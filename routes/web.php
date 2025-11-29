@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -16,9 +19,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
     
     // Permission routes
-    Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
-    Route::delete('permissions/bulk/delete', [\App\Http\Controllers\PermissionController::class, 'bulkDelete'])->name('permissions.bulk.delete');
-    Route::get('permissions/download-pdf', [\App\Http\Controllers\PermissionController::class, 'downloadPdf'])->name('permissions.download.pdf');
+    Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
+    Route::post('permissions', [PermissionController::class, 'store'])->name('permissions.store');
+    Route::put('permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
+    Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
+    Route::delete('permissions/bulk/delete', [PermissionController::class, 'bulkDelete'])->name('permissions.bulk.delete');
+    Route::get('permissions/download-pdf', [PermissionController::class, 'downloadPdf'])->name('permissions.download.pdf');
+    
+    // Role routes
+    Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+    Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    Route::delete('roles/bulk/delete', [RoleController::class, 'bulkDelete'])->name('roles.bulk.delete');
+    
+    // User routes
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
+    Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::delete('users/bulk/delete', [UserController::class, 'bulkDelete'])->name('users.bulk.delete');
 });
 
 require __DIR__.'/settings.php';
