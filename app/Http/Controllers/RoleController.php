@@ -11,55 +11,45 @@ class RoleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Role::with('permissions');
+        $query = Role::withCount(['permissions', 'users']);
 
-        // Search
-        if ($request->filled('search')) {
+        // Apply filters
+        if ($request->search) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // Filter by guard name
-        if ($request->filled('guard_name')) {
-            $query->where('guard_name', $request->guard_name);
-        }
-
-        // Date range filter
-        if ($request->filled('start_date')) {
+        if ($request->start_date) {
             $query->whereDate('created_at', '>=', $request->start_date);
         }
 
-        if ($request->filled('end_date')) {
+        if ($request->end_date) {
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        // Sorting
+        // Apply sorting
         $sortBy = $request->get('sort_by', 'name');
         $sortOrder = $request->get('sort_order', 'asc');
-        
-        if ($sortBy === 'permissions_count') {
-            $query->withCount('permissions')->orderBy('permissions_count', $sortOrder);
-        } else {
-            $query->orderBy($sortBy, $sortOrder);
-        }
+        $query->orderBy($sortBy, $sortOrder);
 
-        // Pagination
+        // Paginate
         $perPage = $request->get('per_page', 10);
-        $roles = $query->paginate($perPage);
-
-        // Transform data
-        $roles->getCollection()->transform(function ($role) {
+        $roles = $query->paginate($perPage)->withQueryString()->through(function ($role) {
             return [
                 'id' => $role->id,
                 'name' => $role->name,
-                'guard_name' => $role->guard_name,
-                'permissions_count' => $role->permissions->count(),
-                'created_at' => $role->created_at->format('Y-m-d H:i:s'),
+                'description' => 'Role for ' . $role->name,
+                'permissions_count' => $role->permissions_count,
+                'users_count' => $role->users_count,
+                'created_at' => $role->created_at->format('Y-m-d'),
             ];
         });
 
+        $permissions = Permission::all(['id', 'name']);
+
         return Inertia::render('Roles/Roles', [
             'roles' => $roles,
-            'filters' => $request->only(['search', 'guard_name', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page']),
+            'permissions' => $permissions,
+            'filters' => $request->only(['search', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }
 
@@ -67,19 +57,17 @@ class RoleController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name',
-            'guard_name' => 'required|string|max:255',
             'permissions' => 'array',
             'permissions.*' => 'exists:permissions,id'
         ]);
 
         $role = Role::create([
             'name' => $request->name,
-            'guard_name' => $request->guard_name,
+            'guard_name' => 'web'
         ]);
 
-        if ($request->has('permissions')) {
-            $permissions = Permission::whereIn('id', $request->permissions)->get();
-            $role->syncPermissions($permissions);
+        if ($request->permissions) {
+            $role->syncPermissions($request->permissions);
         }
 
         return redirect()->back()->with('success', 'Role created successfully.');
@@ -89,27 +77,34 @@ class RoleController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
-            'guard_name' => 'required|string|max:255',
             'permissions' => 'array',
             'permissions.*' => 'exists:permissions,id'
         ]);
 
         $role->update([
-            'name' => $request->name,
-            'guard_name' => $request->guard_name,
+            'name' => $request->name
         ]);
 
-        if ($request->has('permissions')) {
-            $permissions = Permission::whereIn('id', $request->permissions)->get();
-            $role->syncPermissions($permissions);
-        }
+        $role->syncPermissions($request->permissions ?? []);
 
         return redirect()->back()->with('success', 'Role updated successfully.');
     }
 
+    public function edit(Role $role)
+    {
+        return response()->json([
+            'rolePermissions' => $role->permissions->pluck('id')->toArray()
+        ]);
+    }
+
     public function destroy(Role $role)
     {
+        if ($role->users()->count() > 0) {
+            return redirect()->back()->withErrors(['error' => 'Cannot delete role with assigned users.']);
+        }
+
         $role->delete();
+
         return redirect()->back()->with('success', 'Role deleted successfully.');
     }
 
@@ -120,8 +115,16 @@ class RoleController extends Controller
             'ids.*' => 'exists:roles,id'
         ]);
 
+        $rolesWithUsers = Role::whereIn('id', $request->ids)
+            ->whereHas('users')
+            ->count();
+
+        if ($rolesWithUsers > 0) {
+            return redirect()->back()->withErrors(['error' => 'Cannot delete roles with assigned users.']);
+        }
+
         Role::whereIn('id', $request->ids)->delete();
 
-        return redirect()->back()->with('success', 'Selected roles deleted successfully.');
+        return redirect()->back()->with('success', count($request->ids) . ' roles deleted successfully.');
     }
 }

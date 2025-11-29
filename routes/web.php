@@ -28,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Role routes
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
     Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
     Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
@@ -35,10 +36,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // User routes
     Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-    Route::delete('users/bulk/delete', [UserController::class, 'bulkDelete'])->name('users.bulk.delete');
+    Route::delete('users/bulk/delete', [UserController::class, 'bulkDelete'])->name('users.bulk-delete');
+
+    Route::get('users/download-pdf', [UserController::class, 'downloadPdf'])->name('users.download-pdf');
 });
 
 require __DIR__.'/settings.php';

@@ -16,8 +16,9 @@ import { useState, useEffect } from 'react';
 interface Role {
     id: number;
     name: string;
-    guard_name: string;
+    description: string;
     permissions_count: number;
+    users_count: number;
     created_at: string;
 }
 
@@ -42,23 +43,24 @@ interface RolesProps {
         from: number;
         to: number;
     };
+    permissions: Permission[];
     filters: {
         search?: string;
-        guard_name?: string;
+        start_date?: string;
+        end_date?: string;
         sort_by?: string;
         sort_order?: string;
         per_page?: number;
     };
 }
 
-export default function Roles({ roles, filters }: RolesProps) {
+export default function Roles({ roles, permissions = [], filters }: RolesProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingRole, setEditingRole] = useState<Role | null>(null);
     const [deletingRole, setDeletingRole] = useState<Role | null>(null);
     const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters?.search || '');
-    const [guardName, setGuardName] = useState(filters?.guard_name || 'all');
     const [startDate, setStartDate] = useState(filters?.start_date || '');
     const [endDate, setEndDate] = useState(filters?.end_date || '');
     const [sortBy, setSortBy] = useState(filters?.sort_by || 'name');
@@ -67,7 +69,7 @@ export default function Roles({ roles, filters }: RolesProps) {
     
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
-        guard_name: 'web'
+        permissions: [] as number[]
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -89,12 +91,21 @@ export default function Roles({ roles, filters }: RolesProps) {
         }
     };
 
-    const handleEdit = (role: Role) => {
+    const handleEdit = async (role: Role) => {
         setEditingRole(role);
-        setData({
-            name: role.name,
-            guard_name: role.guard_name
-        });
+        try {
+            const response = await fetch(`/roles/${role.id}/edit`);
+            const data = await response.json();
+            setData({
+                name: role.name,
+                permissions: data.rolePermissions || []
+            });
+        } catch (error) {
+            setData({
+                name: role.name,
+                permissions: []
+            });
+        }
     };
 
     const handleDelete = (role: Role) => {
@@ -126,7 +137,6 @@ export default function Roles({ roles, filters }: RolesProps) {
     const applyFilters = () => {
         router.get('/roles', {
             search: search || undefined,
-            guard_name: guardName === 'all' ? undefined : guardName,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: sortBy,
@@ -137,7 +147,6 @@ export default function Roles({ roles, filters }: RolesProps) {
 
     const clearFilters = () => {
         setSearch('');
-        setGuardName('all');
         setStartDate('');
         setEndDate('');
         router.get('/roles', {
@@ -153,7 +162,6 @@ export default function Roles({ roles, filters }: RolesProps) {
         setSortOrder(newOrder);
         router.get('/roles', {
             search: search || undefined,
-            guard_name: guardName === 'all' ? undefined : guardName,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: column,
@@ -165,7 +173,6 @@ export default function Roles({ roles, filters }: RolesProps) {
     const handlePageChange = (page: number) => {
         router.get('/roles', {
             search: search || undefined,
-            guard_name: guardName === 'all' ? undefined : guardName,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: sortBy,
@@ -207,8 +214,8 @@ export default function Roles({ roles, filters }: RolesProps) {
             <div className="p-6 space-y-6">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-2xl font-bold dark:text-white">Roles</h1>
-                        <p className="text-gray-600 dark:text-gray-400">Manage user roles and permissions</p>
+                        <h1 className="text-3xl font-bold dark:text-white">Roles</h1>
+                        <p className="text-gray-600 dark:text-gray-400">Manage user roles and access levels</p>
                     </div>
                     <div className="flex gap-2">
                         {selectedRoles.length > 0 && (
@@ -216,12 +223,27 @@ export default function Roles({ roles, filters }: RolesProps) {
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
                             >
-                                <Trash2 className="h-5 w-5 mr-2" />
+                                <Trash2 className="h-4 w-4 mr-2" />
                                 Delete Selected ({selectedRoles.length})
                             </Button>
                         )}
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                if (search) params.append('search', search);
+                                if (startDate) params.append('start_date', startDate);
+                                if (endDate) params.append('end_date', endDate);
+                                if (sortBy) params.append('sort_by', sortBy);
+                                if (sortOrder) params.append('sort_order', sortOrder);
+                                window.location.href = `/roles/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Download
+                        </Button>
                         <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="h-5 w-5 mr-2" />
+                            <Plus className="h-4 w-4 mr-2" />
                             Add Role
                         </Button>
                     </div>
@@ -231,14 +253,14 @@ export default function Roles({ roles, filters }: RolesProps) {
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
-                            <Filter className="h-4 w-4" />
+                            <Filter className="h-5 w-5" />
                             Filters
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
-                                <Label className="text-sm dark:text-gray-200">Search</Label>
+                                <Label className="dark:text-gray-200">Search</Label>
                                 <Input
                                     placeholder="Search roles..."
                                     value={search}
@@ -246,21 +268,9 @@ export default function Roles({ roles, filters }: RolesProps) {
                                     className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 />
                             </div>
+
                             <div>
-                                <Label className="text-sm dark:text-gray-200">Guard Name</Label>
-                                <Select value={guardName} onValueChange={setGuardName}>
-                                    <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                        <SelectValue placeholder="All guards" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All guards</SelectItem>
-                                        <SelectItem value="web">Web</SelectItem>
-                                        <SelectItem value="api">API</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label className="text-sm dark:text-gray-200">Start Date</Label>
+                                <Label className="dark:text-gray-200">Start Date</Label>
                                 <Input
                                     type="date"
                                     value={startDate}
@@ -269,7 +279,7 @@ export default function Roles({ roles, filters }: RolesProps) {
                                 />
                             </div>
                             <div>
-                                <Label className="text-sm dark:text-gray-200">End Date</Label>
+                                <Label className="dark:text-gray-200">End Date</Label>
                                 <Input
                                     type="date"
                                     value={endDate}
@@ -313,17 +323,17 @@ export default function Roles({ roles, filters }: RolesProps) {
                                                 {sortBy === 'name' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Guard Name</th>
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Description</th>
                                         <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('permissions_count')}>
                                             <div className="flex items-center gap-1">
                                                 Permissions
                                                 {sortBy === 'permissions_count' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('created_at')}>
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('users_count')}>
                                             <div className="flex items-center gap-1">
-                                                Created At
-                                                {sortBy === 'created_at' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                Users
+                                                {sortBy === 'users_count' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
                                         <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
@@ -341,13 +351,9 @@ export default function Roles({ roles, filters }: RolesProps) {
                                                 />
                                             </td>
                                             <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</td>
-                                            <td className="py-3 px-4">
-                                                <span className="px-2 py-1 text-sm font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                                                    {role.guard_name}
-                                                </span>
-                                            </td>
+                                            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{role.description}</td>
                                             <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{role.permissions_count} permissions</td>
-                                            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{new Date(role.created_at).toLocaleDateString()}</td>
+                                            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{role.users_count} users</td>
                                             <td className="py-3 px-4">
                                                 <div className="flex gap-2">
                                                     <Button 
@@ -356,7 +362,7 @@ export default function Roles({ roles, filters }: RolesProps) {
                                                         onClick={() => handleEdit(role)}
                                                         className="text-indigo-600 hover:text-indigo-800"
                                                     >
-                                                        <Edit className="h-5 w-5" />
+                                                        <Edit className="h-4 w-4" />
                                                     </Button>
                                                     <Button 
                                                         variant="ghost" 
@@ -364,7 +370,7 @@ export default function Roles({ roles, filters }: RolesProps) {
                                                         onClick={() => handleDelete(role)}
                                                         className="text-red-600 hover:text-red-800"
                                                     >
-                                                        <Trash2 className="h-5 w-5" />
+                                                        <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>
                                             </td>
@@ -393,7 +399,6 @@ export default function Roles({ roles, filters }: RolesProps) {
                                 setPerPage(newPerPage);
                                 router.get('/roles', {
                                     search: search || undefined,
-                                    guard_name: guardName === 'all' ? undefined : guardName,
                                     start_date: startDate || undefined,
                                     end_date: endDate || undefined,
                                     sort_by: sortBy,
@@ -420,22 +425,31 @@ export default function Roles({ roles, filters }: RolesProps) {
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            placeholder="e.g., admin, editor"
+                            placeholder="e.g., admin"
                         />
                         {errors.name && <span className="text-red-500 text-sm">{errors.name}</span>}
                     </div>
                     <div>
-                        <Label htmlFor="guard_name" className="dark:text-gray-200">Guard Name</Label>
-                        <Select value={data.guard_name} onValueChange={(value) => setData('guard_name', value)}>
-                            <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="web">Web</SelectItem>
-                                <SelectItem value="api">API</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {errors.guard_name && <span className="text-red-500 text-sm">{errors.guard_name}</span>}
+                        <Label className="dark:text-gray-200">Permissions</Label>
+                        <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3 dark:bg-gray-700">
+                            {permissions.map((permission) => (
+                                <label key={permission.id} className="flex items-center space-x-2 mb-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.permissions.includes(permission.id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setData('permissions', [...data.permissions, permission.id]);
+                                            } else {
+                                                setData('permissions', data.permissions.filter(id => id !== permission.id));
+                                            }
+                                        }}
+                                        className="rounded border-gray-300 dark:border-gray-600"
+                                    />
+                                    <span className="text-sm dark:text-gray-300">{permission.name}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
                 </FormModal>
 
@@ -458,17 +472,26 @@ export default function Roles({ roles, filters }: RolesProps) {
                         {errors.name && <span className="text-red-500 text-sm">{errors.name}</span>}
                     </div>
                     <div>
-                        <Label htmlFor="edit-guard_name" className="dark:text-gray-200">Guard Name</Label>
-                        <Select value={data.guard_name} onValueChange={(value) => setData('guard_name', value)}>
-                            <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="web">Web</SelectItem>
-                                <SelectItem value="api">API</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {errors.guard_name && <span className="text-red-500 text-sm">{errors.guard_name}</span>}
+                        <Label className="dark:text-gray-200">Permissions</Label>
+                        <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3 dark:bg-gray-700">
+                            {permissions.map((permission) => (
+                                <label key={permission.id} className="flex items-center space-x-2 mb-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.permissions.includes(permission.id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setData('permissions', [...data.permissions, permission.id]);
+                                            } else {
+                                                setData('permissions', data.permissions.filter(id => id !== permission.id));
+                                            }
+                                        }}
+                                        className="rounded border-gray-300 dark:border-gray-600"
+                                    />
+                                    <span className="text-sm dark:text-gray-300">{permission.name}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
                 </FormModal>
 

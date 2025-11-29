@@ -2,75 +2,78 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Inertia\Inertia;
 
 class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('roles');
+        $query = User::select('id', 'name', 'email', 'email_verified_at', 'banned', 'created_at')
+            ->with('roles:name');
 
-        // Search
-        if ($request->filled('search')) {
+        // Apply filters
+        if ($request->search) {
             $query->where(function($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
                   ->orWhere('email', 'like', '%' . $request->search . '%');
             });
         }
 
-        // Filter by status
-        if ($request->filled('status')) {
-            if ($request->status === 'active') {
+        if ($request->role && $request->role !== 'all') {
+            $query->whereHas('roles', function($q) use ($request) {
+                $q->where('name', $request->role);
+            });
+        }
+
+        if ($request->status && $request->status !== 'all') {
+            if ($request->status === 'verified') {
                 $query->whereNotNull('email_verified_at');
-            } elseif ($request->status === 'inactive') {
+            } elseif ($request->status === 'unverified') {
                 $query->whereNull('email_verified_at');
+            } elseif ($request->status === 'banned') {
+                $query->where('banned', true);
+            } elseif ($request->status === 'active') {
+                $query->where('banned', false);
             }
         }
 
-        // Date range filter
-        if ($request->filled('start_date')) {
+        if ($request->start_date) {
             $query->whereDate('created_at', '>=', $request->start_date);
         }
 
-        if ($request->filled('end_date')) {
+        if ($request->end_date) {
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        // Sorting
-        $sortBy = $request->get('sort_by', 'name');
-        $sortOrder = $request->get('sort_order', 'asc');
-        
-        if ($sortBy === 'roles_count') {
-            $query->withCount('roles')->orderBy('roles_count', $sortOrder);
-        } else {
-            $query->orderBy($sortBy, $sortOrder);
-        }
+        // Apply sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
 
-        // Pagination
+        // Paginate
         $perPage = $request->get('per_page', 10);
-        $users = $query->paginate($perPage);
-
-        // Transform data
-        $users->getCollection()->transform(function ($user) {
+        $users = $query->paginate($perPage)->withQueryString()->through(function ($user) {
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'status' => $user->email_verified_at ? 'Active' : 'Inactive',
-                'roles_count' => $user->roles->count(),
-                'roles' => $user->roles->pluck('name')->join(', '),
-                'created_at' => $user->created_at->format('Y-m-d H:i:s'),
+                'roles' => $user->roles->pluck('name')->toArray(),
+                'email_verified' => !is_null($user->email_verified_at),
+                'banned' => $user->banned,
+                'created_at' => $user->created_at->format('Y-m-d'),
             ];
         });
 
+        $roles = Role::all(['id', 'name']);
+
         return Inertia::render('Users/Users', [
             'users' => $users,
-            'filters' => $request->only(['search', 'status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page']),
-            'roles' => Role::all(['id', 'name']),
+            'roles' => $roles,
+            'filters' => $request->only(['search', 'role', 'status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }
 
@@ -78,52 +81,61 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8',
             'roles' => 'array',
-            'roles.*' => 'exists:roles,id'
+            'roles.*' => 'exists:roles,id',
+            'email_verified' => 'boolean',
+            'banned' => 'boolean'
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'email_verified_at' => now(),
+            'email_verified_at' => $request->email_verified ? now() : null,
+            'banned' => $request->banned ?? false,
         ]);
 
-        if ($request->has('roles')) {
-            $roles = Role::whereIn('id', $request->roles)->get();
-            $user->syncRoles($roles);
+        if ($request->roles) {
+            $user->syncRoles($request->roles);
         }
 
         return redirect()->back()->with('success', 'User created successfully.');
+    }
+
+    public function edit(User $user)
+    {
+        return response()->json([
+            'userRoles' => $user->roles->pluck('id')->toArray()
+        ]);
     }
 
     public function update(Request $request, User $user)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'password' => 'nullable|min:8',
             'roles' => 'array',
-            'roles.*' => 'exists:roles,id'
+            'roles.*' => 'exists:roles,id',
+            'email_verified' => 'boolean',
+            'banned' => 'boolean'
         ]);
 
-        $updateData = [
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
+            'email_verified_at' => $request->email_verified ? now() : null,
+            'banned' => $request->banned ?? false,
         ];
 
-        if ($request->filled('password')) {
-            $updateData['password'] = Hash::make($request->password);
+        if ($request->password) {
+            $userData['password'] = Hash::make($request->password);
         }
 
-        $user->update($updateData);
-
-        if ($request->has('roles')) {
-            $roles = Role::whereIn('id', $request->roles)->get();
-            $user->syncRoles($roles);
-        }
+        $user->update($userData);
+        $user->syncRoles($request->roles ?? []);
 
         return redirect()->back()->with('success', 'User updated successfully.');
     }
@@ -143,6 +155,57 @@ class UserController extends Controller
 
         User::whereIn('id', $request->ids)->delete();
 
-        return redirect()->back()->with('success', 'Selected users deleted successfully.');
+        return redirect()->back()->with('success', count($request->ids) . ' users deleted successfully.');
+    }
+
+
+
+    public function downloadPdf(Request $request)
+    {
+        $query = User::select('id', 'name', 'email', 'email_verified_at', 'banned', 'created_at')
+            ->with('roles:name');
+
+        // Apply same filters as index method
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->role && $request->role !== 'all') {
+            $query->whereHas('roles', function($q) use ($request) {
+                $q->where('name', $request->role);
+            });
+        }
+
+        if ($request->status && $request->status !== 'all') {
+            if ($request->status === 'verified') {
+                $query->whereNotNull('email_verified_at');
+            } elseif ($request->status === 'unverified') {
+                $query->whereNull('email_verified_at');
+            } elseif ($request->status === 'banned') {
+                $query->where('banned', true);
+            } elseif ($request->status === 'active') {
+                $query->where('banned', false);
+            }
+        }
+
+        if ($request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $users = $query->get();
+
+        // Simple PDF response for now
+        return response()->json(['message' => 'PDF download functionality needs to be implemented']);
     }
 }
