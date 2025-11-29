@@ -209,8 +209,8 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
             <div className="p-6 space-y-6">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-xl font-bold dark:text-white">Permissions</h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Manage system permissions and access controls</p>
+                        <h1 className="text-2xl font-bold dark:text-white">Permissions</h1>
+                        <p className="text-gray-600 dark:text-gray-400">Manage system permissions and access controls</p>
                     </div>
                     <div className="flex gap-2">
                         {selectedPermissions.length > 0 && (
@@ -248,7 +248,7 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                 {/* Filter Card */}
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
-                        <CardTitle className="text-sm dark:text-white flex items-center gap-2">
+                        <CardTitle className="dark:text-white flex items-center gap-2">
                             <Filter className="h-4 w-4" />
                             Filters
                         </CardTitle>
@@ -256,7 +256,7 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div>
-                                <Label className="text-xs dark:text-gray-200">Search</Label>
+                                <Label className="text-sm dark:text-gray-200">Search</Label>
                                 <Input
                                     placeholder="Search permissions..."
                                     value={search}
@@ -265,7 +265,7 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                 />
                             </div>
                             <div>
-                                <Label className="text-xs dark:text-gray-200">Module</Label>
+                                <Label className="text-sm dark:text-gray-200">Module</Label>
                                 <Select value={module} onValueChange={setModule}>
                                     <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                         <SelectValue placeholder="All modules" />
@@ -279,7 +279,7 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                 </Select>
                             </div>
                             <div>
-                                <Label className="text-xs dark:text-gray-200">Start Date</Label>
+                                <Label className="text-sm dark:text-gray-200">Start Date</Label>
                                 <Input
                                     type="date"
                                     value={startDate}
@@ -288,7 +288,7 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                 />
                             </div>
                             <div>
-                                <Label className="text-xs dark:text-gray-200">End Date</Label>
+                                <Label className="text-sm dark:text-gray-200">End Date</Label>
                                 <Input
                                     type="date"
                                     value={endDate}
@@ -311,14 +311,14 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
-                        <CardTitle className="text-sm dark:text-white">Permission Management</CardTitle>
+                        <CardTitle className="dark:text-white">Permission Management</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-gray-200 dark:border-gray-700">
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">
                                             <input
                                                 type="checkbox"
                                                 checked={selectedPermissions.length === permissions.data.length && permissions.data.length > 0}
@@ -326,21 +326,21 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                                 className="rounded border-gray-300 dark:border-gray-600"
                                             />
                                         </th>
-                                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('name')}>
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('name')}>
                                             <div className="flex items-center gap-1">
                                                 Name
                                                 {sortBy === 'name' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 dark:text-gray-300">Module</th>
-                                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 dark:text-gray-300">Description</th>
-                                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('roles_count')}>
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Module</th>
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('roles_count')}>
                                             <div className="flex items-center gap-1">
                                                 Roles
                                                 {sortBy === 'roles_count' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -354,14 +354,14 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                                     className="rounded border-gray-300 dark:border-gray-600"
                                                 />
                                             </td>
-                                            <td className="py-3 px-4 text-xs font-medium text-gray-900 dark:text-gray-100">{permission.name}</td>
+                                            <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-gray-100">{permission.name}</td>
                                             <td className="py-3 px-4">
-                                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                                <span className="px-2 py-1 text-sm font-semibold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                                                     {permission.module}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4 text-xs text-gray-700 dark:text-gray-300">{permission.description}</td>
-                                            <td className="py-3 px-4 text-xs text-gray-700 dark:text-gray-300">{permission.roles_count} roles</td>
+                                            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{permission.description}</td>
+                                            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{permission.roles_count} roles</td>
                                             <td className="py-3 px-4">
                                                 <div className="flex gap-2">
                                                     <Button 

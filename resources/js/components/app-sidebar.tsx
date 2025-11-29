@@ -233,7 +233,7 @@ export function AppSidebar() {
     }, [url]);
 
     return (
-        <Sidebar collapsible="icon" variant="inset" className="w-64 h-screen">
+        <Sidebar collapsible="icon" variant="inset" className="w-72 h-screen">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -255,7 +255,7 @@ export function AppSidebar() {
                                         onClick={() =>
                                             toggleDropdown(item.title)
                                         }
-                                        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                                        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors cursor-pointer ${
                                             isParentActive(item.children)
                                                 ? 'bg-indigo-600 text-white'
                                                 : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
@@ -285,7 +285,7 @@ export function AppSidebar() {
                                                     <Link
                                                         key={childIndex}
                                                         href={child.href}
-                                                        className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs transition-colors ${
+                                                        className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                                                             isActive(child.href)
                                                                 ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
                                                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
@@ -311,7 +311,7 @@ export function AppSidebar() {
                             ) : (
                                 <Link
                                     href={item.href || '#'}
-                                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                                         isActive(item.href || '#')
                                             ? 'bg-indigo-600 text-white'
                                             : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
