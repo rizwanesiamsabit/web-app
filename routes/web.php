@@ -6,6 +6,7 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CompanySettingController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -43,6 +44,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('users/bulk/delete', [UserController::class, 'bulkDelete'])->name('users.bulk-delete');
 
     Route::get('users/download-pdf', [UserController::class, 'downloadPdf'])->name('users.download-pdf');
+    
+    // Company Setting Routes
+    Route::get('company-settings', [CompanySettingController::class, 'index'])->name('company-settings.index');
+    Route::get('company-settings/create', [CompanySettingController::class, 'create'])->name('company-settings.create');
+    Route::post('company-settings', [CompanySettingController::class, 'store'])->name('company-settings.store');
+    Route::get('company-settings/{companySetting}', [CompanySettingController::class, 'show'])->name('company-settings.show');
+    Route::get('company-settings/{companySetting}/edit', [CompanySettingController::class, 'edit'])->name('company-settings.edit');
+    Route::put('company-settings/{companySetting}', [CompanySettingController::class, 'update'])->name('company-settings.update');
+    Route::delete('company-settings/{companySetting}', [CompanySettingController::class, 'destroy'])->name('company-settings.destroy');
+    Route::delete('company-settings/bulk/delete', [CompanySettingController::class, 'bulkDelete'])->name('company-settings.bulk-delete');
+    Route::get('company-settings/download-pdf', [CompanySettingController::class, 'downloadPdf'])->name('company-settings.download-pdf');
 });
 
 require __DIR__.'/settings.php';
