@@ -5,17 +5,25 @@ import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { type BreadcrumbItem } from '@/types';
 import { type PropsWithChildren } from 'react';
 
-export default function AppSidebarLayout({
+interface AppSidebarLayoutProps extends PropsWithChildren {
+    breadcrumbs?: BreadcrumbItem[];
+}
+
+export function AppSidebarLayout({
     children,
     breadcrumbs = [],
-}: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
+}: AppSidebarLayoutProps) {
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
             <AppContent variant="sidebar" className="overflow-x-hidden">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
-                {children}
+                <main className="flex-1">
+                    {children}
+                </main>
             </AppContent>
         </AppShell>
     );
 }
+
+export default AppSidebarLayout;

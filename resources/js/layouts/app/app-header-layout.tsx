@@ -4,14 +4,24 @@ import { AppShell } from '@/components/app-shell';
 import { type BreadcrumbItem } from '@/types';
 import type { PropsWithChildren } from 'react';
 
-export default function AppHeaderLayout({
+interface AppHeaderLayoutProps extends PropsWithChildren {
+    breadcrumbs?: BreadcrumbItem[];
+}
+
+export function AppHeaderLayout({
     children,
     breadcrumbs,
-}: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
+}: AppHeaderLayoutProps) {
     return (
         <AppShell>
             <AppHeader breadcrumbs={breadcrumbs} />
-            <AppContent>{children}</AppContent>
+            <AppContent>
+                <main className="flex-1">
+                    {children}
+                </main>
+            </AppContent>
         </AppShell>
     );
 }
+
+export default AppHeaderLayout;

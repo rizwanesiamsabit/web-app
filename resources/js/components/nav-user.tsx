@@ -21,6 +21,11 @@ export function NavUser() {
     const { state } = useSidebar();
     const isMobile = useIsMobile();
 
+    const getDropdownSide = () => {
+        if (isMobile) return 'bottom';
+        return state === 'collapsed' ? 'left' : 'bottom';
+    };
+
     return (
         <SidebarMenu>
             <SidebarMenuItem>
@@ -29,7 +34,6 @@ export function NavUser() {
                         <SidebarMenuButton
                             size="lg"
                             className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
-                            data-test="sidebar-menu-button"
                         >
                             <UserInfo user={auth.user} />
                             <ChevronsUpDown className="ml-auto size-4" />
@@ -38,13 +42,7 @@ export function NavUser() {
                     <DropdownMenuContent
                         className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
                         align="end"
-                        side={
-                            isMobile
-                                ? 'bottom'
-                                : state === 'collapsed'
-                                  ? 'left'
-                                  : 'bottom'
-                        }
+                        side={getDropdownSide()}
                     >
                         <UserMenuContent user={auth.user} />
                     </DropdownMenuContent>
