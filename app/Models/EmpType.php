@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Shift extends Model
+class EmpType extends Model
 {
-    protected $fillable = ['name', 'start_time', 'end_time', 'status'];
+    protected $fillable = [
+        'name',
+        'status'
+    ];
 
     protected $casts = [
         'status' => 'boolean'

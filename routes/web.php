@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\EmpDesignationController;
+use App\Http\Controllers\EmpTypeController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -73,6 +74,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('emp-designations', [EmpDesignationController::class, 'store'])->name('emp-designations.store');
     Route::put('emp-designations/{empDesignation}', [EmpDesignationController::class, 'update'])->name('emp-designations.update');
     Route::delete('emp-designations/{empDesignation}', [EmpDesignationController::class, 'destroy'])->name('emp-designations.destroy');
+    
+    // Employee Type routes
+    Route::get('emp-types', [EmpTypeController::class, 'index'])->name('emp-types.index');
+    Route::get('emp-types/download-pdf', [EmpTypeController::class, 'downloadPdf'])->name('emp-types.download.pdf');
+    Route::delete('emp-types/bulk/delete', [EmpTypeController::class, 'bulkDelete'])->name('emp-types.bulk.delete');
+    Route::post('emp-types', [EmpTypeController::class, 'store'])->name('emp-types.store');
+    Route::put('emp-types/{empType}', [EmpTypeController::class, 'update'])->name('emp-types.update');
+    Route::delete('emp-types/{empType}', [EmpTypeController::class, 'destroy'])->name('emp-types.destroy');
 });
 
 require __DIR__.'/settings.php';
