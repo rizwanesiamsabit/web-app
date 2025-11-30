@@ -14,19 +14,19 @@ class ShiftSeeder extends Seeder
                 'name' => 'Morning Shift',
                 'start_time' => '07:00 AM',
                 'end_time' => '03:00 PM',
-                'status' => 'active'
+                'status' => true
             ],
             [
                 'name' => 'Evening Shift', 
                 'start_time' => '03:00 PM',
                 'end_time' => '11:00 PM',
-                'status' => 'active'
+                'status' => true
             ],
             [
                 'name' => 'Night Shift',
                 'start_time' => '11:00 PM', 
                 'end_time' => '07:00 AM',
-                'status' => 'active'
+                'status' => false
             ]
         ];
 

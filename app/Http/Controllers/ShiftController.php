@@ -18,7 +18,7 @@ class ShiftController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        if ($request->status !== null && $request->status !== 'all') {
+        if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
@@ -41,7 +41,7 @@ class ShiftController extends Controller
                 'name' => $shift->name,
                 'start_time' => $shift->start_time,
                 'end_time' => $shift->end_time,
-                'status' => $shift->status,
+                'status' => (bool) $shift->status,
                 'created_at' => $shift->created_at->format('Y-m-d'),
             ];
         });
@@ -115,8 +115,8 @@ class ShiftController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        if ($request->status !== null && $request->status !== 'all') {
-            $query->where('status', $request->status);
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status === 'true');
         }
 
         if ($request->start_date) {

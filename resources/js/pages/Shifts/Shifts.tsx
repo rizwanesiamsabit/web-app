@@ -207,6 +207,12 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
         return () => clearTimeout(timer);
     }, [search]);
 
+    useEffect(() => {
+        if (status !== (filters?.status || 'all')) {
+            applyFilters();
+        }
+    }, [status]);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Shifts" />
@@ -277,8 +283,8 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All status</SelectItem>
-                                        <SelectItem value="1">Active</SelectItem>
-                                        <SelectItem value="0">Inactive</SelectItem>
+                                        <SelectItem value="true">Active</SelectItem>
+                                        <SelectItem value="false">Inactive</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
