@@ -54,21 +54,21 @@ const mainNavItems = [
         title: 'Dispenser',
         icon: Fuel,
         children: [
-            { title: 'Credit Sales', href: '/credit-sales', icon: CreditCard },
+            { title: 'Credit Sales', href: '#', icon: CreditCard },
             {
                 title: 'Dispensers Calculation',
-                href: '/product/dispensers-reading',
+                href: '#',
                 icon: BarChart3,
             },
-            { title: 'Dispensers Setting', href: '/dispensers', icon: Fuel },
+            { title: 'Dispensers Setting', href: '#', icon: Fuel },
         ],
     },
     {
         title: 'Customer',
         icon: Users,
         children: [
-            { title: 'Customers', href: '/customers', icon: Users },
-            { title: 'Vehicles', href: '/vehicles', icon: Car },
+            { title: 'Customers', href: '#', icon: Users },
+            { title: 'Vehicles', href: '#', icon: Car },
             {
                 title: 'Customer Received Voucher Entry',
                 href: '#',
@@ -78,7 +78,7 @@ const mainNavItems = [
             { title: 'Customer Summary Bill', href: '#', icon: FileText },
             {
                 title: 'Daily Statement Report',
-                href: '/product/daily_statement_report',
+                href: '#',
                 icon: BarChart3,
             },
         ],
@@ -87,7 +87,7 @@ const mainNavItems = [
         title: 'Supplier',
         icon: Truck,
         children: [
-            { title: 'Suppliers', href: '/suppliers', icon: Truck },
+            { title: 'Suppliers', href: '#', icon: Truck },
             {
                 title: 'Supplier Payment Voucher Entry',
                 href: '#',
@@ -101,22 +101,22 @@ const mainNavItems = [
         icon: Package,
         children: [
             { title: 'Products', href: '/products', icon: Package },
-            { title: 'Category', href: '/categories', icon: Package },
-            { title: 'Unit', href: '/units', icon: Package },
+            { title: 'Categories', href: '/categories', icon: Package },
+            { title: 'Units', href: '/units', icon: Package },
         ],
     },
     {
         title: 'Product Stock',
         icon: Warehouse,
         children: [
-            { title: 'Today Stock Report', href: '/stock', icon: BarChart3 },
+            { title: 'Today Stock Report', href: '#', icon: BarChart3 },
         ],
     },
     {
         title: 'Purchase',
         icon: ShoppingCart,
         children: [
-            { title: 'Purchase', href: '/purchases', icon: ShoppingCart },
+            { title: 'Purchase', href: '#', icon: ShoppingCart },
             {
                 title: 'Invoice Wise Purchase Report',
                 href: '#',
@@ -133,7 +133,7 @@ const mainNavItems = [
         title: 'Sales',
         icon: DollarSign,
         children: [
-            { title: 'Sales', href: '/sales', icon: DollarSign },
+            { title: 'Sales', href: '#', icon: DollarSign },
             { title: 'Challan Wise Sales Reports', href: '#', icon: FileText },
             { title: 'Invoice Wise Sales Reports', href: '#', icon: FileText },
             {
@@ -147,51 +147,51 @@ const mainNavItems = [
         title: 'Accounts',
         icon: Database,
         children: [
-            { title: 'Add Group', href: '/finance/groups', icon: Database },
-            { title: 'Add Account', href: '/finance/accounts', icon: Database },
+            { title: 'Add Group', href: '/groups', icon: Database },
+            { title: 'Add Account', href: '#', icon: Database },
             {
                 title: 'General Ledger',
-                href: '/finance/general_ledger',
+                href: '#',
                 icon: BarChart3,
             },
             {
                 title: 'Cash Book Ledger',
-                href: '/finance/cash_book_ledger',
+                href: '#',
                 icon: BarChart3,
             },
             {
                 title: 'Bank Book Ledger',
-                href: '/finance/bank_book_ledger',
+                href: '#',
                 icon: BarChart3,
             },
             {
                 title: 'Total Customer Receivable List',
-                href: '/finance/total_customer_receivable_list',
+                href: '#',
                 icon: BarChart3,
             },
             {
                 title: 'Total Supplier Payable List',
-                href: '/finance/total_supplier_payable_list',
+                href: '#',
                 icon: BarChart3,
             },
             {
                 title: 'Journal Voucher',
-                href: '/finance/journal_voucher',
+                href: '#',
                 icon: FileText,
             },
             {
                 title: 'Received Voucher',
-                href: '/finance/received_voucher',
+                href: '#',
                 icon: FileText,
             },
             {
                 title: 'Payment Voucher',
-                href: '/finance/payment_voucher',
+                href: '#',
                 icon: FileText,
             },
             {
                 title: 'Office Payment',
-                href: '/office-payment',
+                href: '#',
                 icon: CreditCard,
             },
         ],
@@ -200,7 +200,7 @@ const mainNavItems = [
         title: 'Employee',
         icon: UserCheck,
         children: [
-            { title: 'Add Employee', href: '/employees', icon: UserCheck },
+            { title: 'Add Employee', href: '#', icon: UserCheck },
             { title: 'Employee Type', href: '/emp-types', icon: Users },
             { title: 'Department', href: '/emp-departments', icon: Building },
             {

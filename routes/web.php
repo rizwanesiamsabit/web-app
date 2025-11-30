@@ -14,6 +14,7 @@ use App\Http\Controllers\EmpDepartmentController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\GroupController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -118,6 +119,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('products', [ProductController::class, 'store'])->name('products.store');
     Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    
+    // Group routes
+    Route::get('groups', [GroupController::class, 'index'])->name('groups.index');
+    Route::get('groups/get-parentchild/{code}', [GroupController::class, 'getParentChild'])->name('groups.get-parentchild');
+    Route::get('groups/download-pdf', [GroupController::class, 'downloadPdf'])->name('groups.download.pdf');
+    Route::delete('groups/bulk/delete', [GroupController::class, 'bulkDelete'])->name('groups.bulk.delete');
+    Route::post('groups', [GroupController::class, 'store'])->name('groups.store');
+    Route::put('groups/{group}', [GroupController::class, 'update'])->name('groups.update');
+    Route::delete('groups/{group}', [GroupController::class, 'destroy'])->name('groups.destroy');
 });
 
 require __DIR__.'/settings.php';
