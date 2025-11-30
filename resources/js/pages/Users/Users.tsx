@@ -492,11 +492,6 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                 </Card>
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="dark:text-white">
-                            User Management
-                        </CardTitle>
-                    </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">
                             <table className="w-full">

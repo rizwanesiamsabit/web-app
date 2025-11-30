@@ -320,9 +320,6 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                 </Card>
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
-                    <CardHeader>
-                        <CardTitle className="dark:text-white">Shift Management</CardTitle>
-                    </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">
                             <table className="w-full">

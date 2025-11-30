@@ -8,6 +8,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\EmpDesignationController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -64,6 +65,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('shifts', [ShiftController::class, 'store'])->name('shifts.store');
     Route::put('shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
     Route::delete('shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
+    
+    // Employee Designation routes
+    Route::get('emp-designations', [EmpDesignationController::class, 'index'])->name('emp-designations.index');
+    Route::get('emp-designations/download-pdf', [EmpDesignationController::class, 'downloadPdf'])->name('emp-designations.download.pdf');
+    Route::delete('emp-designations/bulk/delete', [EmpDesignationController::class, 'bulkDelete'])->name('emp-designations.bulk.delete');
+    Route::post('emp-designations', [EmpDesignationController::class, 'store'])->name('emp-designations.store');
+    Route::put('emp-designations/{empDesignation}', [EmpDesignationController::class, 'update'])->name('emp-designations.update');
+    Route::delete('emp-designations/{empDesignation}', [EmpDesignationController::class, 'destroy'])->name('emp-designations.destroy');
 });
 
 require __DIR__.'/settings.php';

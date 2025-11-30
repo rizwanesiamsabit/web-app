@@ -1,7 +1,13 @@
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { Link, usePage } from '@inertiajs/react';
-import AppLogo from './app-logo';
 import {
     BarChart3,
     Building,
@@ -24,6 +30,7 @@ import {
     Warehouse,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import AppLogo from './app-logo';
 
 const mainNavItems = [
     {
@@ -48,7 +55,11 @@ const mainNavItems = [
         icon: Fuel,
         children: [
             { title: 'Credit Sales', href: '/credit-sales', icon: CreditCard },
-            { title: 'Dispensers Calculation', href: '/product/dispensers-reading', icon: BarChart3 },
+            {
+                title: 'Dispensers Calculation',
+                href: '/product/dispensers-reading',
+                icon: BarChart3,
+            },
             { title: 'Dispensers Setting', href: '/dispensers', icon: Fuel },
         ],
     },
@@ -65,7 +76,11 @@ const mainNavItems = [
             },
             { title: 'Customer Details Bill', href: '#', icon: FileText },
             { title: 'Customer Summary Bill', href: '#', icon: FileText },
-            { title: 'Daily Statement Report', href: '/product/daily_statement_report', icon: BarChart3 },
+            {
+                title: 'Daily Statement Report',
+                href: '/product/daily_statement_report',
+                icon: BarChart3,
+            },
         ],
     },
     {
@@ -188,7 +203,11 @@ const mainNavItems = [
             { title: 'Add Employee', href: '/employees', icon: UserCheck },
             { title: 'Branch', href: '/branches', icon: Building },
             { title: 'Department', href: '/departments', icon: Building },
-            { title: 'Designation', href: '/designations', icon: UserCheck },
+            {
+                title: 'Designation',
+                href: '/emp-designations',
+                icon: UserCheck,
+            },
         ],
     },
     {
@@ -233,7 +252,7 @@ export function AppSidebar() {
     }, [url]);
 
     return (
-        <Sidebar collapsible="icon" variant="inset" className="w-72 h-screen">
+        <Sidebar collapsible="icon" variant="inset" className="h-screen w-72">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -245,7 +264,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
-            <SidebarContent className="px-4 scrollbar-ultra-thin overflow-y-auto">
+            <SidebarContent className="scrollbar-ultra-thin overflow-y-auto px-4">
                 <nav className="space-y-1">
                     {mainNavItems.map((item, index) => (
                         <div key={index}>
@@ -255,7 +274,7 @@ export function AppSidebar() {
                                         onClick={() =>
                                             toggleDropdown(item.title)
                                         }
-                                        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors cursor-pointer ${
+                                        className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors ${
                                             isParentActive(item.children)
                                                 ? 'bg-indigo-600 text-white'
                                                 : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
@@ -275,37 +294,35 @@ export function AppSidebar() {
                                             }`}
                                         />
                                     </button>
-                                    <div className={`mt-1 ml-8 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${
-                                        openDropdowns.includes(item.title) 
-                                            ? 'max-h-[500px] opacity-100' 
-                                            : 'max-h-0 opacity-0'
-                                    }`}>
-                                            {item.children.map(
-                                                (child, childIndex) => (
-                                                    <Link
-                                                        key={childIndex}
-                                                        href={child.href}
-                                                        className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] transition-colors ${
+                                    <div
+                                        className={`mt-1 ml-8 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${
+                                            openDropdowns.includes(item.title)
+                                                ? 'max-h-[500px] opacity-100'
+                                                : 'max-h-0 opacity-0'
+                                        }`}
+                                    >
+                                        {item.children.map(
+                                            (child, childIndex) => (
+                                                <Link
+                                                    key={childIndex}
+                                                    href={child.href}
+                                                    className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] transition-colors ${
+                                                        isActive(child.href)
+                                                            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
+                                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+                                                    }`}
+                                                >
+                                                    <span
+                                                        className={`h-2 w-2 flex-shrink-0 rounded-full ${
                                                             isActive(child.href)
-                                                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
-                                                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+                                                                ? 'bg-indigo-500'
+                                                                : 'bg-gray-400 dark:bg-gray-500'
                                                         }`}
-                                                    >
-                                                        <span
-                                                            className={`h-2 w-2 flex-shrink-0 rounded-full ${
-                                                                isActive(
-                                                                    child.href,
-                                                                )
-                                                                    ? 'bg-indigo-500'
-                                                                    : 'bg-gray-400 dark:bg-gray-500'
-                                                            }`}
-                                                        ></span>
-                                                        <span>
-                                                            {child.title}
-                                                        </span>
-                                                    </Link>
-                                                ),
-                                            )}
+                                                    ></span>
+                                                    <span>{child.title}</span>
+                                                </Link>
+                                            ),
+                                        )}
                                     </div>
                                 </div>
                             ) : (

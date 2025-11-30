@@ -231,9 +231,6 @@ export default function CompanySettings({ companySettings = [], filters }: Compa
                 </Card>
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
-                    <CardHeader>
-                        <CardTitle className="dark:text-white">Company Settings Management</CardTitle>
-                    </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">
                             <table className="w-full">

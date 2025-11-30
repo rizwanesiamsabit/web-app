@@ -10,15 +10,13 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Shield, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Briefcase, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-interface Role {
+interface EmpDesignation {
     id: number;
     name: string;
-    description: string;
-    permissions_count: number;
-    users_count: number;
+    status: boolean;
     created_at: string;
 }
 
@@ -28,14 +26,14 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard().url,
     },
     {
-        title: 'Roles',
-        href: '/roles',
+        title: 'Employee Designations',
+        href: '/emp-designations',
     },
 ];
 
-interface RolesProps {
-    roles: {
-        data: Role[];
+interface EmpDesignationsProps {
+    designations: {
+        data: EmpDesignation[];
         current_page: number;
         last_page: number;
         per_page: number;
@@ -43,9 +41,9 @@ interface RolesProps {
         from: number;
         to: number;
     };
-    permissions: Permission[];
     filters: {
         search?: string;
+        status?: string;
         start_date?: string;
         end_date?: string;
         sort_by?: string;
@@ -54,13 +52,14 @@ interface RolesProps {
     };
 }
 
-export default function Roles({ roles, permissions = [], filters }: RolesProps) {
+export default function EmpDesignations({ designations, filters }: EmpDesignationsProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [editingRole, setEditingRole] = useState<Role | null>(null);
-    const [deletingRole, setDeletingRole] = useState<Role | null>(null);
-    const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
+    const [editingDesignation, setEditingDesignation] = useState<EmpDesignation | null>(null);
+    const [deletingDesignation, setDeletingDesignation] = useState<EmpDesignation | null>(null);
+    const [selectedDesignations, setSelectedDesignations] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters?.search || '');
+    const [status, setStatus] = useState(filters?.status || 'all');
     const [startDate, setStartDate] = useState(filters?.start_date || '');
     const [endDate, setEndDate] = useState(filters?.end_date || '');
     const [sortBy, setSortBy] = useState(filters?.sort_by || 'name');
@@ -69,20 +68,20 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
     
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
-        permissions: [] as number[]
+        status: true
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (editingRole) {
-            put(`/roles/${editingRole.id}`, {
+        if (editingDesignation) {
+            put(`/emp-designations/${editingDesignation.id}`, {
                 onSuccess: () => {
-                    setEditingRole(null);
+                    setEditingDesignation(null);
                     reset();
                 }
             });
         } else {
-            post('/roles', {
+            post('/emp-designations', {
                 onSuccess: () => {
                     setIsCreateOpen(false);
                     reset();
@@ -91,31 +90,22 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
         }
     };
 
-    const handleEdit = async (role: Role) => {
-        setEditingRole(role);
-        try {
-            const response = await fetch(`/roles/${role.id}/edit`);
-            const data = await response.json();
-            setData({
-                name: role.name,
-                permissions: data.rolePermissions || []
-            });
-        } catch (error) {
-            setData({
-                name: role.name,
-                permissions: []
-            });
-        }
+    const handleEdit = (designation: EmpDesignation) => {
+        setEditingDesignation(designation);
+        setData({
+            name: designation.name,
+            status: designation.status
+        });
     };
 
-    const handleDelete = (role: Role) => {
-        setDeletingRole(role);
+    const handleDelete = (designation: EmpDesignation) => {
+        setDeletingDesignation(designation);
     };
 
     const confirmDelete = () => {
-        if (deletingRole) {
-            router.delete(`/roles/${deletingRole.id}`, {
-                onSuccess: () => setDeletingRole(null)
+        if (deletingDesignation) {
+            router.delete(`/emp-designations/${deletingDesignation.id}`, {
+                onSuccess: () => setDeletingDesignation(null)
             });
         }
     };
@@ -125,18 +115,19 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
     };
 
     const confirmBulkDelete = () => {
-        router.delete('/roles/bulk/delete', {
-            data: { ids: selectedRoles },
+        router.delete('/emp-designations/bulk/delete', {
+            data: { ids: selectedDesignations },
             onSuccess: () => {
-                setSelectedRoles([]);
+                setSelectedDesignations([]);
                 setIsBulkDeleting(false);
             }
         });
     };
 
     const applyFilters = () => {
-        router.get('/roles', {
+        router.get('/emp-designations', {
             search: search || undefined,
+            status: status === 'all' ? undefined : status,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: sortBy,
@@ -147,9 +138,10 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
 
     const clearFilters = () => {
         setSearch('');
+        setStatus('all');
         setStartDate('');
         setEndDate('');
-        router.get('/roles', {
+        router.get('/emp-designations', {
             sort_by: sortBy,
             sort_order: sortOrder,
             per_page: perPage,
@@ -160,8 +152,9 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
         const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
         setSortBy(column);
         setSortOrder(newOrder);
-        router.get('/roles', {
+        router.get('/emp-designations', {
             search: search || undefined,
+            status: status === 'all' ? undefined : status,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: column,
@@ -171,8 +164,9 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
     };
 
     const handlePageChange = (page: number) => {
-        router.get('/roles', {
+        router.get('/emp-designations', {
             search: search || undefined,
+            status: status === 'all' ? undefined : status,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: sortBy,
@@ -183,18 +177,18 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
     };
 
     const toggleSelectAll = () => {
-        if (selectedRoles.length === roles.data.length) {
-            setSelectedRoles([]);
+        if (selectedDesignations.length === designations.data.length) {
+            setSelectedDesignations([]);
         } else {
-            setSelectedRoles(roles.data.map(role => role.id));
+            setSelectedDesignations(designations.data.map(designation => designation.id));
         }
     };
 
-    const toggleSelectRole = (roleId: number) => {
-        if (selectedRoles.includes(roleId)) {
-            setSelectedRoles(selectedRoles.filter(id => id !== roleId));
+    const toggleSelectDesignation = (designationId: number) => {
+        if (selectedDesignations.includes(designationId)) {
+            setSelectedDesignations(selectedDesignations.filter(id => id !== designationId));
         } else {
-            setSelectedRoles([...selectedRoles, roleId]);
+            setSelectedDesignations([...selectedDesignations, designationId]);
         }
     };
 
@@ -207,24 +201,30 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
         return () => clearTimeout(timer);
     }, [search]);
 
+    useEffect(() => {
+        if (status !== (filters?.status || 'all')) {
+            applyFilters();
+        }
+    }, [status]);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Roles" />
+            <Head title="Employee Designations" />
             
             <div className="p-6 space-y-6">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold dark:text-white">Roles</h1>
-                        <p className="text-gray-600 dark:text-gray-400">Manage user roles and access levels</p>
+                        <h1 className="text-2xl font-bold dark:text-white">Employee Designations</h1>
+                        <p className="text-gray-600 dark:text-gray-400">Manage employee designations and positions</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedRoles.length > 0 && (
+                        {selectedDesignations.length > 0 && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
                             >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Selected ({selectedRoles.length})
+                                Delete Selected ({selectedDesignations.length})
                             </Button>
                         )}
                         <Button
@@ -232,11 +232,12 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                             onClick={() => {
                                 const params = new URLSearchParams();
                                 if (search) params.append('search', search);
+                                if (status !== 'all') params.append('status', status);
                                 if (startDate) params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
                                 if (sortBy) params.append('sort_by', sortBy);
                                 if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/roles/download-pdf?${params.toString()}`;
+                                window.location.href = `/emp-designations/download-pdf?${params.toString()}`;
                             }}
                         >
                             <FileText className="h-4 w-4 mr-2" />
@@ -244,7 +245,7 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                         </Button>
                         <Button onClick={() => setIsCreateOpen(true)}>
                             <Plus className="h-4 w-4 mr-2" />
-                            Add Role
+                            Add Designation
                         </Button>
                     </div>
                 </div>
@@ -253,24 +254,36 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
-                            <Filter className="h-5 w-5" />
+                            <Filter className="h-4 w-4" />
                             Filters
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div>
-                                <Label className="dark:text-gray-200">Search</Label>
+                                <Label className="text-sm dark:text-gray-200">Search</Label>
                                 <Input
-                                    placeholder="Search roles..."
+                                    placeholder="Search designations..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 />
                             </div>
-
                             <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
+                                <Label className="text-sm dark:text-gray-200">Status</Label>
+                                <Select value={status} onValueChange={setStatus}>
+                                    <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <SelectValue placeholder="All status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All status</SelectItem>
+                                        <SelectItem value="true">Active</SelectItem>
+                                        <SelectItem value="false">Inactive</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label className="text-sm dark:text-gray-200">Start Date</Label>
                                 <Input
                                     type="date"
                                     value={startDate}
@@ -279,7 +292,7 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                 />
                             </div>
                             <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
+                                <Label className="text-sm dark:text-gray-200">End Date</Label>
                                 <Input
                                     type="date"
                                     value={endDate}
@@ -306,57 +319,47 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-gray-200 dark:border-gray-700">
-                                        <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">
+                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedRoles.length === roles.data.length && roles.data.length > 0}
+                                                checked={selectedDesignations.length === designations.data.length && designations.data.length > 0}
                                                 onChange={toggleSelectAll}
                                                 className="rounded border-gray-300 dark:border-gray-600"
                                             />
                                         </th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('name')}>
                                             <div className="flex items-center gap-1">
-                                                Name
+                                                Designation Name
                                                 {sortBy === 'name' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Description</th>
-                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('permissions_count')}>
-                                            <div className="flex items-center gap-1">
-                                                Permissions
-                                                {sortBy === 'permissions_count' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
-                                            </div>
-                                        </th>
-                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('users_count')}>
-                                            <div className="flex items-center gap-1">
-                                                Users
-                                                {sortBy === 'users_count' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
-                                            </div>
-                                        </th>
+                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Status</th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {roles.data.length > 0 ? roles.data.map((role) => (
-                                        <tr key={role.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                    {designations.data.length > 0 ? designations.data.map((designation) => (
+                                        <tr key={designation.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                             <td className="py-3 px-4">
                                                 <input
                                                     type="checkbox"
-                                                    checked={selectedRoles.includes(role.id)}
-                                                    onChange={() => toggleSelectRole(role.id)}
+                                                    checked={selectedDesignations.includes(designation.id)}
+                                                    onChange={() => toggleSelectDesignation(designation.id)}
                                                     className="rounded border-gray-300 dark:border-gray-600"
                                                 />
                                             </td>
-                                            <td className="py-3 px-4 text-[13px] font-medium text-gray-900 dark:text-gray-100">{role.name}</td>
-                                            <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{role.description}</td>
-                                            <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{role.permissions_count} permissions</td>
-                                            <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{role.users_count} users</td>
+                                            <td className="py-3 px-4 text-[13px] font-medium text-gray-900 dark:text-gray-100">{designation.name}</td>
+                                            <td className="py-3 px-4">
+                                                <span className={`px-2 py-1 text-[11px] rounded-full ${designation.status ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+                                                    {designation.status ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
                                             <td className="py-3 px-4">
                                                 <div className="flex gap-2">
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
-                                                        onClick={() => handleEdit(role)}
+                                                        onClick={() => handleEdit(designation)}
                                                         className="text-indigo-600 hover:text-indigo-800"
                                                     >
                                                         <Edit className="h-4 w-4" />
@@ -364,7 +367,7 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
-                                                        onClick={() => handleDelete(role)}
+                                                        onClick={() => handleDelete(designation)}
                                                         className="text-red-600 hover:text-red-800"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -374,9 +377,9 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={6} className="py-12 text-center text-gray-500 dark:text-gray-400">
-                                                <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                                No roles found
+                                            <td colSpan={4} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                                <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                                No designations found
                                             </td>
                                         </tr>
                                     )}
@@ -385,17 +388,18 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                         </div>
                         
                         <Pagination
-                            currentPage={roles.current_page}
-                            lastPage={roles.last_page}
-                            from={roles.from}
-                            to={roles.to}
-                            total={roles.total}
+                            currentPage={designations.current_page}
+                            lastPage={designations.last_page}
+                            from={designations.from}
+                            to={designations.to}
+                            total={designations.total}
                             perPage={perPage}
                             onPageChange={handlePageChange}
                             onPerPageChange={(newPerPage) => {
                                 setPerPage(newPerPage);
-                                router.get('/roles', {
+                                router.get('/emp-designations', {
                                     search: search || undefined,
+                                    status: status === 'all' ? undefined : status,
                                     start_date: startDate || undefined,
                                     end_date: endDate || undefined,
                                     sort_by: sortBy,
@@ -410,56 +414,46 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                 <FormModal
                     isOpen={isCreateOpen}
                     onClose={() => setIsCreateOpen(false)}
-                    title="Create Role"
+                    title="Create Designation"
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText="Create"
                 >
                     <div>
-                        <Label htmlFor="name" className="dark:text-gray-200">Role Name</Label>
+                        <Label htmlFor="name" className="dark:text-gray-200">Designation Name</Label>
                         <Input
                             id="name"
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            placeholder="e.g., admin"
+                            placeholder="e.g., Software Engineer"
                         />
                         {errors.name && <span className="text-red-500 text-sm">{errors.name}</span>}
                     </div>
                     <div>
-                        <Label className="dark:text-gray-200">Permissions</Label>
-                        <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3 dark:bg-gray-700">
-                            {permissions.map((permission) => (
-                                <label key={permission.id} className="flex items-center space-x-2 mb-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.permissions.includes(permission.id)}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setData('permissions', [...data.permissions, permission.id]);
-                                            } else {
-                                                setData('permissions', data.permissions.filter(id => id !== permission.id));
-                                            }
-                                        }}
-                                        className="rounded border-gray-300 dark:border-gray-600"
-                                    />
-                                    <span className="text-sm dark:text-gray-300">{permission.name}</span>
-                                </label>
-                            ))}
-                        </div>
+                        <Label htmlFor="status" className="dark:text-gray-200">Status</Label>
+                        <Select value={data.status ? '1' : '0'} onValueChange={(value) => setData('status', value === '1')}>
+                            <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="1">Active</SelectItem>
+                                <SelectItem value="0">Inactive</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </FormModal>
 
                 <FormModal
-                    isOpen={!!editingRole}
-                    onClose={() => setEditingRole(null)}
-                    title="Edit Role"
+                    isOpen={!!editingDesignation}
+                    onClose={() => setEditingDesignation(null)}
+                    title="Edit Designation"
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText="Update"
                 >
                     <div>
-                        <Label htmlFor="edit-name" className="dark:text-gray-200">Role Name</Label>
+                        <Label htmlFor="edit-name" className="dark:text-gray-200">Designation Name</Label>
                         <Input
                             id="edit-name"
                             value={data.name}
@@ -469,43 +463,33 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                         {errors.name && <span className="text-red-500 text-sm">{errors.name}</span>}
                     </div>
                     <div>
-                        <Label className="dark:text-gray-200">Permissions</Label>
-                        <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3 dark:bg-gray-700">
-                            {permissions.map((permission) => (
-                                <label key={permission.id} className="flex items-center space-x-2 mb-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.permissions.includes(permission.id)}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setData('permissions', [...data.permissions, permission.id]);
-                                            } else {
-                                                setData('permissions', data.permissions.filter(id => id !== permission.id));
-                                            }
-                                        }}
-                                        className="rounded border-gray-300 dark:border-gray-600"
-                                    />
-                                    <span className="text-sm dark:text-gray-300">{permission.name}</span>
-                                </label>
-                            ))}
-                        </div>
+                        <Label htmlFor="edit-status" className="dark:text-gray-200">Status</Label>
+                        <Select value={data.status ? '1' : '0'} onValueChange={(value) => setData('status', value === '1')}>
+                            <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="1">Active</SelectItem>
+                                <SelectItem value="0">Inactive</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </FormModal>
 
                 <DeleteModal
-                    isOpen={!!deletingRole}
-                    onClose={() => setDeletingRole(null)}
+                    isOpen={!!deletingDesignation}
+                    onClose={() => setDeletingDesignation(null)}
                     onConfirm={confirmDelete}
-                    title="Delete Role"
-                    message={`Are you sure you want to delete the role "${deletingRole?.name}"? This action cannot be undone.`}
+                    title="Delete Designation"
+                    message={`Are you sure you want to delete the designation "${deletingDesignation?.name}"? This action cannot be undone.`}
                 />
 
                 <DeleteModal
                     isOpen={isBulkDeleting}
                     onClose={() => setIsBulkDeleting(false)}
                     onConfirm={confirmBulkDelete}
-                    title="Delete Selected Roles"
-                    message={`Are you sure you want to delete ${selectedRoles.length} selected roles? This action cannot be undone.`}
+                    title="Delete Selected Designations"
+                    message={`Are you sure you want to delete ${selectedDesignations.length} selected designations? This action cannot be undone.`}
                 />
             </div>
         </AppLayout>
