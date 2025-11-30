@@ -1,78 +1,207 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
-    <title>Employee Departments Report</title>
+    <title>Employee Departments List</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 12px; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-        .company-info { margin-bottom: 20px; }
-        .company-name { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 5px; }
-        .company-details { font-size: 12px; color: #666; }
-        .title-box { background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; text-align: center; margin: 20px 0; }
-        .report-title { font-size: 18px; font-weight: bold; color: #333; margin: 0; }
-        .report-date { font-size: 12px; color: #666; margin-top: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f8f9fa; font-weight: bold; font-size: 11px; }
-        td { font-size: 11px; }
-        .status-active { color: #28a745; font-weight: bold; }
-        .status-inactive { color: #dc3545; font-weight: bold; }
-        .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding-bottom: 60px;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
+
+        .header .logo {
+            width: 120px;
+            flex-shrink: 0;
+        }
+
+        .header .logo img {
+            height: 80px;
+            width: auto;
+            display: block;
+        }
+
+        .header .company-info {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-60%);
+            text-align: center;
+            width: auto;
+            margin-top: -80px;
+        }
+
+        .header .company-info h2 {
+            margin: 0 0 8px 0;
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .header .company-info p {
+            margin: 4px 0;
+            font-size: 12px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .title-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .title-box {
+            border: 1px solid #000;
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #f5f5f5;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 10px 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            font-size: 12px;
+            color: #000;
+        }
+
+        td {
+            font-size: 11px;
+            color: #333;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px 20px;
+            border-top: 1px solid #ccc;
+            background-color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .footer-left {
+            text-align: left;
+        }
+
+        .footer-right {
+            text-align: right;
+        }
+
+        @media print {
+            .footer {
+                position: fixed;
+                bottom: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="company-info">
-            @if($companySetting && $companySetting->logo)
-                <img src="{{ public_path('storage/' . $companySetting->logo) }}" alt="Company Logo" style="height: 60px; margin-bottom: 10px;">
+        <div class="logo">
+            @if($companySetting && $companySetting->company_logo)
+            <img src="{{ public_path('storage/' . $companySetting->company_logo) }}" alt="Company Logo">
             @endif
-            <div class="company-name">{{ $companySetting->company_name ?? 'Company Name' }}</div>
-            <div class="company-details">
-                @if($companySetting)
-                    {{ $companySetting->address }}<br>
-                    Phone: {{ $companySetting->phone }} | Email: {{ $companySetting->email }}
+        </div>
+        <div class="company-info">
+            @if($companySetting)
+            <h2>{{ $companySetting->company_name ?? 'East West Filling Station' }}</h2>
+            @if($companySetting->company_address)
+            <p>{{ $companySetting->company_address }}</p>
+            @endif
+            @if($companySetting->company_mobile || $companySetting->company_email)
+            <p>
+                @if($companySetting->company_email)
+                {{ $companySetting->company_email }}
                 @endif
-            </div>
+                @if($companySetting->company_mobile && $companySetting->company_email) | @endif
+                @if($companySetting->company_mobile)
+                {{ $companySetting->company_mobile }}
+                @endif
+            </p>
+            @endif
+            @else
+            <h2>East West Filling Station</h2>
+            <p>Dhaka, Bangladesh</p>
+            <p>mehedihassan2992001@gmail.com | 01750542923</p>
+            @endif
         </div>
-        
-        <div class="title-box">
-            <h1 class="report-title">Employee Departments Report</h1>
-            <div class="report-date">Generated on: {{ date('F d, Y') }}</div>
-        </div>
+    </div>
+
+    <div class="title-section">
+        <div class="title-box">Employee Departments List</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th style="width: 10%;">#</th>
-                <th style="width: 40%;">Department Name</th>
-                <th style="width: 30%;">Employee Type</th>
-                <th style="width: 20%;">Status</th>
+                <th class="text-center" style="width: 50px;">SL</th>
+                <th>Department Name</th>
+                <th style="width: 150px;">Employee Type</th>
+                <th style="width: 100px;">Status</th>
             </tr>
         </thead>
         <tbody>
             @forelse($departments as $index => $department)
-                <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ $department->name }}</td>
-                    <td>{{ $department->empType?->name ?? 'No Type' }}</td>
-                    <td class="{{ $department->status ? 'status-active' : 'status-inactive' }}">
-                        {{ $department->status ? 'Active' : 'Inactive' }}
-                    </td>
-                </tr>
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td>{{ $department->name }}</td>
+                <td>{{ $department->empType?->name ?? 'No Type' }}</td>
+                <td>{{ $department->status ? 'Active' : 'Inactive' }}</td>
+            </tr>
             @empty
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 20px; color: #666;">
-                        No departments found
-                    </td>
-                </tr>
+            <tr>
+                <td colspan="4" class="text-center" style="padding: 20px; color: #999;">No departments found</td>
+            </tr>
             @endforelse
         </tbody>
     </table>
 
     <div class="footer">
-        <p>This report contains {{ $departments->count() }} department(s) | Generated by {{ $companySetting->company_name ?? 'System' }}</p>
+        <div class="footer-left">
+            Generated on: {{ date('Y-m-d H:i:s') }}
+        </div>
+        <div class="footer-right">
+            Total Records: {{ count($departments) }}
+        </div>
     </div>
 </body>
 </html>
