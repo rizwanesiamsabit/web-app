@@ -12,6 +12,7 @@ use App\Http\Controllers\EmpDesignationController;
 use App\Http\Controllers\EmpTypeController;
 use App\Http\Controllers\EmpDepartmentController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\CategoryController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -100,6 +101,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('units', [UnitController::class, 'store'])->name('units.store');
     Route::put('units/{unit}', [UnitController::class, 'update'])->name('units.update');
     Route::delete('units/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
+    
+    // Category routes
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('categories/download-pdf', [CategoryController::class, 'downloadPdf'])->name('categories.download.pdf');
+    Route::delete('categories/bulk/delete', [CategoryController::class, 'bulkDelete'])->name('categories.bulk.delete');
+    Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 });
 
 require __DIR__.'/settings.php';
