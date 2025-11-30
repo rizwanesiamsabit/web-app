@@ -202,7 +202,7 @@ const mainNavItems = [
         children: [
             { title: 'Add Employee', href: '/employees', icon: UserCheck },
             { title: 'Employee Type', href: '/emp-types', icon: Users },
-            { title: 'Department', href: '/departments', icon: Building },
+            { title: 'Department', href: '/emp-departments', icon: Building },
             {
                 title: 'Designation',
                 href: '/emp-designations',

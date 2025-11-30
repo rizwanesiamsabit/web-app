@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EmpType extends Model
+class EmpDepartment extends Model
 {
     protected $fillable = [
+        'emp_type_id',
         'name',
         'status'
     ];
@@ -15,8 +16,8 @@ class EmpType extends Model
         'status' => 'boolean'
     ];
 
-    public function departments()
+    public function empType()
     {
-        return $this->hasMany(EmpDepartment::class, 'emp_type_id');
+        return $this->belongsTo(EmpType::class, 'emp_type_id');
     }
 }
