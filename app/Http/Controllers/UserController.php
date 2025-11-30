@@ -204,8 +204,10 @@ class UserController extends Controller
         $query->orderBy($sortBy, $sortOrder);
 
         $users = $query->get();
+        $companySetting = \App\Models\CompanySetting::first();
 
-        // Simple PDF response for now
-        return response()->json(['message' => 'PDF download functionality needs to be implemented']);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.users', compact('users', 'companySetting'));
+        $filename = 'users_' . date('Y-m-d_H-i-s') . '.pdf';
+        return $pdf->download($filename);
     }
 }

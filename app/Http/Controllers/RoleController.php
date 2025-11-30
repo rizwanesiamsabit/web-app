@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Models\CompanySetting;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class RoleController extends Controller
 {
@@ -126,5 +128,34 @@ class RoleController extends Controller
         Role::whereIn('id', $request->ids)->delete();
 
         return redirect()->back()->with('success', count($request->ids) . ' roles deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = Role::withCount(['permissions', 'users']);
+
+        // Apply same filters as index method
+        if ($request->search) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->get('sort_by', 'name');
+        $sortOrder = $request->get('sort_order', 'asc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $roles = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.roles', compact('roles', 'companySetting'));
+        $filename = 'roles_' . date('Y-m-d_H-i-s') . '.pdf';
+        return $pdf->download($filename);
     }
 }

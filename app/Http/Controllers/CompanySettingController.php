@@ -158,8 +158,10 @@ class CompanySettingController extends Controller
         }
 
         $companySettings = $query->orderBy('created_at', 'desc')->get();
+        $companySetting = CompanySetting::first(); // For header consistency
 
-        $pdf = Pdf::loadView('pdf.company-settings', compact('companySettings'));
-        return $pdf->download('company-settings-' . date('Y-m-d') . '.pdf');
+        $pdf = Pdf::loadView('pdf.company-settings', compact('companySettings', 'companySetting'));
+        $filename = 'company-settings_' . date('Y-m-d_H-i-s') . '.pdf';
+        return $pdf->download($filename);
     }
 }
