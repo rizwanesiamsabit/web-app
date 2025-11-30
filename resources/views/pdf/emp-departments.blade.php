@@ -176,7 +176,6 @@
                 <th class="text-center" style="width: 50px;">SL</th>
                 <th>Department Name</th>
                 <th style="width: 150px;">Employee Type</th>
-                <th style="width: 100px;">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -185,11 +184,10 @@
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $department->name }}</td>
                 <td>{{ $department->empType?->name ?? 'No Type' }}</td>
-                <td>{{ $department->status ? 'Active' : 'Inactive' }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="4" class="text-center" style="padding: 20px; color: #999;">No departments found</td>
+                <td colspan="3" class="text-center" style="padding: 20px; color: #999;">No departments found</td>
             </tr>
             @endforelse
         </tbody>

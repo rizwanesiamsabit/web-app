@@ -175,7 +175,6 @@
             <tr>
                 <th class="text-center" style="width: 50px;">SL</th>
                 <th>Employee Type Name</th>
-                <th style="width: 120px;">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -183,11 +182,10 @@
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $empType->name }}</td>
-                <td>{{ $empType->status ? 'Active' : 'Inactive' }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="3" class="text-center" style="padding: 20px; color: #999;">No employee types found</td>
+                <td colspan="2" class="text-center" style="padding: 20px; color: #999;">No employee types found</td>
             </tr>
             @endforelse
         </tbody>

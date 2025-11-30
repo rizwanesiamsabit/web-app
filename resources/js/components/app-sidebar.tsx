@@ -100,7 +100,7 @@ const mainNavItems = [
         title: 'Product',
         icon: Package,
         children: [
-            { title: 'Add Product', href: '/products', icon: Package },
+            { title: 'Products', href: '/products', icon: Package },
             { title: 'Category', href: '/categories', icon: Package },
             { title: 'Unit', href: '/units', icon: Package },
         ],

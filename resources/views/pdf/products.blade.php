@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Employee Designations List</title>
+    <title>Products List</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -134,7 +134,6 @@
         }
     </style>
 </head>
-
 <body>
     <div class="header">
         <div class="logo">
@@ -168,25 +167,35 @@
     </div>
 
     <div class="title-section">
-        <div class="title-box">Employee Designations List</div>
+        <div class="title-box">Products List</div>
     </div>
 
     <table>
         <thead>
             <tr>
                 <th class="text-center" style="width: 50px;">SL</th>
-                <th>Designation Name</th>
+                <th>Product Code</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Purchase Price</th>
+                <th>Sales Price</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($designations as $index => $designation)
+            @forelse($products as $index => $product)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ $designation->name }}</td>
+                <td>{{ $product->product_code ?? '-' }}</td>
+                <td>{{ $product->product_name }}</td>
+                <td>{{ $product->category ? $product->category->name : '-' }}</td>
+                <td>{{ $product->unit ? $product->unit->name : '-' }}</td>
+                <td>{{ $product->purchase_price ?? '-' }}</td>
+                <td>{{ $product->sales_price ?? '-' }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="2" class="text-center" style="padding: 20px; color: #999;">No designations found</td>
+                <td colspan="7" class="text-center" style="padding: 20px; color: #999;">No products found</td>
             </tr>
             @endforelse
         </tbody>
@@ -197,9 +206,8 @@
             Generated on: {{ date('Y-m-d H:i:s') }}
         </div>
         <div class="footer-right">
-            Total Records: {{ count($designations) }}
+            Total Records: {{ count($products) }}
         </div>
     </div>
 </body>
-
 </html>
