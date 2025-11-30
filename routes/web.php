@@ -11,6 +11,7 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\EmpDesignationController;
 use App\Http\Controllers\EmpTypeController;
 use App\Http\Controllers\EmpDepartmentController;
+use App\Http\Controllers\UnitController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -91,6 +92,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('emp-departments', [EmpDepartmentController::class, 'store'])->name('emp-departments.store');
     Route::put('emp-departments/{empDepartment}', [EmpDepartmentController::class, 'update'])->name('emp-departments.update');
     Route::delete('emp-departments/{empDepartment}', [EmpDepartmentController::class, 'destroy'])->name('emp-departments.destroy');
+    
+    // Unit routes
+    Route::get('units', [UnitController::class, 'index'])->name('units.index');
+    Route::get('units/download-pdf', [UnitController::class, 'downloadPdf'])->name('units.download.pdf');
+    Route::delete('units/bulk/delete', [UnitController::class, 'bulkDelete'])->name('units.bulk.delete');
+    Route::post('units', [UnitController::class, 'store'])->name('units.store');
+    Route::put('units/{unit}', [UnitController::class, 'update'])->name('units.update');
+    Route::delete('units/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
 });
 
 require __DIR__.'/settings.php';
