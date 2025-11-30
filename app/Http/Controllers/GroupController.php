@@ -21,7 +21,8 @@ class GroupController extends Controller
     public function index(Request $request)
     {
         $query = Group::select('groups.*', 'f2.name as parent_name')
-            ->join('groups as f2', 'f2.code', '=', 'groups.parents');
+            ->leftJoin('groups as f2', 'f2.code', '=', 'groups.parents')
+            ->where('groups.parents', '!=', 'ROOT');
 
         // Apply filters
         if ($request->search) {
@@ -73,15 +74,20 @@ class GroupController extends Controller
             'name.unique' => 'The group name has already been taken.',
         ]);
 
-        $groupParents = $request->parents;
-        $count = Group::where('parents', $groupParents)->count();
-        $count = $count + 1;
-        $new_code = $request->parents . str_pad($count, 4, '0', STR_PAD_LEFT);
+        $groupParents = $request->parents ?: 'ROOT';
+
+        // Find the next available code
+        $count = 1;
+        do {
+            $new_code = $groupParents . str_pad($count, 4, '0', STR_PAD_LEFT);
+            $exists = Group::where('code', $new_code)->exists();
+            $count++;
+        } while ($exists);
 
         Group::create([
             'code' => $new_code,
             'name' => strip_tags($request->name),
-            'parents' => $request->parents ?: '0',
+            'parents' => $groupParents,
             'status' => 1,
         ]);
 
@@ -117,7 +123,8 @@ class GroupController extends Controller
     public function downloadPdf(Request $request)
     {
         $query = Group::select('groups.*', 'f2.name as parent_name')
-            ->join('groups as f2', 'f2.code', '=', 'groups.parents');
+            ->leftJoin('groups as f2', 'f2.code', '=', 'groups.parents')
+            ->where('groups.parents', '!=', 'ROOT');
 
         // Apply same filters as index method
         if ($request->search) {

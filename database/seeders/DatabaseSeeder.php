@@ -27,5 +27,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ShiftSeeder::class);
         $this->call(EmpDesignationSeeder::class);
         $this->call(EmpTypeSeeder::class);
+        $this->call(GroupSeeder::class);
     }
 }

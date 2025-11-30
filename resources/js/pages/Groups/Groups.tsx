@@ -253,18 +253,34 @@ export default function Groups({
         }
     };
 
+    const handlePageChange = (page: number) => {
+        router.get(
+            '/groups',
+            {
+                search: search || undefined,
+                master_group: masterGroup === 'all' ? undefined : masterGroup,
+                status: status === 'all' ? undefined : status,
+                sort_by: sortBy,
+                sort_order: sortOrder,
+                per_page: perPage,
+                page,
+            },
+            { preserveState: true },
+        );
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Groups" />
 
-            <div className="space-y-4 p-4">
+            <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold dark:text-white">
                             Groups
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400">
-                            Manage groups
+                            Manage groups and their hierarchy
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -301,6 +317,7 @@ export default function Groups({
                     </div>
                 </div>
 
+                {/* Filter Card */}
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -309,7 +326,7 @@ export default function Groups({
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div>
                                 <Label className="dark:text-gray-200">
                                     Search
@@ -327,7 +344,27 @@ export default function Groups({
                                 </Label>
                                 <Select
                                     value={masterGroup}
-                                    onValueChange={setMasterGroup}
+                                    onValueChange={(value) => {
+                                        setMasterGroup(value);
+                                        router.get(
+                                            '/groups',
+                                            {
+                                                search: search || undefined,
+                                                master_group:
+                                                    value === 'all'
+                                                        ? undefined
+                                                        : value,
+                                                status:
+                                                    status === 'all'
+                                                        ? undefined
+                                                        : status,
+                                                sort_by: sortBy,
+                                                sort_order: sortOrder,
+                                                per_page: perPage,
+                                            },
+                                            { preserveState: true },
+                                        );
+                                    }}
                                 >
                                     <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                         <SelectValue placeholder="All groups" />
@@ -355,7 +392,27 @@ export default function Groups({
                                 </Label>
                                 <Select
                                     value={status}
-                                    onValueChange={setStatus}
+                                    onValueChange={(value) => {
+                                        setStatus(value);
+                                        router.get(
+                                            '/groups',
+                                            {
+                                                search: search || undefined,
+                                                master_group:
+                                                    masterGroup === 'all'
+                                                        ? undefined
+                                                        : masterGroup,
+                                                status:
+                                                    value === 'all'
+                                                        ? undefined
+                                                        : value,
+                                                sort_by: sortBy,
+                                                sort_order: sortOrder,
+                                                per_page: perPage,
+                                            },
+                                            { preserveState: true },
+                                        );
+                                    }}
                                 >
                                     <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                         <SelectValue placeholder="All status" />
@@ -373,35 +430,33 @@ export default function Groups({
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-                        <div className="mt-3 flex gap-2">
-                            <Button onClick={applyFilters} size="sm">
-                                Apply
-                            </Button>
-                            <Button
-                                onClick={clearFilters}
-                                variant="outline"
-                                size="sm"
-                            >
-                                <X className="mr-1 h-4 w-4" />
-                                Clear
-                            </Button>
+                            <div className="flex items-end gap-2">
+                                <Button
+                                    onClick={applyFilters}
+                                    className="flex-1"
+                                >
+                                    Apply Filters
+                                </Button>
+                                <Button
+                                    onClick={clearFilters}
+                                    variant="secondary"
+                                    className="flex-1"
+                                >
+                                    <X className="mr-2 h-4 w-4" />
+                                    Clear
+                                </Button>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="dark:text-white">
-                            Groups
-                        </CardTitle>
-                    </CardHeader>
                     <CardContent>
-                        <div className="max-w-full overflow-x-auto">
-                            <table className="w-full text-sm">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
-                                        <th className="p-2 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
                                                 checked={
@@ -414,7 +469,7 @@ export default function Groups({
                                             />
                                         </th>
                                         <th
-                                            className="cursor-pointer p-2 text-left font-medium dark:text-gray-300"
+                                            className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
                                             onClick={() => handleSort('id')}
                                         >
                                             <div className="flex items-center gap-1">
@@ -428,13 +483,13 @@ export default function Groups({
                                             </div>
                                         </th>
                                         <th
-                                            className="cursor-pointer p-2 text-left font-medium dark:text-gray-300"
+                                            className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
                                             onClick={() =>
                                                 handleSort('code')
                                             }
                                         >
                                             <div className="flex items-center gap-1">
-                                                CODE
+                                                Code
                                                 {sortBy === 'code' &&
                                                     (sortOrder === 'asc' ? (
                                                         <ChevronUp className="h-4 w-4" />
@@ -443,17 +498,14 @@ export default function Groups({
                                                     ))}
                                             </div>
                                         </th>
-                                        <th className="p-2 text-left font-medium dark:text-gray-300">
-                                            PARENT GROUP
-                                        </th>
                                         <th
-                                            className="cursor-pointer p-2 text-left font-medium dark:text-gray-300"
+                                            className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
                                             onClick={() =>
                                                 handleSort('name')
                                             }
                                         >
                                             <div className="flex items-center gap-1">
-                                                GROUP NAME
+                                                Name
                                                 {sortBy === 'name' &&
                                                     (sortOrder === 'asc' ? (
                                                         <ChevronUp className="h-4 w-4" />
@@ -462,7 +514,13 @@ export default function Groups({
                                                     ))}
                                             </div>
                                         </th>
-                                        <th className="p-2 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                            Parent Group
+                                        </th>
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                            Status
+                                        </th>
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
                                             Actions
                                         </th>
                                     </tr>
@@ -474,7 +532,7 @@ export default function Groups({
                                                 key={group.id}
                                                 className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
                                             >
-                                                <td className="p-2">
+                                                <td className="p-4">
                                                     <input
                                                         type="checkbox"
                                                         checked={selectedGroups.includes(
@@ -488,21 +546,30 @@ export default function Groups({
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
                                                 </td>
-                                                <td className="p-2 dark:text-white">
+                                                <td className="p-4 text-[13px] dark:text-white">
                                                     {group.id}
                                                 </td>
-                                                <td className="p-2 dark:text-white">
+                                                <td className="p-4 text-[13px] dark:text-white">
                                                     {group.code}
                                                 </td>
-                                                <td className="p-2 dark:text-gray-300">
+                                                <td className="p-4 text-[13px] dark:text-white">
+                                                    {group.name}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {group.parent_name ||
                                                         group.parents}
                                                 </td>
-                                                <td className="p-2 dark:text-white">
-                                                    {group.name}
+                                                <td className="p-4">
+                                                    <span className={`px-2 py-1 rounded text-xs ${
+                                                        group.status 
+                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                                    }`}>
+                                                        {group.status ? 'Active' : 'Inactive'}
+                                                    </span>
                                                 </td>
-                                                <td className="p-2">
-                                                    <div className="flex gap-1">
+                                                <td className="p-4">
+                                                    <div className="flex gap-2">
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -511,9 +578,9 @@ export default function Groups({
                                                                     group,
                                                                 )
                                                             }
-                                                            className="p-1 text-indigo-600 hover:text-indigo-800"
+                                                            className="text-indigo-600 hover:text-indigo-800"
                                                         >
-                                                            <Edit className="h-3 w-3" />
+                                                            <Edit className="h-4 w-4" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
@@ -523,9 +590,9 @@ export default function Groups({
                                                                     group,
                                                                 )
                                                             }
-                                                            className="p-1 text-red-600 hover:text-red-800"
+                                                            className="text-red-600 hover:text-red-800"
                                                         >
-                                                            <Trash2 className="h-3 w-3" />
+                                                            <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </div>
                                                 </td>
@@ -534,8 +601,8 @@ export default function Groups({
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={6}
-                                                className="p-6 text-center text-gray-500 dark:text-gray-400"
+                                                colSpan={7}
+                                                className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Building className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No groups found
@@ -553,27 +620,7 @@ export default function Groups({
                             to={groups.to}
                             total={groups.total}
                             perPage={perPage}
-                            onPageChange={(page) => {
-                                router.get(
-                                    '/groups',
-                                    {
-                                        search: search || undefined,
-                                        master_group:
-                                            masterGroup === 'all'
-                                                ? undefined
-                                                : masterGroup,
-                                        status:
-                                            status === 'all'
-                                                ? undefined
-                                                : status,
-                                        sort_by: sortBy,
-                                        sort_order: sortOrder,
-                                        per_page: perPage,
-                                        page,
-                                    },
-                                    { preserveState: true },
-                                );
-                            }}
+                            onPageChange={handlePageChange}
                             onPerPageChange={(newPerPage) => {
                                 setPerPage(newPerPage);
                                 router.get(
@@ -602,102 +649,99 @@ export default function Groups({
                 <FormModal
                     isOpen={isCreateOpen}
                     onClose={() => setIsCreateOpen(false)}
-                    title="Add Group"
+                    title="Create Group"
                     onSubmit={handleSubmit}
                     processing={processing}
-                    submitText="Save"
-                    wide
+                    submitText="Create"
                 >
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <Label
-                                htmlFor="code"
-                                className="dark:text-gray-200"
-                            >
-                                Select Master Group
-                            </Label>
-                            <Select
-                                value={data.code}
-                                onValueChange={(value) =>
-                                    setData('code', value)
-                                }
-                            >
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="--Select Master Group--" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {masterGroupsList.map((group) => (
-                                        <SelectItem
-                                            key={group.code}
-                                            value={group.code}
-                                        >
-                                            {group.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.code && (
-                                <span className="text-sm text-red-500">
-                                    {errors.code}
-                                </span>
-                            )}
-                        </div>
-                        <div>
-                            <Label
-                                htmlFor="parents"
-                                className="dark:text-gray-200"
-                            >
-                                Under Main Group
-                            </Label>
-                            <Select
-                                value={data.parents}
-                                onValueChange={(value) =>
-                                    setData('parents', value)
-                                }
-                                disabled={!data.code}
-                            >
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="--Under Main Group--" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {subGroups.map((group) => (
-                                        <SelectItem
-                                            key={group.code}
-                                            value={group.code}
-                                        >
-                                            {group.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.parents && (
-                                <span className="text-sm text-red-500">
-                                    {errors.parents}
-                                </span>
-                            )}
-                        </div>
-                        <div>
-                            <Label
-                                htmlFor="name"
-                                className="dark:text-gray-200"
-                            >
-                                Group Name
-                            </Label>
-                            <Input
-                                id="name"
-                                value={data.name}
-                                onChange={(e) =>
-                                    setData('name', e.target.value)
-                                }
-                                placeholder="Group Name"
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.name && (
-                                <span className="text-sm text-red-500">
-                                    {errors.name}
-                                </span>
-                            )}
-                        </div>
+                    <div>
+                        <Label
+                            htmlFor="code"
+                            className="dark:text-gray-200"
+                        >
+                            Select Master Group
+                        </Label>
+                        <Select
+                            value={data.code}
+                            onValueChange={(value) =>
+                                setData('code', value)
+                            }
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="--Select Master Group--" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {masterGroupsList.map((group) => (
+                                    <SelectItem
+                                        key={group.code}
+                                        value={group.code}
+                                    >
+                                        {group.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.code && (
+                            <span className="text-sm text-red-500">
+                                {errors.code}
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <Label
+                            htmlFor="parents"
+                            className="dark:text-gray-200"
+                        >
+                            Under Main Group
+                        </Label>
+                        <Select
+                            value={data.parents}
+                            onValueChange={(value) =>
+                                setData('parents', value)
+                            }
+                            disabled={!data.code}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="--Under Main Group--" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {subGroups.map((group) => (
+                                    <SelectItem
+                                        key={group.code}
+                                        value={group.code}
+                                    >
+                                        {group.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.parents && (
+                            <span className="text-sm text-red-500">
+                                {errors.parents}
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <Label
+                            htmlFor="name"
+                            className="dark:text-gray-200"
+                        >
+                            Group Name
+                        </Label>
+                        <Input
+                            id="name"
+                            value={data.name}
+                            onChange={(e) =>
+                                setData('name', e.target.value)
+                            }
+                            placeholder="Group Name"
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.name && (
+                            <span className="text-sm text-red-500">
+                                {errors.name}
+                            </span>
+                        )}
                     </div>
                 </FormModal>
 
@@ -708,98 +752,95 @@ export default function Groups({
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText="Update"
-                    wide
                 >
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <Label
-                                htmlFor="edit_code"
-                                className="dark:text-gray-200"
-                            >
-                                Select Master Group
-                            </Label>
-                            <Select
-                                value={data.code}
-                                onValueChange={(value) =>
-                                    setData('code', value)
-                                }
-                            >
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="--Select Master Group--" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {masterGroupsList.map((group) => (
-                                        <SelectItem
-                                            key={group.code}
-                                            value={group.code}
-                                        >
-                                            {group.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.code && (
-                                <span className="text-sm text-red-500">
-                                    {errors.code}
-                                </span>
-                            )}
-                        </div>
-                        <div>
-                            <Label
-                                htmlFor="edit_parents"
-                                className="dark:text-gray-200"
-                            >
-                                Under Main Group
-                            </Label>
-                            <Select
-                                value={data.parents}
-                                onValueChange={(value) =>
-                                    setData('parents', value)
-                                }
-                                disabled={!data.code}
-                            >
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="--Under Main Group--" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {subGroups.map((group) => (
-                                        <SelectItem
-                                            key={group.code}
-                                            value={group.code}
-                                        >
-                                            {group.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.parents && (
-                                <span className="text-sm text-red-500">
-                                    {errors.parents}
-                                </span>
-                            )}
-                        </div>
-                        <div>
-                            <Label
-                                htmlFor="edit_name"
-                                className="dark:text-gray-200"
-                            >
-                                Group Name
-                            </Label>
-                            <Input
-                                id="edit_name"
-                                value={data.name}
-                                onChange={(e) =>
-                                    setData('name', e.target.value)
-                                }
-                                placeholder="Group Name"
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.name && (
-                                <span className="text-sm text-red-500">
-                                    {errors.name}
-                                </span>
-                            )}
-                        </div>
+                    <div>
+                        <Label
+                            htmlFor="edit_code"
+                            className="dark:text-gray-200"
+                        >
+                            Select Master Group
+                        </Label>
+                        <Select
+                            value={data.code}
+                            onValueChange={(value) =>
+                                setData('code', value)
+                            }
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="--Select Master Group--" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {masterGroupsList.map((group) => (
+                                    <SelectItem
+                                        key={group.code}
+                                        value={group.code}
+                                    >
+                                        {group.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.code && (
+                            <span className="text-sm text-red-500">
+                                {errors.code}
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <Label
+                            htmlFor="edit_parents"
+                            className="dark:text-gray-200"
+                        >
+                            Under Main Group
+                        </Label>
+                        <Select
+                            value={data.parents}
+                            onValueChange={(value) =>
+                                setData('parents', value)
+                            }
+                            disabled={!data.code}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="--Under Main Group--" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {subGroups.map((group) => (
+                                    <SelectItem
+                                        key={group.code}
+                                        value={group.code}
+                                    >
+                                        {group.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.parents && (
+                            <span className="text-sm text-red-500">
+                                {errors.parents}
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <Label
+                            htmlFor="edit_name"
+                            className="dark:text-gray-200"
+                        >
+                            Group Name
+                        </Label>
+                        <Input
+                            id="edit_name"
+                            value={data.name}
+                            onChange={(e) =>
+                                setData('name', e.target.value)
+                            }
+                            placeholder="Group Name"
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.name && (
+                            <span className="text-sm text-red-500">
+                                {errors.name}
+                            </span>
+                        )}
                     </div>
                 </FormModal>
 
@@ -808,7 +849,7 @@ export default function Groups({
                     onClose={() => setDeletingGroup(null)}
                     onConfirm={confirmDelete}
                     title="Delete Group"
-                    message={`Are you sure you want to delete "${deletingGroup?.name}"?`}
+                    message={`Are you sure you want to delete the group "${deletingGroup?.name}"? This action cannot be undone.`}
                 />
 
                 <DeleteModal
@@ -816,7 +857,7 @@ export default function Groups({
                     onClose={() => setIsBulkDeleting(false)}
                     onConfirm={confirmBulkDelete}
                     title="Delete Selected Groups"
-                    message={`Are you sure you want to delete ${selectedGroups.length} selected groups?`}
+                    message={`Are you sure you want to delete ${selectedGroups.length} selected groups? This action cannot be undone.`}
                 />
             </div>
         </AppLayout>
