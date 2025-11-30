@@ -326,21 +326,21 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                                 className="rounded border-gray-300 dark:border-gray-600"
                                             />
                                         </th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('name')}>
+                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('name')}>
                                             <div className="flex items-center gap-1">
                                                 Name
                                                 {sortBy === 'name' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Module</th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Description</th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('roles_count')}>
+                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Module</th>
+                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300 cursor-pointer" onClick={() => handleSort('roles_count')}>
                                             <div className="flex items-center gap-1">
                                                 Roles
                                                 {sortBy === 'roles_count' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -354,14 +354,14 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                                     className="rounded border-gray-300 dark:border-gray-600"
                                                 />
                                             </td>
-                                            <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-gray-100">{permission.name}</td>
+                                            <td className="py-3 px-4 text-[13px] font-medium text-gray-900 dark:text-gray-100">{permission.name}</td>
                                             <td className="py-3 px-4">
-                                                <span className="px-2 py-1 text-sm font-semibold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                                <span className="px-2 py-1 text-[13px] font-semibold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                                                     {permission.module}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{permission.description}</td>
-                                            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{permission.roles_count} roles</td>
+                                            <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{permission.description}</td>
+                                            <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{permission.roles_count} roles</td>
                                             <td className="py-3 px-4">
                                                 <div className="flex gap-2">
                                                     <Button 

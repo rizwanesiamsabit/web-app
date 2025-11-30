@@ -515,7 +515,7 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                             />
                                         </th>
                                         <th
-                                            className="cursor-pointer p-4 text-left font-medium dark:text-gray-300"
+                                            className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
                                             onClick={() => handleSort('name')}
                                         >
                                             <div className="flex items-center gap-1">
@@ -529,7 +529,7 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                             </div>
                                         </th>
                                         <th
-                                            className="cursor-pointer p-4 text-left font-medium dark:text-gray-300"
+                                            className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
                                             onClick={() => handleSort('email')}
                                         >
                                             <div className="flex items-center gap-1">
@@ -577,10 +577,10 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
                                                 </td>
-                                                <td className="p-4 dark:text-white">
+                                                <td className="p-4 text-[13px] dark:text-white">
                                                     {user.name}
                                                 </td>
-                                                <td className="p-4 dark:text-gray-300">
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {user.email}
                                                 </td>
                                                 <td className="p-4">
@@ -596,14 +596,14 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                                                         key={
                                                                             index
                                                                         }
-                                                                        className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                                                                        className="rounded bg-blue-100 px-1.5 py-0.5 text-[11px] text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                                                                     >
                                                                         {role}
                                                                     </span>
                                                                 ),
                                                             )
                                                         ) : (
-                                                            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                                                            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600 dark:bg-gray-700 dark:text-gray-400">
                                                                 No Role
                                                             </span>
                                                         )}

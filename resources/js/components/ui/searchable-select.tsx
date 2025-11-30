@@ -70,7 +70,7 @@ export function SearchableSelect({
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 disabled={disabled}
                 className={cn(
-                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                    "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-2 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                     "dark:border-gray-600 dark:bg-gray-700 dark:text-white",
                     isOpen && "ring-2 ring-ring ring-offset-2"
                 )}
@@ -92,7 +92,7 @@ export function SearchableSelect({
                                 placeholder={searchPlaceholder}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-8 pr-2 py-2 text-sm bg-transparent border-0 focus:outline-none dark:text-white placeholder:text-muted-foreground"
+                                className="w-full pl-8 pr-2 py-1.5 text-sm bg-transparent border-0 focus:outline-none dark:text-white placeholder:text-muted-foreground"
                             />
                         </div>
                     </div>

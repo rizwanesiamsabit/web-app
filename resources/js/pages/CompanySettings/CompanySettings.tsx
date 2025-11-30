@@ -247,13 +247,13 @@ export default function CompanySettings({ companySettings = [], filters }: Compa
                                                 className="rounded"
                                             />
                                         </th>
-                                        <th className="text-left p-4 font-medium dark:text-gray-300">SL</th>
-                                        <th className="text-left p-4 font-medium dark:text-gray-300">Company Name</th>
-                                        <th className="text-left p-4 font-medium dark:text-gray-300">E-mail</th>
-                                        <th className="text-left p-4 font-medium dark:text-gray-300">Cell Number</th>
-                                        <th className="text-left p-4 font-medium dark:text-gray-300">Phone Number</th>
-                                        <th className="text-left p-4 font-medium dark:text-gray-300">Status</th>
-                                        <th className="text-left p-4 font-medium dark:text-gray-300">Actions</th>
+                                        <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">SL</th>
+                                        <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Company Name</th>
+                                        <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">E-mail</th>
+                                        <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Cell Number</th>
+                                        <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Phone Number</th>
+                                        <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Status</th>
+                                        <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -267,13 +267,13 @@ export default function CompanySettings({ companySettings = [], filters }: Compa
                                                     className="rounded"
                                                 />
                                             </td>
-                                            <td className="p-4 dark:text-white">{index + 1}</td>
-                                            <td className="p-4 dark:text-white">{setting.company_name}</td>
-                                            <td className="p-4 dark:text-gray-300">{setting.company_email || '-'}</td>
-                                            <td className="p-4 dark:text-gray-300">{setting.company_mobile || '-'}</td>
-                                            <td className="p-4 dark:text-gray-300">{setting.company_phone || '-'}</td>
+                                            <td className="p-4 text-[13px] dark:text-white">{index + 1}</td>
+                                            <td className="p-4 text-[13px] dark:text-white">{setting.company_name}</td>
+                                            <td className="p-4 text-[13px] dark:text-gray-300">{setting.company_email || '-'}</td>
+                                            <td className="p-4 text-[13px] dark:text-gray-300">{setting.company_mobile || '-'}</td>
+                                            <td className="p-4 text-[13px] dark:text-gray-300">{setting.company_phone || '-'}</td>
                                             <td className="p-4">
-                                                <span className={`px-2 py-1 rounded text-xs ${setting.status == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+                                                <span className={`px-2 py-1 rounded text-[11px] ${setting.status == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
                                                     {setting.status == 1 ? 'Active' : 'Disabled'}
                                                 </span>
                                             </td>
