@@ -18,6 +18,7 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\EmployeeController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -156,6 +157,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('vehicles', [VehicleController::class, 'store'])->name('vehicles.store');
     Route::put('vehicles/{vehicle}', [VehicleController::class, 'update'])->name('vehicles.update');
     Route::delete('vehicles/{vehicle}', [VehicleController::class, 'destroy'])->name('vehicles.destroy');
+    
+    // Employee routes
+    Route::get('employees', [EmployeeController::class, 'index'])->name('employees.index');
+    Route::get('employees/create', [EmployeeController::class, 'create'])->name('employees.create');
+    Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
+    Route::get('employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+    Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+    Route::put('employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+    Route::delete('employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+    Route::delete('employees/bulk/delete', [EmployeeController::class, 'bulkDelete'])->name('employees.bulk.delete');
+    Route::get('employees/download-pdf', [EmployeeController::class, 'downloadPdf'])->name('employees.download.pdf');
 });
 
 require __DIR__.'/settings.php';

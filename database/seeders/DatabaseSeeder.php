@@ -22,5 +22,6 @@ class DatabaseSeeder extends Seeder
         $this->call(EmpDesignationSeeder::class);
         $this->call(EmpTypeSeeder::class);
         $this->call(GroupSeeder::class);
+        $this->call(UnitSeeder::class);
     }
 }
