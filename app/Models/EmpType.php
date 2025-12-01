@@ -19,4 +19,9 @@ class EmpType extends Model
     {
         return $this->hasMany(EmpDepartment::class, 'emp_type_id');
     }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class, 'emp_type_id');
+    }
 }

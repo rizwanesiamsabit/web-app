@@ -10,20 +10,23 @@ return new class extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('account_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('account_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('emp_type_id')->nullable()->constrained('emp_types')->onDelete('set null');
+            $table->foreignId('department_id')->nullable()->constrained('emp_departments')->onDelete('set null');
+            $table->foreignId('designation_id')->nullable()->constrained('emp_designations')->onDelete('set null');
             $table->string('employee_code', 50)->nullable();
             $table->string('employee_name', 100)->nullable();
             $table->string('email', 100)->nullable();
+            $table->integer('order')->default(1);
             $table->date('dob')->nullable();
             $table->string('gender', 10)->nullable();
             $table->string('blood_group', 10)->nullable();
             $table->string('marital_status', 20)->nullable();
+            $table->string('emergency_contact_person', 100)->nullable();
             $table->string('religion', 100)->nullable();
             $table->string('nid', 100)->nullable();
             $table->string('mobile', 100)->nullable();
             $table->string('mobile_two', 20)->nullable();
-            $table->string('emergency_contact_person', 100)->nullable();
             $table->string('emergency_contact_number', 100)->nullable();
             $table->string('father_name', 100)->nullable();
             $table->string('mother_name', 100)->nullable();

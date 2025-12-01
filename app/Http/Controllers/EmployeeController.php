@@ -1,0 +1,293 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Employee;
+use App\Models\Account;
+use App\Models\Group;
+use App\Models\EmpType;
+use App\Models\EmpDepartment;
+use App\Models\EmpDesignation;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Hash;
+
+class EmployeeController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Employee::with('account:id,name,ac_number', 'empType:id,name', 'department:id,name', 'designation:id,name');
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('employee_name', 'like', '%' . $request->search . '%')
+                    ->orWhere('employee_code', 'like', '%' . $request->search . '%')
+                    ->orWhere('email', 'like', '%' . $request->search . '%')
+                    ->orWhere('mobile', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->status && $request->status !== 'all') {
+            $query->where('status', $request->status === 'active');
+        }
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $perPage = $request->get('per_page', 10);
+        $employees = $query->paginate($perPage)->withQueryString()->through(function ($employee) {
+            return [
+                'id' => $employee->id,
+                'employee_code' => $employee->employee_code,
+                'employee_name' => $employee->employee_name,
+                'email' => $employee->email,
+                'mobile' => $employee->mobile,
+                'joining_date' => $employee->joining_date,
+                'job_status' => $employee->job_status,
+                'status' => $employee->status,
+                'emp_type' => $employee->empType,
+                'department' => $employee->department,
+                'designation' => $employee->designation,
+                'account' => $employee->account,
+                'created_at' => $employee->created_at->format('Y-m-d'),
+            ];
+        });
+
+        $empTypes = EmpType::where('status', true)->get(['id', 'name']);
+        $departments = EmpDepartment::where('status', true)->get(['id', 'name']);
+        $designations = EmpDesignation::where('status', true)->get(['id', 'name']);
+        $groups = Group::where('status', true)->get(['id', 'code', 'name']);
+
+        return Inertia::render('Employee/Index', [
+            'employees' => $employees,
+            'empTypes' => $empTypes,
+            'departments' => $departments,
+            'designations' => $designations,
+            'groups' => $groups,
+            'filters' => $request->only(['search', 'status', 'sort_by', 'sort_order', 'per_page'])
+        ]);
+    }
+
+    public function create()
+    {
+        $empTypes = EmpType::where('status', true)->get(['id', 'name']);
+        $departments = EmpDepartment::where('status', true)->get(['id', 'name']);
+        $designations = EmpDesignation::where('status', true)->get(['id', 'name']);
+        $groups = Group::where('status', true)->get(['id', 'code', 'name']);
+
+        return Inertia::render('Employee/Create', [
+            'empTypes' => $empTypes,
+            'departments' => $departments,
+            'designations' => $designations,
+            'groups' => $groups,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'employee_code' => 'nullable|string|max:50',
+            'employee_name' => 'required|string|max:100',
+            'email' => 'nullable|email|max:100',
+            'password' => 'nullable|string|min:6',
+            'emp_type_id' => 'nullable|exists:emp_types,id',
+            'department_id' => 'nullable|exists:emp_departments,id',
+            'designation_id' => 'nullable|exists:emp_designations,id',
+            'mobile' => 'nullable|string|max:100',
+            'mobile_two' => 'nullable|string|max:20',
+            'dob' => 'nullable|date',
+            'gender' => 'nullable|string|max:10',
+            'blood_group' => 'nullable|string|max:10',
+            'marital_status' => 'nullable|string|max:20',
+            'religion' => 'nullable|string|max:100',
+            'nid' => 'nullable|string|max:100',
+            'emergency_contact_person' => 'nullable|string|max:100',
+            'emergency_contact_number' => 'nullable|string|max:100',
+            'father_name' => 'nullable|string|max:100',
+            'mother_name' => 'nullable|string|max:100',
+            'present_address' => 'nullable|string|max:250',
+            'permanent_address' => 'nullable|string|max:350',
+            'job_status' => 'nullable|string|max:50',
+            'joining_date' => 'nullable|date',
+            'order' => 'nullable|integer',
+            'status' => 'boolean'
+        ]);
+
+        // Create account first
+        $lastAccount = Account::orderBy('ac_number', 'desc')->first();
+        if ($lastAccount && str_starts_with($lastAccount->ac_number, '2')) {
+            $ac_number = str_pad((int)$lastAccount->ac_number + 1, 13, '0', STR_PAD_LEFT);
+        } else {
+            $ac_number = '2000000000001';
+        }
+
+        $account = Account::create([
+            'name' => $request->employee_name,
+            'ac_number' => $ac_number,
+            'group_id' => 1, // Default employee group
+            'group_code' => 'EMP',
+            'due_amount' => 0,
+            'paid_amount' => 0,
+            'status' => $request->status ?? true,
+        ]);
+
+        Employee::create([
+            'account_id' => $account->id,
+            'emp_type_id' => $request->emp_type_id,
+            'department_id' => $request->department_id,
+            'designation_id' => $request->designation_id,
+            'employee_code' => $request->employee_code,
+            'employee_name' => $request->employee_name,
+            'email' => $request->email,
+            'password' => $request->password ? Hash::make($request->password) : null,
+            'mobile' => $request->mobile,
+            'mobile_two' => $request->mobile_two,
+            'dob' => $request->dob,
+            'gender' => $request->gender,
+            'blood_group' => $request->blood_group,
+            'marital_status' => $request->marital_status,
+            'religion' => $request->religion,
+            'nid' => $request->nid,
+            'emergency_contact_person' => $request->emergency_contact_person,
+            'emergency_contact_number' => $request->emergency_contact_number,
+            'father_name' => $request->father_name,
+            'mother_name' => $request->mother_name,
+            'present_address' => $request->present_address,
+            'permanent_address' => $request->permanent_address,
+            'job_status' => $request->job_status,
+            'joining_date' => $request->joining_date,
+            'order' => $request->order ?? 1,
+            'status' => $request->status ?? true,
+        ]);
+
+        return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
+    }
+
+    public function show(Employee $employee)
+    {
+        $employee->load('account', 'empType', 'department', 'designation');
+        
+        return Inertia::render('Employee/Show', [
+            'employee' => $employee
+        ]);
+    }
+
+    public function edit(Employee $employee)
+    {
+        $employee->load('account', 'empType', 'department', 'designation');
+        
+        $empTypes = EmpType::where('status', true)->get(['id', 'name']);
+        $departments = EmpDepartment::where('status', true)->get(['id', 'name']);
+        $designations = EmpDesignation::where('status', true)->get(['id', 'name']);
+
+        return Inertia::render('Employee/Update', [
+            'employee' => $employee,
+            'empTypes' => $empTypes,
+            'departments' => $departments,
+            'designations' => $designations,
+        ]);
+    }
+
+    public function update(Request $request, Employee $employee)
+    {
+        $request->validate([
+            'employee_code' => 'nullable|string|max:50',
+            'employee_name' => 'required|string|max:100',
+            'email' => 'nullable|email|max:100',
+            'password' => 'nullable|string|min:6',
+            'emp_type_id' => 'nullable|exists:emp_types,id',
+            'department_id' => 'nullable|exists:emp_departments,id',
+            'designation_id' => 'nullable|exists:emp_designations,id',
+            'mobile' => 'nullable|string|max:100',
+            'mobile_two' => 'nullable|string|max:20',
+            'dob' => 'nullable|date',
+            'gender' => 'nullable|string|max:10',
+            'blood_group' => 'nullable|string|max:10',
+            'marital_status' => 'nullable|string|max:20',
+            'religion' => 'nullable|string|max:100',
+            'nid' => 'nullable|string|max:100',
+            'emergency_contact_person' => 'nullable|string|max:100',
+            'emergency_contact_number' => 'nullable|string|max:100',
+            'father_name' => 'nullable|string|max:100',
+            'mother_name' => 'nullable|string|max:100',
+            'present_address' => 'nullable|string|max:250',
+            'permanent_address' => 'nullable|string|max:350',
+            'job_status' => 'nullable|string|max:50',
+            'joining_date' => 'nullable|date',
+            'order' => 'nullable|integer',
+            'status' => 'boolean'
+        ]);
+
+        // Update account
+        if ($employee->account) {
+            $employee->account->update([
+                'name' => $request->employee_name,
+                'status' => $request->status ?? true,
+            ]);
+        }
+
+        $updateData = [
+            'emp_type_id' => $request->emp_type_id,
+            'department_id' => $request->department_id,
+            'designation_id' => $request->designation_id,
+            'employee_code' => $request->employee_code,
+            'employee_name' => $request->employee_name,
+            'email' => $request->email,
+            'mobile' => $request->mobile,
+            'mobile_two' => $request->mobile_two,
+            'dob' => $request->dob,
+            'gender' => $request->gender,
+            'blood_group' => $request->blood_group,
+            'marital_status' => $request->marital_status,
+            'religion' => $request->religion,
+            'nid' => $request->nid,
+            'emergency_contact_person' => $request->emergency_contact_person,
+            'emergency_contact_number' => $request->emergency_contact_number,
+            'father_name' => $request->father_name,
+            'mother_name' => $request->mother_name,
+            'present_address' => $request->present_address,
+            'permanent_address' => $request->permanent_address,
+            'job_status' => $request->job_status,
+            'joining_date' => $request->joining_date,
+            'order' => $request->order ?? 1,
+            'status' => $request->status ?? true,
+        ];
+
+        if ($request->password) {
+            $updateData['password'] = Hash::make($request->password);
+        }
+
+        $employee->update($updateData);
+
+        return redirect()->route('employees.index')->with('success', 'Employee updated successfully.');
+    }
+
+    public function destroy(Employee $employee)
+    {
+        $employee->delete();
+        return redirect()->back()->with('success', 'Employee deleted successfully.');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:employees,id'
+        ]);
+
+        Employee::whereIn('id', $request->ids)->delete();
+        
+        return redirect()->back()->with('success', 'Selected employees deleted successfully.');
+    }
+
+    public function downloadPdf()
+    {
+        $employees = Employee::with('empType', 'department', 'designation')->get();
+        
+        $pdf = app('dompdf.wrapper');
+        $pdf->loadView('pdf.employees', compact('employees'));
+        
+        return $pdf->download('employees-' . date('Y-m-d') . '.pdf');
+    }
+}

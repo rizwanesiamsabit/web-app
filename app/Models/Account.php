@@ -27,9 +27,9 @@ class Account extends Model
         return $this->belongsTo(Group::class, 'group_code', 'code');
     }
 
-    public function employees()
+    public function employee()
     {
-        return $this->hasMany(Employee::class);
+        return $this->hasOne(Employee::class, 'account_id');
     }
 
     public function suppliers()

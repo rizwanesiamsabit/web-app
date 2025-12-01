@@ -7,20 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 class Employee extends Model
 {
     protected $fillable = [
-        'user_id',
         'account_id',
+        'emp_type_id',
+        'department_id',
+        'designation_id',
         'employee_code',
         'employee_name',
         'email',
+        'order',
         'dob',
         'gender',
         'blood_group',
         'marital_status',
         'religion',
+        'emergency_contact_person',
         'nid',
         'mobile',
         'mobile_two',
-        'emergency_contact_person',
         'emergency_contact_number',
         'father_name',
         'mother_name',
@@ -48,13 +51,23 @@ class Employee extends Model
         'status' => 'boolean'
     ];
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function account()
     {
-        return $this->belongsTo(Account::class);
+        return $this->belongsTo(Account::class, 'account_id');
+    }
+
+    public function empType()
+    {
+        return $this->belongsTo(EmpType::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(EmpDepartment::class);
+    }
+
+    public function designation()
+    {
+        return $this->belongsTo(EmpDesignation::class);
     }
 }
