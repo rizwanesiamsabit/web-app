@@ -87,7 +87,7 @@ const mainNavItems = [
         title: 'Supplier',
         icon: Truck,
         children: [
-            { title: 'Suppliers', href: '#', icon: Truck },
+            { title: 'Suppliers', href: '/suppliers', icon: Truck },
             {
                 title: 'Supplier Payment Voucher Entry',
                 href: '#',
@@ -97,7 +97,7 @@ const mainNavItems = [
         ],
     },
     {
-        title: 'Product',
+        title: 'Products',
         icon: Package,
         children: [
             { title: 'Products', href: '/products', icon: Package },

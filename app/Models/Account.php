@@ -32,9 +32,9 @@ class Account extends Model
         return $this->hasOne(Employee::class, 'account_id');
     }
 
-    public function suppliers()
+    public function supplier()
     {
-        return $this->hasMany(Supplier::class);
+        return $this->hasOne(Supplier::class);
     }
 
     public function customer()
