@@ -17,6 +17,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\VehicleController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -147,6 +148,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
     Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    
+    // Vehicle routes
+    Route::get('vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
+    Route::get('vehicles/download-pdf', [VehicleController::class, 'downloadPdf'])->name('vehicles.download.pdf');
+    Route::delete('vehicles/bulk/delete', [VehicleController::class, 'bulkDelete'])->name('vehicles.bulk.delete');
+    Route::post('vehicles', [VehicleController::class, 'store'])->name('vehicles.store');
+    Route::put('vehicles/{vehicle}', [VehicleController::class, 'update'])->name('vehicles.update');
+    Route::delete('vehicles/{vehicle}', [VehicleController::class, 'destroy'])->name('vehicles.destroy');
 });
 
 require __DIR__.'/settings.php';
