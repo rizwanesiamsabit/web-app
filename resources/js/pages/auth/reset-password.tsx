@@ -87,12 +87,12 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                                                                     id="email"
                                                                     type="email"
                                                                     name="email"
-                                                                    className="pl-11"
+                                                                    className="pl-10"
                                                                     value={email}
                                                                     readOnly
                                                                 />
                                                                 <svg
-                                                                    className="absolute top-3 left-3 h-5 w-5 text-gray-400"
+                                                                    className="absolute top-2.5 left-3 h-4 w-4 text-gray-400"
                                                                     fill="currentColor"
                                                                     viewBox="0 0 20 20"
                                                                 >
@@ -116,7 +116,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                                                                     id="password"
                                                                     type={showPassword ? 'text' : 'password'}
                                                                     name="password"
-                                                                    className="pr-11 pl-11"
+                                                                    className="pr-10 pl-10"
                                                                     placeholder="••••••••"
                                                                     error={!!errors.password}
                                                                     required
@@ -169,7 +169,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                                                                     id="password_confirmation"
                                                                     type={showPasswordConfirmation ? 'text' : 'password'}
                                                                     name="password_confirmation"
-                                                                    className="pr-11 pl-11"
+                                                                    className="pr-10 pl-10"
                                                                     placeholder="••••••••"
                                                                     error={!!errors.password_confirmation}
                                                                     required

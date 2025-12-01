@@ -9,7 +9,7 @@ class GroupSeeder extends Seeder
 {
     public function run(): void
     {
-        Group::truncate();
+        Group::query()->delete();
         
         $groups = [
             [1, '1', 'Assets', 'ROOT', true],

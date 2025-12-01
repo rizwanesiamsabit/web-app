@@ -92,14 +92,14 @@ export default function Register({ status }: RegisterProps) {
                                                                     id="name"
                                                                     type="text"
                                                                     name="name"
-                                                                    className="pl-11"
+                                                                    className="pl-10"
                                                                     placeholder="John Doe"
                                                                     error={!!errors.name}
                                                                     required
                                                                     autoFocus
                                                                 />
                                                                 <svg
-                                                                    className="absolute top-3 left-3 h-5 w-5 text-gray-400"
+                                                                    className="absolute top-2.5 left-3 h-4 w-4 text-gray-400"
                                                                     fill="currentColor"
                                                                     viewBox="0 0 20 20"
                                                                 >
@@ -122,13 +122,13 @@ export default function Register({ status }: RegisterProps) {
                                                                     id="email"
                                                                     type="email"
                                                                     name="email"
-                                                                    className="pl-11"
+                                                                    className="pl-10"
                                                                     placeholder="john@example.com"
                                                                     error={!!errors.email}
                                                                     required
                                                                 />
                                                                 <svg
-                                                                    className="absolute top-3 left-3 h-5 w-5 text-gray-400"
+                                                                    className="absolute top-2.5 left-3 h-4 w-4 text-gray-400"
                                                                     fill="currentColor"
                                                                     viewBox="0 0 20 20"
                                                                 >
@@ -152,13 +152,13 @@ export default function Register({ status }: RegisterProps) {
                                                                     id="password"
                                                                     type={showPassword ? 'text' : 'password'}
                                                                     name="password"
-                                                                    className="pr-11 pl-11"
+                                                                    className="pr-10 pl-10"
                                                                     placeholder="••••••••"
                                                                     error={!!errors.password}
                                                                     required
                                                                 />
                                                                 <svg
-                                                                    className="absolute top-3 left-3 h-5 w-5 text-gray-400"
+                                                                    className="absolute top-2.5 left-3 h-4 w-4 text-gray-400"
                                                                     fill="currentColor"
                                                                     viewBox="0 0 20 20"
                                                                 >
@@ -172,7 +172,7 @@ export default function Register({ status }: RegisterProps) {
                                                                     type="button"
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="absolute top-1 right-1 h-8 w-8"
+                                                                    className="absolute top-0.5 right-0.5 h-8 w-8"
                                                                     onClick={() => setShowPassword(!showPassword)}
                                                                 >
                                                                     {showPassword ? (
@@ -204,13 +204,13 @@ export default function Register({ status }: RegisterProps) {
                                                                     id="password_confirmation"
                                                                     type={showPasswordConfirmation ? 'text' : 'password'}
                                                                     name="password_confirmation"
-                                                                    className="pr-11 pl-11"
+                                                                    className="pr-10 pl-10"
                                                                     placeholder="••••••••"
                                                                     error={!!errors.password_confirmation}
                                                                     required
                                                                 />
                                                                 <svg
-                                                                    className="absolute top-3 left-3 h-5 w-5 text-gray-400"
+                                                                    className="absolute top-2.5 left-3 h-4 w-4 text-gray-400"
                                                                     fill="currentColor"
                                                                     viewBox="0 0 20 20"
                                                                 >
@@ -224,7 +224,7 @@ export default function Register({ status }: RegisterProps) {
                                                                     type="button"
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="absolute top-1 right-1 h-8 w-8"
+                                                                    className="absolute top-0.5 right-0.5 h-8 w-8"
                                                                     onClick={() => setShowPasswordConfirmation(!showPasswordConfirmation)}
                                                                 >
                                                                     {showPasswordConfirmation ? (

@@ -80,14 +80,14 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                                                     id="email"
                                                                     type="email"
                                                                     name="email"
-                                                                    className="pl-11"
+                                                                    className="pl-10"
                                                                     placeholder="john@example.com"
                                                                     error={!!errors.email}
                                                                     required
                                                                     autoFocus
                                                                 />
                                                                 <svg
-                                                                    className="absolute top-3 left-3 h-5 w-5 text-gray-400"
+                                                                    className="absolute top-2.5 left-3 h-4 w-4 text-gray-400"
                                                                     fill="currentColor"
                                                                     viewBox="0 0 20 20"
                                                                 >
