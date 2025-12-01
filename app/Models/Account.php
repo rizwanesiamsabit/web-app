@@ -37,8 +37,8 @@ class Account extends Model
         return $this->hasMany(Supplier::class);
     }
 
-    public function customers()
+    public function customer()
     {
-        return $this->hasMany(Customer::class);
+        return $this->hasOne(Customer::class);
     }
 }

@@ -67,7 +67,7 @@ const mainNavItems = [
         title: 'Customer',
         icon: Users,
         children: [
-            { title: 'Customers', href: '#', icon: Users },
+            { title: 'Customers', href: '/customers', icon: Users },
             { title: 'Vehicles', href: '#', icon: Car },
             {
                 title: 'Customer Received Voucher Entry',
