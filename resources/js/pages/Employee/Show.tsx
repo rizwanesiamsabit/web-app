@@ -22,34 +22,55 @@ import {
 
 interface Employee {
     id: number;
-    name: string;
+    account_id: number;
+    emp_type_id: number;
+    department_id: number;
+    designation_id: number;
+    employee_code: string;
+    employee_name: string;
     email: string;
-    phone: string;
-    address: string;
-    department: {
-        id: number;
-        name: string;
-    };
-    designation: {
-        id: number;
-        name: string;
-    };
-    empType: {
-        id: number;
-        name: string;
-    };
-    shift: {
-        id: number;
-        name: string;
-        start_time: string;
-        end_time: string;
-    };
-    salary: string;
+    order: number;
+    dob: string;
+    gender: string;
+    blood_group: string;
+    marital_status: string;
+    emergency_contact_person: string;
+    religion: string;
+    nid: string;
+    mobile: string;
+    mobile_two: string;
+    emergency_contact_number: string;
+    father_name: string;
+    mother_name: string;
+    present_address: string;
+    permanent_address: string;
+    job_status: string;
     joining_date: string;
     status: boolean;
-    notes: string;
+    status_date: string;
+    photo: string;
+    signature: string;
+    highest_education: string;
+    reference_one_name: string;
+    reference_one_phone: string;
+    reference_one_address: string;
+    reference_two_name: string;
+    reference_two_phone: string;
+    reference_two_address: string;
     created_at: string;
     updated_at: string;
+    department?: {
+        id: number;
+        name: string;
+    };
+    designation?: {
+        id: number;
+        name: string;
+    };
+    emp_type?: {
+        id: number;
+        name: string;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -99,13 +120,13 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Employee - ${employee.name}`} />
+            <Head title={`Employee - ${employee.employee_name}`} />
 
             <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold dark:text-white">
-                            Employee Details
+                            {employee.employee_name}
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400">
                             View employee information and details
@@ -145,7 +166,7 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                             Full Name
                                         </label>
                                         <p className="mt-1 text-lg font-semibold dark:text-white">
-                                            {employee.name}
+                                            {employee.employee_name}
                                         </p>
                                     </div>
                                     <div>
@@ -176,19 +197,19 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                             <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                                                 Phone
                                             </label>
-                                            <p className="dark:text-white">{employee.phone}</p>
+                                            <p className="dark:text-white">{employee.mobile}</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {employee.address && (
+                                {employee.present_address && (
                                     <div className="flex items-start gap-3">
                                         <MapPin className="h-5 w-5 text-gray-400 mt-1" />
                                         <div>
                                             <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                                Address
+                                                Present Address
                                             </label>
-                                            <p className="dark:text-white">{employee.address}</p>
+                                            <p className="dark:text-white">{employee.present_address}</p>
                                         </div>
                                     </div>
                                 )}
@@ -208,9 +229,9 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                             <CardContent className="space-y-4">
                                 <div>
                                     <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                        Employee ID
+                                        Employee Code
                                     </label>
-                                    <p className="font-semibold dark:text-white">#{employee.id}</p>
+                                    <p className="font-semibold dark:text-white">{employee.employee_code}</p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -221,17 +242,14 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                         {formatDate(employee.joining_date)}
                                     </p>
                                 </div>
-                                {employee.salary && (
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                            Salary
-                                        </label>
-                                        <p className="flex items-center gap-2 font-semibold text-green-600 dark:text-green-400">
-                                            <DollarSign className="h-4 w-4" />
-                                            {formatCurrency(employee.salary)}
-                                        </p>
-                                    </div>
-                                )}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Job Status
+                                    </label>
+                                    <p className="font-semibold dark:text-white">
+                                        {employee.job_status}
+                                    </p>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
@@ -252,7 +270,7 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                     Department
                                 </label>
                                 <p className="mt-1 font-semibold dark:text-white">
-                                    {employee.department.name}
+                                    {employee.department?.name || 'Not Assigned'}
                                 </p>
                             </div>
                             <div>
@@ -260,7 +278,7 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                     Designation
                                 </label>
                                 <p className="mt-1 font-semibold dark:text-white">
-                                    {employee.designation.name}
+                                    {employee.designation?.name || 'Not Assigned'}
                                 </p>
                             </div>
                             <div>
@@ -268,43 +286,70 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                     Employee Type
                                 </label>
                                 <p className="mt-1 font-semibold dark:text-white">
-                                    {employee.empType.name}
+                                    {employee.emp_type?.name || 'Not Assigned'}
                                 </p>
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Shift
+                                    Gender
                                 </label>
-                                <div className="mt-1">
-                                    <p className="font-semibold dark:text-white">
-                                        {employee.shift.name}
-                                    </p>
-                                    <p className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                                        <Clock className="h-3 w-3" />
-                                        {employee.shift.start_time} - {employee.shift.end_time}
-                                    </p>
-                                </div>
+                                <p className="mt-1 font-semibold dark:text-white">
+                                    {employee.gender}
+                                </p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Notes */}
-                {employee.notes && (
-                    <Card className="dark:border-gray-700 dark:bg-gray-800">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 dark:text-white">
-                                <FileText className="h-5 w-5" />
-                                Notes
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                {employee.notes}
-                            </p>
-                        </CardContent>
-                    </Card>
-                )}
+                {/* Personal Details */}
+                <Card className="dark:border-gray-700 dark:bg-gray-800">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 dark:text-white">
+                            <User className="h-5 w-5" />
+                            Personal Details
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            <div>
+                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                    Date of Birth
+                                </label>
+                                <p className="dark:text-white">{employee.dob ? formatDate(employee.dob) : 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                    Blood Group
+                                </label>
+                                <p className="dark:text-white">{employee.blood_group || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                    Marital Status
+                                </label>
+                                <p className="dark:text-white">{employee.marital_status || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                    Religion
+                                </label>
+                                <p className="dark:text-white">{employee.religion || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                    NID
+                                </label>
+                                <p className="dark:text-white">{employee.nid || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                    Father's Name
+                                </label>
+                                <p className="dark:text-white">{employee.father_name || 'Not provided'}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* System Information */}
                 <Card className="dark:border-gray-700 dark:bg-gray-800">

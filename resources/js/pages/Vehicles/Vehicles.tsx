@@ -416,6 +416,9 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                             Type
                                         </th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">
+                                            Product
+                                        </th>
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
                                             Status
                                         </th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">
@@ -459,6 +462,9 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {vehicle.vehicle_type || 'N/A'}
                                                 </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {vehicle.product?.product_name || 'N/A'}
+                                                </td>
                                                 <td className="p-4">
                                                     <span className={`px-2 py-1 rounded text-xs ${
                                                         vehicle.status 
@@ -493,7 +499,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={8}
+                                                colSpan={9}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Car className="mx-auto mb-4 h-12 w-12 text-gray-400" />

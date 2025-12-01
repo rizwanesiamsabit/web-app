@@ -174,11 +174,11 @@ const mainNavItems = [
                 href: '#',
                 icon: BarChart3,
             },
-            {
-                title: 'Journal Voucher',
-                href: '#',
-                icon: FileText,
-            },
+            // {
+            //     title: 'Journal Voucher',
+            //     href: '#',
+            //     icon: FileText,
+            // },
             {
                 title: 'Received Voucher',
                 href: '#',
