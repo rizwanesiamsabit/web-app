@@ -76,11 +76,22 @@ class EmployeeController extends Controller
         $designations = EmpDesignation::where('status', true)->get(['id', 'name']);
         $groups = Group::where('status', true)->get(['id', 'code', 'name']);
 
+
+        $lastEmployeeGroup = null;
+        $lastEmployee = Employee::with('account.group')->latest()->first();
+        if ($lastEmployee && $lastEmployee->account && $lastEmployee->account->group) {
+            $lastEmployeeGroup = [
+                'id' => $lastEmployee->account->group->id,
+                'code' => $lastEmployee->account->group->code
+            ];
+        }
+
         return Inertia::render('Employee/Create', [
             'empTypes' => $empTypes,
             'departments' => $departments,
             'designations' => $designations,
             'groups' => $groups,
+            'lastEmployeeGroup' => $lastEmployeeGroup,
         ]);
     }
 
@@ -90,10 +101,10 @@ class EmployeeController extends Controller
             'employee_code' => 'nullable|string|max:50',
             'employee_name' => 'required|string|max:100',
             'email' => 'nullable|email|max:100',
-            'password' => 'nullable|string|min:6',
             'emp_type_id' => 'nullable|exists:emp_types,id',
             'department_id' => 'nullable|exists:emp_departments,id',
             'designation_id' => 'nullable|exists:emp_designations,id',
+            'group_id' => 'required|exists:groups,id',
             'mobile' => 'nullable|string|max:100',
             'mobile_two' => 'nullable|string|max:20',
             'dob' => 'nullable|date',
@@ -116,19 +127,19 @@ class EmployeeController extends Controller
 
         // Create account first
         $lastAccount = Account::orderBy('ac_number', 'desc')->first();
-        if ($lastAccount && str_starts_with($lastAccount->ac_number, '2')) {
+        if ($lastAccount) {
             $ac_number = str_pad((int)$lastAccount->ac_number + 1, 13, '0', STR_PAD_LEFT);
         } else {
-            $ac_number = '2000000000001';
+            $ac_number = '1000000000001';
         }
+
+        $group = Group::find($request->group_id);
 
         $account = Account::create([
             'name' => $request->employee_name,
             'ac_number' => $ac_number,
-            'group_id' => 1, // Default employee group
-            'group_code' => 'EMP',
-            'due_amount' => 0,
-            'paid_amount' => 0,
+            'group_id' => $group->id,
+            'group_code' => $group->code,
             'status' => $request->status ?? true,
         ]);
 
@@ -140,16 +151,16 @@ class EmployeeController extends Controller
             'employee_code' => $request->employee_code,
             'employee_name' => $request->employee_name,
             'email' => $request->email,
-            'password' => $request->password ? Hash::make($request->password) : null,
-            'mobile' => $request->mobile,
-            'mobile_two' => $request->mobile_two,
+            'order' => $request->order ?? 1,
             'dob' => $request->dob,
             'gender' => $request->gender,
             'blood_group' => $request->blood_group,
             'marital_status' => $request->marital_status,
+            'emergency_contact_person' => $request->emergency_contact_person,
             'religion' => $request->religion,
             'nid' => $request->nid,
-            'emergency_contact_person' => $request->emergency_contact_person,
+            'mobile' => $request->mobile,
+            'mobile_two' => $request->mobile_two,
             'emergency_contact_number' => $request->emergency_contact_number,
             'father_name' => $request->father_name,
             'mother_name' => $request->mother_name,
@@ -157,7 +168,6 @@ class EmployeeController extends Controller
             'permanent_address' => $request->permanent_address,
             'job_status' => $request->job_status,
             'joining_date' => $request->joining_date,
-            'order' => $request->order ?? 1,
             'status' => $request->status ?? true,
         ]);
 
@@ -167,7 +177,7 @@ class EmployeeController extends Controller
     public function show(Employee $employee)
     {
         $employee->load('account', 'empType', 'department', 'designation');
-        
+
         return Inertia::render('Employee/Show', [
             'employee' => $employee
         ]);
@@ -176,16 +186,18 @@ class EmployeeController extends Controller
     public function edit(Employee $employee)
     {
         $employee->load('account', 'empType', 'department', 'designation');
-        
+
         $empTypes = EmpType::where('status', true)->get(['id', 'name']);
         $departments = EmpDepartment::where('status', true)->get(['id', 'name']);
         $designations = EmpDesignation::where('status', true)->get(['id', 'name']);
+        $groups = Group::where('status', true)->get(['id', 'code', 'name']);
 
         return Inertia::render('Employee/Update', [
             'employee' => $employee,
             'empTypes' => $empTypes,
             'departments' => $departments,
             'designations' => $designations,
+            'groups' => $groups,
         ]);
     }
 
@@ -195,10 +207,10 @@ class EmployeeController extends Controller
             'employee_code' => 'nullable|string|max:50',
             'employee_name' => 'required|string|max:100',
             'email' => 'nullable|email|max:100',
-            'password' => 'nullable|string|min:6',
             'emp_type_id' => 'nullable|exists:emp_types,id',
             'department_id' => 'nullable|exists:emp_departments,id',
             'designation_id' => 'nullable|exists:emp_designations,id',
+            'group_id' => 'nullable|exists:groups,id',
             'mobile' => 'nullable|string|max:100',
             'mobile_two' => 'nullable|string|max:20',
             'dob' => 'nullable|date',
@@ -221,10 +233,18 @@ class EmployeeController extends Controller
 
         // Update account
         if ($employee->account) {
-            $employee->account->update([
+            $updateData = [
                 'name' => $request->employee_name,
                 'status' => $request->status ?? true,
-            ]);
+            ];
+
+            if ($request->group_id) {
+                $group = Group::find($request->group_id);
+                $updateData['group_id'] = $group->id;
+                $updateData['group_code'] = $group->code;
+            }
+
+            $employee->account->update($updateData);
         }
 
         $updateData = [
@@ -234,15 +254,16 @@ class EmployeeController extends Controller
             'employee_code' => $request->employee_code,
             'employee_name' => $request->employee_name,
             'email' => $request->email,
-            'mobile' => $request->mobile,
-            'mobile_two' => $request->mobile_two,
+            'order' => $request->order ?? 1,
             'dob' => $request->dob,
             'gender' => $request->gender,
             'blood_group' => $request->blood_group,
             'marital_status' => $request->marital_status,
+            'emergency_contact_person' => $request->emergency_contact_person,
             'religion' => $request->religion,
             'nid' => $request->nid,
-            'emergency_contact_person' => $request->emergency_contact_person,
+            'mobile' => $request->mobile,
+            'mobile_two' => $request->mobile_two,
             'emergency_contact_number' => $request->emergency_contact_number,
             'father_name' => $request->father_name,
             'mother_name' => $request->mother_name,
@@ -250,13 +271,8 @@ class EmployeeController extends Controller
             'permanent_address' => $request->permanent_address,
             'job_status' => $request->job_status,
             'joining_date' => $request->joining_date,
-            'order' => $request->order ?? 1,
             'status' => $request->status ?? true,
         ];
-
-        if ($request->password) {
-            $updateData['password'] = Hash::make($request->password);
-        }
 
         $employee->update($updateData);
 
@@ -277,17 +293,17 @@ class EmployeeController extends Controller
         ]);
 
         Employee::whereIn('id', $request->ids)->delete();
-        
+
         return redirect()->back()->with('success', 'Selected employees deleted successfully.');
     }
 
     public function downloadPdf()
     {
         $employees = Employee::with('empType', 'department', 'designation')->get();
-        
+
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('pdf.employees', compact('employees'));
-        
+
         return $pdf->download('employees-' . date('Y-m-d') . '.pdf');
     }
 }

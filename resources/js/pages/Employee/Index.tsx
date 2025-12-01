@@ -431,6 +431,7 @@ export default function EmployeeIndex({
                                                 ))}
                                             </div>
                                         </th>
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">Account Number</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">Email</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">Phone</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">Department</th>
@@ -455,6 +456,7 @@ export default function EmployeeIndex({
                                                     />
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">{employee.employee_name}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{employee.account?.ac_number || 'N/A'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{employee.email}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{employee.mobile}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{employee.department?.name}</td>
@@ -500,7 +502,7 @@ export default function EmployeeIndex({
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={9} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <EmployeeIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No employees found
                                             </td>

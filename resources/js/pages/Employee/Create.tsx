@@ -16,6 +16,7 @@ import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface Department {
     id: number;
@@ -29,6 +30,12 @@ interface Designation {
 
 interface EmpType {
     id: number;
+    name: string;
+}
+
+interface Group {
+    id: number;
+    code: string;
     name: string;
 }
 
@@ -51,12 +58,16 @@ interface CreateEmployeeProps {
     departments: Department[];
     designations: Designation[];
     empTypes: EmpType[];
+    groups: Group[];
+    lastEmployeeGroup?: { id: number; code: string };
 }
 
 export default function CreateEmployee({ 
     departments = [], 
     designations = [], 
-    empTypes = [] 
+    empTypes = [],
+    groups = [],
+    lastEmployeeGroup 
 }: CreateEmployeeProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         employee_code: '',
@@ -67,6 +78,7 @@ export default function CreateEmployee({
         department_id: '',
         designation_id: '',
         emp_type_id: '',
+        group_id: lastEmployeeGroup?.id?.toString() || '',
         dob: '',
         gender: '',
         blood_group: '',
@@ -94,6 +106,8 @@ export default function CreateEmployee({
         });
     };
 
+
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Employee" />
@@ -118,12 +132,26 @@ export default function CreateEmployee({
                 </div>
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="dark:text-white">Employee Information</CardTitle>
-                    </CardHeader>
+
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+                                <div>
+                                    <Label htmlFor="employee_name" className="dark:text-gray-200">
+                                        Full Name *
+                                    </Label>
+                                    <Input
+                                        id="employee_name"
+                                        value={data.employee_name}
+                                        onChange={(e) => setData('employee_name', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        placeholder="Enter full name"
+                                    />
+                                    {errors.employee_name && (
+                                        <span className="text-sm text-red-500">{errors.employee_name}</span>
+                                    )}
+                                </div>
+
                                 <div>
                                     <Label htmlFor="employee_code" className="dark:text-gray-200">
                                         Employee Code
@@ -141,18 +169,18 @@ export default function CreateEmployee({
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="employee_name" className="dark:text-gray-200">
-                                        Full Name *
+                                    <Label htmlFor="mobile" className="dark:text-gray-200">
+                                        Mobile
                                     </Label>
                                     <Input
-                                        id="employee_name"
-                                        value={data.employee_name}
-                                        onChange={(e) => setData('employee_name', e.target.value)}
+                                        id="mobile"
+                                        value={data.mobile}
+                                        onChange={(e) => setData('mobile', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        placeholder="Enter full name"
+                                        placeholder="Enter mobile number"
                                     />
-                                    {errors.employee_name && (
-                                        <span className="text-sm text-red-500">{errors.employee_name}</span>
+                                    {errors.mobile && (
+                                        <span className="text-sm text-red-500">{errors.mobile}</span>
                                     )}
                                 </div>
 
@@ -174,34 +202,130 @@ export default function CreateEmployee({
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="mobile" className="dark:text-gray-200">
-                                        Mobile
+                                    <Label htmlFor="department_id" className="dark:text-gray-200">
+                                        Department
                                     </Label>
-                                    <Input
-                                        id="mobile"
-                                        value={data.mobile}
-                                        onChange={(e) => setData('mobile', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        placeholder="Enter mobile number"
-                                    />
-                                    {errors.mobile && (
-                                        <span className="text-sm text-red-500">{errors.mobile}</span>
+                                    <Select
+                                        value={data.department_id}
+                                        onValueChange={(value) => setData('department_id', value)}
+                                    >
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select department" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {departments.map((dept) => (
+                                                <SelectItem key={dept.id} value={dept.id.toString()}>
+                                                    {dept.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.department_id && (
+                                        <span className="text-sm text-red-500">{errors.department_id}</span>
                                     )}
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="mobile_two" className="dark:text-gray-200">
-                                        Alternative Mobile
+                                    <Label htmlFor="designation_id" className="dark:text-gray-200">
+                                        Designation
+                                    </Label>
+                                    <Select
+                                        value={data.designation_id}
+                                        onValueChange={(value) => setData('designation_id', value)}
+                                    >
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select designation" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {designations.map((desig) => (
+                                                <SelectItem key={desig.id} value={desig.id.toString()}>
+                                                    {desig.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.designation_id && (
+                                        <span className="text-sm text-red-500">{errors.designation_id}</span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="emp_type_id" className="dark:text-gray-200">
+                                        Employee Type
+                                    </Label>
+                                    <Select
+                                        value={data.emp_type_id}
+                                        onValueChange={(value) => setData('emp_type_id', value)}
+                                    >
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select employee type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {empTypes.map((type) => (
+                                                <SelectItem key={type.id} value={type.id.toString()}>
+                                                    {type.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.emp_type_id && (
+                                        <span className="text-sm text-red-500">{errors.emp_type_id}</span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="group_id" className="dark:text-gray-200">
+                                        Group *
+                                    </Label>
+                                    <Select
+                                        value={data.group_id}
+                                        onValueChange={(value) => setData('group_id', value)}
+                                    >
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select group" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {groups.map((group) => (
+                                                <SelectItem key={group.id} value={group.id.toString()}>
+                                                    {group.name} ({group.code})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.group_id && (
+                                        <span className="text-sm text-red-500">{errors.group_id}</span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="joining_date" className="dark:text-gray-200">
+                                        Joining Date
                                     </Label>
                                     <Input
-                                        id="mobile_two"
-                                        value={data.mobile_two}
-                                        onChange={(e) => setData('mobile_two', e.target.value)}
+                                        id="joining_date"
+                                        type="date"
+                                        value={data.joining_date}
+                                        onChange={(e) => setData('joining_date', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        placeholder="Enter alternative mobile"
                                     />
-                                    {errors.mobile_two && (
-                                        <span className="text-sm text-red-500">{errors.mobile_two}</span>
+                                    {errors.joining_date && (
+                                        <span className="text-sm text-red-500">{errors.joining_date}</span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="job_status" className="dark:text-gray-200">
+                                        Job Status
+                                    </Label>
+                                    <Input
+                                        id="job_status"
+                                        value={data.job_status}
+                                        onChange={(e) => setData('job_status', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        placeholder="Enter job status"
+                                    />
+                                    {errors.job_status && (
+                                        <span className="text-sm text-red-500">{errors.job_status}</span>
                                     )}
                                 </div>
 
@@ -240,6 +364,22 @@ export default function CreateEmployee({
                                     </Select>
                                     {errors.gender && (
                                         <span className="text-sm text-red-500">{errors.gender}</span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="mobile_two" className="dark:text-gray-200">
+                                        Alternative Mobile
+                                    </Label>
+                                    <Input
+                                        id="mobile_two"
+                                        value={data.mobile_two}
+                                        onChange={(e) => setData('mobile_two', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        placeholder="Enter alternative mobile"
+                                    />
+                                    {errors.mobile_two && (
+                                        <span className="text-sm text-red-500">{errors.mobile_two}</span>
                                     )}
                                 </div>
 
@@ -390,38 +530,6 @@ export default function CreateEmployee({
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="joining_date" className="dark:text-gray-200">
-                                        Joining Date
-                                    </Label>
-                                    <Input
-                                        id="joining_date"
-                                        type="date"
-                                        value={data.joining_date}
-                                        onChange={(e) => setData('joining_date', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                    {errors.joining_date && (
-                                        <span className="text-sm text-red-500">{errors.joining_date}</span>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="job_status" className="dark:text-gray-200">
-                                        Job Status
-                                    </Label>
-                                    <Input
-                                        id="job_status"
-                                        value={data.job_status}
-                                        onChange={(e) => setData('job_status', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        placeholder="Enter job status"
-                                    />
-                                    {errors.job_status && (
-                                        <span className="text-sm text-red-500">{errors.job_status}</span>
-                                    )}
-                                </div>
-
-                                <div>
                                     <Label htmlFor="highest_education" className="dark:text-gray-200">
                                         Highest Education
                                     </Label>
@@ -437,98 +545,6 @@ export default function CreateEmployee({
                                     )}
                                 </div>
 
-                                <div>
-                                    <Label htmlFor="department_id" className="dark:text-gray-200">
-                                        Department
-                                    </Label>
-                                    <Select
-                                        value={data.department_id}
-                                        onValueChange={(value) => setData('department_id', value)}
-                                    >
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="Select department" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {departments.map((dept) => (
-                                                <SelectItem key={dept.id} value={dept.id.toString()}>
-                                                    {dept.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.department_id && (
-                                        <span className="text-sm text-red-500">{errors.department_id}</span>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="designation_id" className="dark:text-gray-200">
-                                        Designation
-                                    </Label>
-                                    <Select
-                                        value={data.designation_id}
-                                        onValueChange={(value) => setData('designation_id', value)}
-                                    >
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="Select designation" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {designations.map((desig) => (
-                                                <SelectItem key={desig.id} value={desig.id.toString()}>
-                                                    {desig.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.designation_id && (
-                                        <span className="text-sm text-red-500">{errors.designation_id}</span>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="emp_type_id" className="dark:text-gray-200">
-                                        Employee Type
-                                    </Label>
-                                    <Select
-                                        value={data.emp_type_id}
-                                        onValueChange={(value) => setData('emp_type_id', value)}
-                                    >
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="Select employee type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {empTypes.map((type) => (
-                                                <SelectItem key={type.id} value={type.id.toString()}>
-                                                    {type.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.emp_type_id && (
-                                        <span className="text-sm text-red-500">{errors.emp_type_id}</span>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="status" className="dark:text-gray-200">
-                                        Status
-                                    </Label>
-                                    <Select
-                                        value={data.status ? 'true' : 'false'}
-                                        onValueChange={(value) => setData('status', value === 'true')}
-                                    >
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="true">Active</SelectItem>
-                                            <SelectItem value="false">Inactive</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.status && (
-                                        <span className="text-sm text-red-500">{errors.status}</span>
-                                    )}
-                                </div>
                                 <div>
                                     <Label htmlFor="present_address" className="dark:text-gray-200">
                                         Present Address
@@ -558,6 +574,27 @@ export default function CreateEmployee({
                                     />
                                     {errors.permanent_address && (
                                         <span className="text-sm text-red-500">{errors.permanent_address}</span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="status" className="dark:text-gray-200">
+                                        Status
+                                    </Label>
+                                    <Select
+                                        value={data.status ? 'true' : 'false'}
+                                        onValueChange={(value) => setData('status', value === 'true')}
+                                    >
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="true">Active</SelectItem>
+                                            <SelectItem value="false">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.status && (
+                                        <span className="text-sm text-red-500">{errors.status}</span>
                                     )}
                                 </div>
                             </div>

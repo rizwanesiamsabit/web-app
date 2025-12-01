@@ -21,7 +21,10 @@ class DatabaseSeeder extends Seeder
         $this->call(ShiftSeeder::class);
         $this->call(EmpDesignationSeeder::class);
         $this->call(EmpTypeSeeder::class);
+        $this->call(EmpDepartmentSeeder::class);
         $this->call(GroupSeeder::class);
         $this->call(UnitSeeder::class);
+        $this->call(EmployeeSeeder::class);
+        $this->call(CustomerSeeder::class);
     }
 }

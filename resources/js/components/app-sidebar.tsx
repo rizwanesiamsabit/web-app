@@ -147,7 +147,7 @@ const mainNavItems = [
         title: 'Accounts',
         icon: Database,
         children: [
-            { title: 'Add Group', href: '/groups', icon: Database },
+            { title: 'Groups', href: '/groups', icon: Database },
             { title: 'Accounts', href: '/accounts', icon: Database },
             {
                 title: 'General Ledger',
