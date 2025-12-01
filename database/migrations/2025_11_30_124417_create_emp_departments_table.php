@@ -10,8 +10,7 @@ return new class extends Migration
     {
         Schema::create('emp_departments', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('emp_type_id')->nullable();
-            $table->foreign('emp_type_id')->references('id')->on('emp_types')->onDelete('cascade');
+            $table->foreignId('emp_type_id')->constrained('emp_types')->onDelete('cascade');
             $table->string('name');
             $table->boolean('status')->default(true);
             $table->timestamps();
