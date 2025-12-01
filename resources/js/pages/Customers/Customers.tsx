@@ -6,18 +6,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Edit, Filter, Plus, Trash2, X, Users } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, FileText, Filter, Plus, Trash2, X, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Account {
     id: number;
     name: string;
     ac_number: string;
+    group_id: number;
+    group?: Group;
 }
 
 interface Customer {
@@ -27,6 +29,14 @@ interface Customer {
     name: string;
     mobile?: string;
     email?: string;
+    nid_number?: string;
+    vat_reg_no?: string;
+    tin_no?: string;
+    trade_license?: string;
+    discount_rate?: number;
+    security_deposit?: number;
+    credit_limit?: number;
+    address?: string;
     status: boolean;
     account?: Account;
     created_at: string;
@@ -43,6 +53,17 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface Group {
+    id: number;
+    code: string;
+    name: string;
+}
+
+interface Product {
+    id: number;
+    name: string;
+}
+
 interface CustomersProps {
     customers: {
         data: Customer[];
@@ -53,7 +74,12 @@ interface CustomersProps {
         from: number;
         to: number;
     };
-    accounts: Account[];
+    groups: Group[];
+    products: Product[];
+    lastCustomerGroup?: {
+        id: number;
+        code: string;
+    } | null;
     filters: {
         search?: string;
         status?: string;
@@ -63,10 +89,12 @@ interface CustomersProps {
     };
 }
 
-export default function Customers({ customers, accounts = [], filters }: CustomersProps) {
+export default function Customers({ customers, groups = [], products = [], lastCustomerGroup, filters }: CustomersProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
     const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+    const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters?.search || '');
     const [status, setStatus] = useState(filters?.status || 'all');
     const [sortBy, setSortBy] = useState(filters?.sort_by || 'created_at');
@@ -74,9 +102,10 @@ export default function Customers({ customers, accounts = [], filters }: Custome
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
-        account_id: '',
         code: '',
         name: '',
+        group_id: '',
+        group_code: '',
         mobile: '',
         email: '',
         nid_number: '',
@@ -87,7 +116,13 @@ export default function Customers({ customers, accounts = [], filters }: Custome
         security_deposit: 0,
         credit_limit: 0,
         address: '',
-        status: true
+        status: true,
+        // Vehicle fields
+        product_id: '',
+        vehicle_type: '',
+        vehicle_name: '',
+        vehicle_number: '',
+        reg_date: ''
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -112,19 +147,20 @@ export default function Customers({ customers, accounts = [], filters }: Custome
     const handleEdit = (customer: Customer) => {
         setEditingCustomer(customer);
         setData({
-            account_id: customer.account_id?.toString() || '',
             code: customer.code || '',
             name: customer.name,
+            group_id: customer.account?.group_id?.toString() || '',
+            group_code: customer.account?.group?.code || '',
             mobile: customer.mobile || '',
             email: customer.email || '',
-            nid_number: '',
-            vat_reg_no: '',
-            tin_no: '',
-            trade_license: '',
-            discount_rate: 0,
-            security_deposit: 0,
-            credit_limit: 0,
-            address: '',
+            nid_number: customer.nid_number || '',
+            vat_reg_no: customer.vat_reg_no || '',
+            tin_no: customer.tin_no || '',
+            trade_license: customer.trade_license || '',
+            discount_rate: customer.discount_rate || 0,
+            security_deposit: customer.security_deposit || 0,
+            credit_limit: customer.credit_limit || 0,
+            address: customer.address || '',
             status: customer.status
         });
     };
@@ -138,6 +174,36 @@ export default function Customers({ customers, accounts = [], filters }: Custome
             router.delete(`/customers/${deletingCustomer.id}`, {
                 onSuccess: () => setDeletingCustomer(null),
             });
+        }
+    };
+
+    const handleBulkDelete = () => {
+        setIsBulkDeleting(true);
+    };
+
+    const confirmBulkDelete = () => {
+        router.delete('/customers/bulk/delete', {
+            data: { ids: selectedCustomers },
+            onSuccess: () => {
+                setSelectedCustomers([]);
+                setIsBulkDeleting(false);
+            },
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedCustomers.length === customers.data.length) {
+            setSelectedCustomers([]);
+        } else {
+            setSelectedCustomers(customers.data.map((customer) => customer.id));
+        }
+    };
+
+    const toggleSelectCustomer = (customerId: number) => {
+        if (selectedCustomers.includes(customerId)) {
+            setSelectedCustomers(selectedCustomers.filter((id) => id !== customerId));
+        } else {
+            setSelectedCustomers([...selectedCustomers, customerId]);
         }
     };
 
@@ -222,10 +288,44 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                             Manage customer information
                         </p>
                     </div>
-                    <Button onClick={() => setIsCreateOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Customer
-                    </Button>
+                    <div className="flex gap-2">
+                        {selectedCustomers.length > 0 && (
+                            <Button
+                                variant="destructive"
+                                onClick={handleBulkDelete}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Selected ({selectedCustomers.length})
+                            </Button>
+                        )}
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                if (search) params.append('search', search);
+                                if (status !== 'all') params.append('status', status);
+                                if (sortBy) params.append('sort_by', sortBy);
+                                if (sortOrder) params.append('sort_order', sortOrder);
+                                window.location.href = `/customers/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Download
+                        </Button>
+                        <Button onClick={() => {
+                            setIsCreateOpen(true);
+                            // Auto select last customer's group from backend data
+                            if (lastCustomerGroup) {
+                                setTimeout(() => {
+                                    setData('group_id', lastCustomerGroup.id.toString());
+                                    setData('group_code', lastCustomerGroup.code);
+                                }, 100);
+                            }
+                        }}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Customer
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filter Card */}
@@ -295,6 +395,18 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                            <input
+                                                type="checkbox"
+                                                checked={
+                                                    selectedCustomers.length ===
+                                                        customers.data.length &&
+                                                    customers.data.length > 0
+                                                }
+                                                onChange={toggleSelectAll}
+                                                className="rounded border-gray-300 dark:border-gray-600"
+                                            />
+                                        </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             SL
                                         </th>
@@ -314,6 +426,9 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                                         </th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">
                                             Code
+                                        </th>
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                            Account Number
                                         </th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">
                                             Mobile
@@ -336,6 +451,20 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                                                 key={customer.id}
                                                 className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
                                             >
+                                                <td className="p-4">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedCustomers.includes(
+                                                            customer.id,
+                                                        )}
+                                                        onChange={() =>
+                                                            toggleSelectCustomer(
+                                                                customer.id,
+                                                            )
+                                                        }
+                                                        className="rounded border-gray-300 dark:border-gray-600"
+                                                    />
+                                                </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {(customers.current_page - 1) * customers.per_page + index + 1}
                                                 </td>
@@ -344,6 +473,9 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {customer.code || 'N/A'}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {customer.account?.ac_number || 'N/A'}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {customer.mobile || 'N/A'}
@@ -385,7 +517,7 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={9}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Users className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -425,83 +557,197 @@ export default function Customers({ customers, accounts = [], filters }: Custome
 
                 <FormModal
                     isOpen={isCreateOpen}
-                    onClose={() => setIsCreateOpen(false)}
-                    title="Create Customer"
+                    onClose={() => {
+                        setIsCreateOpen(false);
+                        reset();
+                    }}
+                    title="Create Customer & Vehicle"
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText="Create"
+                    wide={true}
                 >
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="name" className="dark:text-gray-200">Name *</Label>
-                            <Input
-                                id="name"
-                                value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.name && <span className="text-sm text-red-500">{errors.name}</span>}
+                    <div className="grid grid-cols-2 gap-8">
+                        {/* Customer Information */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium dark:text-white border-b pb-2">Customer Information</h3>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="name" className="dark:text-gray-200">Name *</Label>
+                                    <Input
+                                        id="name"
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                    {errors.name && <span className="text-sm text-red-500">{errors.name}</span>}
+                                </div>
+                                <div>
+                                    <Label htmlFor="code" className="dark:text-gray-200">Code</Label>
+                                    <Input
+                                        id="code"
+                                        value={data.code}
+                                        onChange={(e) => setData('code', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <Label className="dark:text-gray-200">Group *</Label>
+                                <Select
+                                    value={data.group_id}
+                                    onValueChange={(value) => {
+                                        const selectedGroup = groups.find(g => g.id.toString() === value);
+                                        setData({
+                                            ...data,
+                                            group_id: value,
+                                            group_code: selectedGroup?.code || ''
+                                        });
+                                    }}
+                                >
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="Select Group" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {groups.map((group) => (
+                                            <SelectItem key={group.id} value={group.id.toString()}>
+                                                {group.name} ({group.code})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.group_id && <span className="text-sm text-red-500">{errors.group_id}</span>}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="mobile" className="dark:text-gray-200">Mobile</Label>
+                                    <Input
+                                        id="mobile"
+                                        value={data.mobile}
+                                        onChange={(e) => setData('mobile', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="email" className="dark:text-gray-200">Email</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(e) => setData('email', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <Label htmlFor="address" className="dark:text-gray-200">Address</Label>
+                                <Input
+                                    id="address"
+                                    value={data.address}
+                                    onChange={(e) => setData('address', e.target.value)}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            
+                            <div>
+                                <Label className="dark:text-gray-200">Status</Label>
+                                <Select
+                                    value={data.status ? 'true' : 'false'}
+                                    onValueChange={(value) => setData('status', value === 'true')}
+                                >
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="Select Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="true">Active</SelectItem>
+                                        <SelectItem value="false">Inactive</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        <div>
-                            <Label htmlFor="code" className="dark:text-gray-200">Code</Label>
-                            <Input
-                                id="code"
-                                value={data.code}
-                                onChange={(e) => setData('code', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
+
+                        {/* Vehicle Information */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium dark:text-white border-b pb-2">Vehicle Information</h3>
+                            
+                            <div>
+                                <Label className="dark:text-gray-200">Product</Label>
+                                <Select
+                                    value={data.product_id}
+                                    onValueChange={(value) => setData('product_id', value)}
+                                >
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="Select Product" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {products.map((product) => (
+                                            <SelectItem key={product.id} value={product.id.toString()}>
+                                                {product.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="vehicle_type" className="dark:text-gray-200">Vehicle Type</Label>
+                                    <Input
+                                        id="vehicle_type"
+                                        value={data.vehicle_type}
+                                        onChange={(e) => setData('vehicle_type', e.target.value)}
+                                        placeholder="e.g., Car, Truck"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="vehicle_name" className="dark:text-gray-200">Vehicle Name</Label>
+                                    <Input
+                                        id="vehicle_name"
+                                        value={data.vehicle_name}
+                                        onChange={(e) => setData('vehicle_name', e.target.value)}
+                                        placeholder="e.g., Toyota Corolla"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="vehicle_number" className="dark:text-gray-200">Vehicle Number</Label>
+                                    <Input
+                                        id="vehicle_number"
+                                        value={data.vehicle_number}
+                                        onChange={(e) => setData('vehicle_number', e.target.value)}
+                                        placeholder="e.g., ABC-1234"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="reg_date" className="dark:text-gray-200">Registration Date</Label>
+                                    <Input
+                                        id="reg_date"
+                                        type="date"
+                                        value={data.reg_date}
+                                        onChange={(e) => setData('reg_date', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="mobile" className="dark:text-gray-200">Mobile</Label>
-                            <Input
-                                id="mobile"
-                                value={data.mobile}
-                                onChange={(e) => setData('mobile', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="email" className="dark:text-gray-200">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <Label htmlFor="address" className="dark:text-gray-200">Address</Label>
-                        <Textarea
-                            id="address"
-                            value={data.address}
-                            onChange={(e) => setData('address', e.target.value)}
-                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
-                    </div>
-                    <div>
-                        <Label className="dark:text-gray-200">Status</Label>
-                        <Select
-                            value={data.status ? 'true' : 'false'}
-                            onValueChange={(value) => setData('status', value === 'true')}
-                        >
-                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="true">Active</SelectItem>
-                                <SelectItem value="false">Inactive</SelectItem>
-                            </SelectContent>
-                        </Select>
                     </div>
                 </FormModal>
 
                 <FormModal
                     isOpen={!!editingCustomer}
-                    onClose={() => setEditingCustomer(null)}
+                    onClose={() => {
+                        setEditingCustomer(null);
+                        reset();
+                    }}
                     title="Edit Customer"
                     onSubmit={handleSubmit}
                     processing={processing}
@@ -528,6 +774,32 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                             />
                         </div>
                     </div>
+                    <div>
+                        <Label className="dark:text-gray-200">Group *</Label>
+                        <Select
+                            value={data.group_id}
+                            onValueChange={(value) => {
+                                const selectedGroup = groups.find(g => g.id.toString() === value);
+                                setData({
+                                    ...data,
+                                    group_id: value,
+                                    group_code: selectedGroup?.code || ''
+                                });
+                            }}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select Group" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {groups.map((group) => (
+                                    <SelectItem key={group.id} value={group.id.toString()}>
+                                        {group.name} ({group.code})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.group_id && <span className="text-sm text-red-500">{errors.group_id}</span>}
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="edit-mobile" className="dark:text-gray-200">Mobile</Label>
@@ -551,7 +823,7 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                     </div>
                     <div>
                         <Label htmlFor="edit-address" className="dark:text-gray-200">Address</Label>
-                        <Textarea
+                        <Input
                             id="edit-address"
                             value={data.address}
                             onChange={(e) => setData('address', e.target.value)}
@@ -581,6 +853,14 @@ export default function Customers({ customers, accounts = [], filters }: Custome
                     onConfirm={confirmDelete}
                     title="Delete Customer"
                     message={`Are you sure you want to delete the customer "${deletingCustomer?.name}"? This action cannot be undone.`}
+                />
+
+                <DeleteModal
+                    isOpen={isBulkDeleting}
+                    onClose={() => setIsBulkDeleting(false)}
+                    onConfirm={confirmBulkDelete}
+                    title="Delete Selected Customers"
+                    message={`Are you sure you want to delete ${selectedCustomers.length} selected customers? This action cannot be undone.`}
                 />
             </div>
         </AppLayout>

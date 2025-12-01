@@ -376,8 +376,16 @@ export default function Accounts({ accounts, groups = [], filters }: AccountsPro
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {account.ac_number}
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {account.group?.name || 'N/A'}
+                                                <td className="p-4">
+                                                    {account.group ? (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                            {account.group.name}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                            N/A
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="p-4">
                                                     <span className={`px-2 py-1 rounded text-xs ${

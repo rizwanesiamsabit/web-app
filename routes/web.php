@@ -142,6 +142,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Customer routes
     Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::get('customers/download-pdf', [CustomerController::class, 'downloadPdf'])->name('customers.download.pdf');
+    Route::delete('customers/bulk/delete', [CustomerController::class, 'bulkDelete'])->name('customers.bulk.delete');
     Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
     Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
