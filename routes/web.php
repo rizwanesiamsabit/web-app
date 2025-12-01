@@ -15,6 +15,7 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\AccountController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -128,6 +129,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('groups', [GroupController::class, 'store'])->name('groups.store');
     Route::put('groups/{group}', [GroupController::class, 'update'])->name('groups.update');
     Route::delete('groups/{group}', [GroupController::class, 'destroy'])->name('groups.destroy');
+    
+    // Account routes
+    Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+    Route::get('accounts/create', [AccountController::class, 'create'])->name('accounts.create');
+    Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+    Route::get('accounts/{account}', [AccountController::class, 'show'])->name('accounts.show');
+    Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
+    Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
+    Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
 });
 
 require __DIR__.'/settings.php';
