@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Group extends Model
+class Supplier extends Model
 {
     protected $fillable = [
-        'code',
+        'account_id',
         'name',
-        'parents',
+        'mobile',
+        'email',
+        'address',
+        'proprietor_name',
         'status'
     ];
 
@@ -17,8 +20,8 @@ class Group extends Model
         'status' => 'boolean'
     ];
 
-    public function accounts()
+    public function account()
     {
-        return $this->hasMany(Account::class, 'group_code', 'code');
+        return $this->belongsTo(Account::class);
     }
 }

@@ -9,21 +9,23 @@ class GroupSeeder extends Seeder
 {
     public function run(): void
     {
+        Group::truncate();
+        
         $groups = [
-            [1, '1', 'Assets', 'ROOT', 1],
-            [2, '2', 'Expenses', 'ROOT', 1],
-            [3, '3', 'Income', 'ROOT', 1],
-            [4, '4', 'Liabilities', 'ROOT', 1],
-            [5, '10001', 'Fixed Asset', '1', 1],
-            [6, '10002', 'Current Asset', '1', 1],
-            [7, '100020001', 'Account Receivable', '10002', 1],
-            [9, '100010001', 'Land', '10001', 1],
-            [10, '40001', 'Current Liabilities', '4', 1],
-            [11, '400010001', 'Account Payable', '40001', 1],
-            [13, '100020002', 'Cash in hand', '10002', 1],
-            [14, '100020003', 'Mobile Bank', '10002', 1],
-            [15, '100020004', 'Bank Account', '10002', 1],
-            [16, '40002', 'Employee Management', '4', 1]
+            [1, '1', 'Assets', 'ROOT', true],
+            [2, '2', 'Expenses', 'ROOT', true],
+            [3, '3', 'Income', 'ROOT', true],
+            [4, '4', 'Liabilities', 'ROOT', true],
+            [5, '10001', 'Fixed Asset', '1', true],
+            [6, '10002', 'Current Asset', '1', true],
+            [7, '100020001', 'Account Receivable', '10002', true],
+            [9, '100010001', 'Land', '10001', true],
+            [10, '40001', 'Current Liabilities', '4', true],
+            [11, '400010001', 'Account Payable', '40001', true],
+            [13, '100020002', 'Cash in hand', '10002', true],
+            [14, '100020003', 'Mobile Bank', '10002', true],
+            [15, '100020004', 'Bank Account', '10002', true],
+            [16, '40002', 'Employee Management', '4', true]
         ];
 
         foreach ($groups as $group) {

@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Account extends Model
+{
+    protected $fillable = [
+        'name',
+        'ac_number',
+        'group_id',
+        'group_code',
+        'due_amount',
+        'paid_amount',
+        'status'
+    ];
+
+    protected $casts = [
+        'due_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'status' => 'boolean'
+    ];
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class, 'group_code', 'code');
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
+    }
+
+    public function suppliers()
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+}
