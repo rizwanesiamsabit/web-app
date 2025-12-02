@@ -5,44 +5,25 @@ import { FormModal } from '@/components/ui/form-modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/ui/pagination';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import {
-    ChevronDown,
-    ChevronUp,
-    Edit,
-    FileText,
-    Filter,
-    Plus,
-    Trash2,
-    Building,
-    X,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, FileText, Filter, Plus, Trash2, Building, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface OfficePayment {
     id: number;
     date: string;
-    shift: { name: string };
-    from_account: { name: string };
-    to_account: { name: string };
+    shift: { id: number; name: string };
+    from_account: { id: number; name: string };
+    to_account: { id: number; name: string };
     amount: number;
     payment_type: string;
     remarks: string;
     created_at: string;
 }
-
-
 
 interface Account {
     id: number;
@@ -56,14 +37,8 @@ interface Shift {
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard().url,
-    },
-    {
-        title: 'Office Payments',
-        href: '/office-payments',
-    },
+    { title: 'Dashboard', href: dashboard().url },
+    { title: 'Office Payments', href: '/office-payments' }
 ];
 
 interface OfficePaymentsProps {
@@ -76,39 +51,35 @@ interface OfficePaymentsProps {
         from: number;
         to: number;
     };
-
     accounts: Account[];
     groupedAccounts: Record<string, Account[]>;
     shifts: Shift[];
     paymentTypes: Array<{code: string; name: string; type: string}>;
+    types: Array<{value: string; label: string}>;
     filters: {
         search?: string;
-        shift?: string;
+        shift_id?: string;
         start_date?: string;
         end_date?: string;
+        type?: string;
         sort_by?: string;
         sort_order?: string;
         per_page?: number;
     };
 }
 
-export default function OfficePayments({ 
-    officePayments = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, 
-    accounts = [], 
-    groupedAccounts = {},
-    shifts = [], 
-    paymentTypes = [],
-    filters = {} 
-}: OfficePaymentsProps) {
+export default function OfficePayments({ officePayments = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, accounts = [], groupedAccounts = {}, shifts = [], paymentTypes = [], types = [], filters = {} }: OfficePaymentsProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingPayment, setEditingPayment] = useState<OfficePayment | null>(null);
     const [deletingPayment, setDeletingPayment] = useState<OfficePayment | null>(null);
     const [selectedPayments, setSelectedPayments] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState('');
-    const [selectedShift, setSelectedShift] = useState('all');
+
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [selectedType, setSelectedType] = useState('');
+    const [selectedShift, setSelectedShift] = useState('');
     const [sortBy, setSortBy] = useState('created_at');
     const [sortOrder, setSortOrder] = useState('desc');
     const [perPage, setPerPage] = useState(10);
@@ -131,7 +102,6 @@ export default function OfficePayments({
         remarks: '',
     });
 
-    // Filter accounts based on payment type
     const getFilteredAccounts = () => {
         const groupName = data.payment_type === 'Cash' ? 'Cash in hand' : data.payment_type;
         return groupedAccounts[groupName] || [];
@@ -158,13 +128,10 @@ export default function OfficePayments({
 
     const handleEdit = (payment: OfficePayment) => {
         setEditingPayment(payment);
-        
-        // Map payment_type from transaction to display format
         let displayPaymentType = payment.payment_type || '';
         if (displayPaymentType === 'cash') displayPaymentType = 'Cash';
         else if (displayPaymentType === 'mobile bank') displayPaymentType = 'Mobile Bank';
         else if (displayPaymentType === 'bank') displayPaymentType = 'Bank Account';
-        
         setData({
             date: payment.date ? payment.date.split('T')[0] : '',
             shift_id: payment.shift?.id?.toString() || '',
@@ -180,7 +147,7 @@ export default function OfficePayments({
             account_no: '',
             mobile_bank: '',
             mobile_number: '',
-            remarks: payment.remarks || '',
+            remarks: payment.remarks || ''
         });
     };
 
@@ -211,67 +178,55 @@ export default function OfficePayments({
     };
 
     const applyFilters = () => {
-        router.get(
-            '/office-payments',
-            {
-                search: search || undefined,
-                start_date: startDate || undefined,
-                end_date: endDate || undefined,
-                sort_by: sortBy,
-                sort_order: sortOrder,
-                per_page: perPage,
-            },
-            { preserveState: true },
-        );
+        router.get('/office-payments', {
+            search: search || undefined,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            type: selectedType || undefined,
+            shift_id: selectedShift || undefined,
+            sort_by: sortBy,
+            sort_order: sortOrder,
+            per_page: perPage
+        }, { preserveState: true });
     };
 
     const clearFilters = () => {
         setSearch('');
         setStartDate('');
         setEndDate('');
-        router.get(
-            '/office-payments',
-            {
-                sort_by: sortBy,
-                sort_order: sortOrder,
-                per_page: perPage,
-            },
-            { preserveState: true },
-        );
+        setSelectedType('');
+        setSelectedShift('');
+        router.get('/office-payments', { sort_by: sortBy, sort_order: sortOrder, per_page: perPage }, { preserveState: true });
     };
 
     const handleSort = (column: string) => {
         const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
         setSortBy(column);
         setSortOrder(newOrder);
-        router.get(
-            '/office-payments',
-            {
-                search: search || undefined,
-                start_date: startDate || undefined,
-                end_date: endDate || undefined,
-                sort_by: column,
-                sort_order: newOrder,
-                per_page: perPage,
-            },
-            { preserveState: true },
-        );
+        router.get('/office-payments', {
+            search: search || undefined,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            type: selectedType || undefined,
+            shift_id: selectedShift || undefined,
+            sort_by: column,
+            sort_order: newOrder,
+            per_page: perPage
+        }, { preserveState: true });
     };
 
     const handlePageChange = (page: number) => {
-        router.get(
-            '/office-payments',
-            {
-                search: search || undefined,
-                start_date: startDate || undefined,
-                end_date: endDate || undefined,
-                sort_by: sortBy,
-                sort_order: sortOrder,
-                per_page: perPage,
-                page,
-            },
-            { preserveState: true },
-        );
+        router.get('/office-payments', {
+            search: search || undefined,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            type: selectedType || undefined,
+            shift_id: selectedShift || undefined,
+            sort_by: sortBy,
+            sort_order: sortOrder,
+            per_page: perPage,
+            page
+        }, { preserveState: true });
     };
 
     const toggleSelectAll = () => {
@@ -321,19 +276,17 @@ export default function OfficePayments({
                                 Delete Selected ({selectedPayments.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/office-payments/download-pdf?${params.toString()}`;
-                            }}
-                        >
+                        <Button variant="success" onClick={() => {
+                            const params = new URLSearchParams();
+                            if (search) params.append('search', search);
+                            if (startDate) params.append('start_date', startDate);
+                            if (endDate) params.append('end_date', endDate);
+                            if (selectedType) params.append('type', selectedType);
+                            if (selectedShift) params.append('shift_id', selectedShift);
+                            if (sortBy) params.append('sort_by', sortBy);
+                            if (sortOrder) params.append('sort_order', sortOrder);
+                            window.location.href = `/office-payments/download-pdf?${params.toString()}`;
+                        }}>
                             <FileText className="mr-2 h-4 w-4" />
                             Download
                         </Button>
@@ -353,7 +306,7 @@ export default function OfficePayments({
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
                             <div>
                                 <Label className="dark:text-gray-200">Search</Label>
                                 <Input
@@ -380,6 +333,38 @@ export default function OfficePayments({
                                     onChange={(e) => setEndDate(e.target.value)}
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
+                            </div>
+                            <div>
+                                <Label className="dark:text-gray-200">Type</Label>
+                                <Select value={selectedType || 'all'} onValueChange={(value) => setSelectedType(value === 'all' ? '' : value)}>
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="All Types" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Types</SelectItem>
+                                        {types.map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label className="dark:text-gray-200">Shift</Label>
+                                <Select value={selectedShift || 'all'} onValueChange={(value) => setSelectedShift(value === 'all' ? '' : value)}>
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="All Shifts" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Shifts</SelectItem>
+                                        {shifts.map((shift) => (
+                                            <SelectItem key={shift.id} value={shift.id.toString()}>
+                                                {shift.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="flex items-end gap-2">
                                 <Button onClick={applyFilters} className="flex-1">
