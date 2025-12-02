@@ -90,20 +90,20 @@ interface PaymentVoucherProps {
     };
 }
 
-export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], filters }: PaymentVoucherProps) {
+export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], filters = {} }: PaymentVoucherProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState<PaymentVoucher | null>(null);
     const [deletingVoucher, setDeletingVoucher] = useState<PaymentVoucher | null>(null);
     const [selectedVouchers, setSelectedVouchers] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-    const [search, setSearch] = useState(filters?.search || '');
-    const [shift, setShift] = useState(filters?.shift || 'all');
-    const [paymentType, setPaymentType] = useState(filters?.payment_type || 'all');
-    const [startDate, setStartDate] = useState(filters?.start_date || '');
-    const [endDate, setEndDate] = useState(filters?.end_date || '');
-    const [sortBy, setSortBy] = useState(filters?.sort_by || 'created_at');
-    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'desc');
-    const [perPage, setPerPage] = useState(filters?.per_page || 10);
+    const [search, setSearch] = useState(filters.search || '');
+    const [shift, setShift] = useState(filters.shift || 'all');
+    const [paymentType, setPaymentType] = useState(filters.payment_type || 'all');
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
+    const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
+    const [perPage, setPerPage] = useState(filters.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         date: '',
@@ -283,7 +283,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (search !== (filters?.search || '')) {
+            if (search !== (filters.search || '')) {
                 applyFilters();
             }
         }, 500);

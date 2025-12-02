@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
+            $table->string('transaction_id', 150)->nullable();
             $table->string('ac_number', 150);
             $table->enum('transaction_type', ['Dr', 'Cr']);
             $table->decimal('amount', 18, 2);

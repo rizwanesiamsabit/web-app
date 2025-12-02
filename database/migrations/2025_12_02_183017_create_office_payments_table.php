@@ -10,16 +10,14 @@ return new class extends Migration
     {
         Schema::create('office_payments', function (Blueprint $table) {
             $table->id();
-            
-            // Basic Fields
             $table->date('date');
             $table->foreignId('shift_id')->constrained('shifts');
-            $table->foreignId('employee_id')->constrained('employees');
             $table->foreignId('transaction_id')->constrained('transactions');
             $table->foreignId('from_account_id')->constrained('accounts');
             $table->foreignId('to_account_id')->constrained('accounts');
+            $table->enum('type', ['cash', 'bank'])->default('cash');
             $table->text('remarks')->nullable();
-            
+
             $table->timestamps();
         });
     }

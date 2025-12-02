@@ -99,20 +99,20 @@ interface PurchasesProps {
     };
 }
 
-export default function Purchases({ purchases, suppliers = [], accounts = [], products = [], filters }: PurchasesProps) {
+export default function Purchases({ purchases, suppliers = [], accounts = [], products = [], filters = {} }: PurchasesProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
     const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
     const [selectedPurchases, setSelectedPurchases] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-    const [search, setSearch] = useState(filters?.search || '');
-    const [supplier, setSupplier] = useState(filters?.supplier || 'all');
-    const [paymentStatus, setPaymentStatus] = useState(filters?.payment_status || 'all');
-    const [startDate, setStartDate] = useState(filters?.start_date || '');
-    const [endDate, setEndDate] = useState(filters?.end_date || '');
-    const [sortBy, setSortBy] = useState(filters?.sort_by || 'created_at');
-    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'desc');
-    const [perPage, setPerPage] = useState(filters?.per_page || 10);
+    const [search, setSearch] = useState(filters.search || '');
+    const [supplier, setSupplier] = useState(filters.supplier || 'all');
+    const [paymentStatus, setPaymentStatus] = useState(filters.payment_status || 'all');
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
+    const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
+    const [perPage, setPerPage] = useState(filters.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         purchase_date: '',
@@ -347,7 +347,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], pr
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (search !== (filters?.search || '')) {
+            if (search !== (filters.search || '')) {
                 applyFilters();
             }
         }, 500);

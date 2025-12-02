@@ -9,10 +9,10 @@ class OfficePayment extends Model
     protected $fillable = [
         'date',
         'shift_id',
-        'employee_id',
         'transaction_id',
         'from_account_id',
         'to_account_id',
+        'type',
         'remarks',
     ];
 
@@ -23,11 +23,6 @@ class OfficePayment extends Model
     public function shift()
     {
         return $this->belongsTo(Shift::class);
-    }
-
-    public function employee()
-    {
-        return $this->belongsTo(Employee::class);
     }
 
     public function transaction()
@@ -41,6 +36,16 @@ class OfficePayment extends Model
     }
 
     public function toAccount()
+    {
+        return $this->belongsTo(Account::class, 'to_account_id');
+    }
+
+    public function from_account()
+    {
+        return $this->belongsTo(Account::class, 'from_account_id');
+    }
+
+    public function to_account()
     {
         return $this->belongsTo(Account::class, 'to_account_id');
     }

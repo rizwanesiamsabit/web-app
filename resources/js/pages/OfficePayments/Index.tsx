@@ -34,7 +34,6 @@ interface OfficePayment {
     id: number;
     date: string;
     shift: { name: string };
-    employee: { employee_name: string };
     from_account: { name: string };
     to_account: { name: string };
     amount: number;
@@ -43,11 +42,7 @@ interface OfficePayment {
     created_at: string;
 }
 
-interface Employee {
-    id: number;
-    employee_name: string;
-    employee_code: string;
-}
+
 
 interface Account {
     id: number;
@@ -81,12 +76,13 @@ interface OfficePaymentsProps {
         from: number;
         to: number;
     };
-    employees: Employee[];
+
     accounts: Account[];
+    groupedAccounts: Record<string, Account[]>;
     shifts: Shift[];
+    paymentTypes: Array<{code: string; name: string; type: string}>;
     filters: {
         search?: string;
-        employee?: string;
         shift?: string;
         start_date?: string;
         end_date?: string;
@@ -96,29 +92,34 @@ interface OfficePaymentsProps {
     };
 }
 
-export default function OfficePayments({ officePayments, employees = [], accounts = [], shifts = [], filters }: OfficePaymentsProps) {
+export default function OfficePayments({ 
+    officePayments = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, 
+    accounts = [], 
+    groupedAccounts = {},
+    shifts = [], 
+    paymentTypes = [],
+    filters = {} 
+}: OfficePaymentsProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingPayment, setEditingPayment] = useState<OfficePayment | null>(null);
     const [deletingPayment, setDeletingPayment] = useState<OfficePayment | null>(null);
     const [selectedPayments, setSelectedPayments] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-    const [search, setSearch] = useState(filters?.search || '');
-    const [employee, setEmployee] = useState(filters?.employee || 'all');
-    const [shift, setShift] = useState(filters?.shift || 'all');
-    const [startDate, setStartDate] = useState(filters?.start_date || '');
-    const [endDate, setEndDate] = useState(filters?.end_date || '');
-    const [sortBy, setSortBy] = useState(filters?.sort_by || 'created_at');
-    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'desc');
-    const [perPage, setPerPage] = useState(filters?.per_page || 10);
+    const [search, setSearch] = useState('');
+    const [selectedShift, setSelectedShift] = useState('all');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [sortBy, setSortBy] = useState('created_at');
+    const [sortOrder, setSortOrder] = useState('desc');
+    const [perPage, setPerPage] = useState(10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         date: '',
         shift_id: '',
-        employee_id: '',
         from_account_id: '',
         to_account_id: '',
         amount: '',
-        payment_type: 'Cash',
+        payment_type: paymentTypes[0]?.type || '',
         bank_type: '',
         cheque_no: '',
         cheque_date: '',
@@ -127,9 +128,14 @@ export default function OfficePayments({ officePayments, employees = [], account
         account_no: '',
         mobile_bank: '',
         mobile_number: '',
-        mobile_transaction_id: '',
         remarks: '',
     });
+
+    // Filter accounts based on payment type
+    const getFilteredAccounts = () => {
+        const groupName = data.payment_type === 'Cash' ? 'Cash in hand' : data.payment_type;
+        return groupedAccounts[groupName] || [];
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -152,14 +158,20 @@ export default function OfficePayments({ officePayments, employees = [], account
 
     const handleEdit = (payment: OfficePayment) => {
         setEditingPayment(payment);
+        
+        // Map payment_type from transaction to display format
+        let displayPaymentType = payment.payment_type || '';
+        if (displayPaymentType === 'cash') displayPaymentType = 'Cash';
+        else if (displayPaymentType === 'mobile bank') displayPaymentType = 'Mobile Bank';
+        else if (displayPaymentType === 'bank') displayPaymentType = 'Bank Account';
+        
         setData({
-            date: payment.date,
-            shift_id: payment.shift.name,
-            employee_id: payment.employee.employee_name,
-            from_account_id: payment.from_account.name,
-            to_account_id: payment.to_account.name,
-            amount: payment.amount.toString(),
-            payment_type: payment.payment_type,
+            date: payment.date ? payment.date.split('T')[0] : '',
+            shift_id: payment.shift?.id?.toString() || '',
+            from_account_id: payment.from_account?.id?.toString() || '',
+            to_account_id: payment.to_account?.id?.toString() || '',
+            amount: payment.amount?.toString() || '',
+            payment_type: displayPaymentType,
             bank_type: '',
             cheque_no: '',
             cheque_date: '',
@@ -168,7 +180,6 @@ export default function OfficePayments({ officePayments, employees = [], account
             account_no: '',
             mobile_bank: '',
             mobile_number: '',
-            mobile_transaction_id: '',
             remarks: payment.remarks || '',
         });
     };
@@ -204,8 +215,6 @@ export default function OfficePayments({ officePayments, employees = [], account
             '/office-payments',
             {
                 search: search || undefined,
-                employee: employee === 'all' ? undefined : employee,
-                shift: shift === 'all' ? undefined : shift,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
                 sort_by: sortBy,
@@ -218,8 +227,6 @@ export default function OfficePayments({ officePayments, employees = [], account
 
     const clearFilters = () => {
         setSearch('');
-        setEmployee('all');
-        setShift('all');
         setStartDate('');
         setEndDate('');
         router.get(
@@ -241,8 +248,6 @@ export default function OfficePayments({ officePayments, employees = [], account
             '/office-payments',
             {
                 search: search || undefined,
-                employee: employee === 'all' ? undefined : employee,
-                shift: shift === 'all' ? undefined : shift,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
                 sort_by: column,
@@ -258,8 +263,6 @@ export default function OfficePayments({ officePayments, employees = [], account
             '/office-payments',
             {
                 search: search || undefined,
-                employee: employee === 'all' ? undefined : employee,
-                shift: shift === 'all' ? undefined : shift,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
                 sort_by: sortBy,
@@ -272,10 +275,10 @@ export default function OfficePayments({ officePayments, employees = [], account
     };
 
     const toggleSelectAll = () => {
-        if (selectedPayments.length === officePayments.data.length) {
+        if (selectedPayments.length === (officePayments?.data?.length || 0)) {
             setSelectedPayments([]);
         } else {
-            setSelectedPayments(officePayments.data.map((payment) => payment.id));
+            setSelectedPayments(officePayments?.data?.map((payment) => payment.id) || []);
         }
     };
 
@@ -289,9 +292,7 @@ export default function OfficePayments({ officePayments, employees = [], account
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (search !== (filters?.search || '')) {
-                applyFilters();
-            }
+            applyFilters();
         }, 500);
         return () => clearTimeout(timer);
     }, [search]);
@@ -325,8 +326,7 @@ export default function OfficePayments({ officePayments, employees = [], account
                             onClick={() => {
                                 const params = new URLSearchParams();
                                 if (search) params.append('search', search);
-                                if (employee !== 'all') params.append('employee', employee);
-                                if (shift !== 'all') params.append('shift', shift);
+
                                 if (startDate) params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
                                 if (sortBy) params.append('sort_by', sortBy);
@@ -353,7 +353,7 @@ export default function OfficePayments({ officePayments, employees = [], account
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div>
                                 <Label className="dark:text-gray-200">Search</Label>
                                 <Input
@@ -362,50 +362,6 @@ export default function OfficePayments({ officePayments, employees = [], account
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Employee</Label>
-                                <Select
-                                    value={employee}
-                                    onValueChange={(value) => {
-                                        setEmployee(value);
-                                        applyFilters();
-                                    }}
-                                >
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All employees" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All employees</SelectItem>
-                                        {employees.map((e) => (
-                                            <SelectItem key={e.id} value={e.employee_name}>
-                                                {e.employee_name} ({e.employee_code})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Shift</Label>
-                                <Select
-                                    value={shift}
-                                    onValueChange={(value) => {
-                                        setShift(value);
-                                        applyFilters();
-                                    }}
-                                >
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All shifts" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All shifts</SelectItem>
-                                        {shifts.map((s) => (
-                                            <SelectItem key={s.id} value={s.name}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
                             </div>
                             <div>
                                 <Label className="dark:text-gray-200">Start Date</Label>
@@ -447,7 +403,7 @@ export default function OfficePayments({ officePayments, employees = [], account
                                         <th className="p-4 text-left font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedPayments.length === officePayments.data.length && officePayments.data.length > 0}
+                                                checked={selectedPayments.length === (officePayments?.data?.length || 0) && (officePayments?.data?.length || 0) > 0}
                                                 onChange={toggleSelectAll}
                                                 className="rounded border-gray-300 dark:border-gray-600"
                                             />
@@ -461,7 +417,6 @@ export default function OfficePayments({ officePayments, employees = [], account
                                                 {sortBy === 'date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Employee</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">Shift</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">From Account</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">To Account</th>
@@ -470,7 +425,7 @@ export default function OfficePayments({ officePayments, employees = [], account
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {officePayments.data.length > 0 ? (
+                                    {officePayments?.data?.length > 0 ? (
                                         officePayments.data.map((payment) => (
                                             <tr key={payment.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
                                                 <td className="p-4">
@@ -481,12 +436,13 @@ export default function OfficePayments({ officePayments, employees = [], account
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-white">{payment.date}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{payment.employee.employee_name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{payment.shift.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{payment.from_account.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{payment.to_account.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">৳{payment.amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-white">
+                                                    {payment.date ? new Date(payment.date).toLocaleDateString('en-GB') : 'N/A'}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{payment.shift?.name || 'N/A'}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{payment.from_account?.name || 'N/A'}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{payment.to_account?.name || 'N/A'}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{payment.amount?.toLocaleString() || '0'}</td>
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
                                                         <Button
@@ -511,7 +467,7 @@ export default function OfficePayments({ officePayments, employees = [], account
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={7} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <Building className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No office payments found
                                             </td>
@@ -564,11 +520,11 @@ export default function OfficePayments({ officePayments, employees = [], account
                                     <SelectValue placeholder="Select shift" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {shifts.map((shift) => (
+                                    {shifts?.map((shift) => (
                                         <SelectItem key={shift.id} value={shift.id.toString()}>
                                             {shift.name}
                                         </SelectItem>
-                                    ))}
+                                    )) || []}
                                 </SelectContent>
                             </Select>
                             {errors.shift_id && <span className="text-sm text-red-500">{errors.shift_id}</span>}
@@ -576,20 +532,23 @@ export default function OfficePayments({ officePayments, employees = [], account
                     </div>
 
                     <div>
-                        <Label htmlFor="employee_id" className="dark:text-gray-200">Employee</Label>
-                        <Select value={data.employee_id} onValueChange={(value) => setData('employee_id', value)}>
+                        <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
+                        <Select value={data.payment_type} onValueChange={(value) => {
+                            setData('payment_type', value);
+                            setData('to_account_id', ''); // Reset account when payment type changes
+                        }}>
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select employee" />
+                                <SelectValue placeholder="Select payment type" />
                             </SelectTrigger>
                             <SelectContent>
-                                {employees.map((employee) => (
-                                    <SelectItem key={employee.id} value={employee.id.toString()}>
-                                        {employee.employee_name} ({employee.employee_code})
+                                {paymentTypes?.map((paymentType) => (
+                                    <SelectItem key={paymentType.code} value={paymentType.type}>
+                                        {paymentType.type}
                                     </SelectItem>
-                                ))}
+                                )) || []}
                             </SelectContent>
                         </Select>
-                        {errors.employee_id && <span className="text-sm text-red-500">{errors.employee_id}</span>}
+                        {errors.payment_type && <span className="text-sm text-red-500">{errors.payment_type}</span>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -600,11 +559,11 @@ export default function OfficePayments({ officePayments, employees = [], account
                                     <SelectValue placeholder="Select from account" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {accounts.map((account) => (
+                                    {accounts?.map((account) => (
                                         <SelectItem key={account.id} value={account.id.toString()}>
                                             {account.name} ({account.ac_number})
                                         </SelectItem>
-                                    ))}
+                                    )) || []}
                                 </SelectContent>
                             </Select>
                             {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
@@ -616,43 +575,15 @@ export default function OfficePayments({ officePayments, employees = [], account
                                     <SelectValue placeholder="Select office account" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {accounts.map((account) => (
+                                    {getFilteredAccounts().map((account) => (
                                         <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.ac_number})
+                                            {account.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                             {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
                         </div>
-                    </div>
-
-                    <div>
-                        <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
-                        <Input
-                            id="amount"
-                            type="number"
-                            step="0.01"
-                            value={data.amount}
-                            onChange={(e) => setData('amount', e.target.value)}
-                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
-                        {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
-                    </div>
-
-                    <div>
-                        <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
-                        <Select value={data.payment_type} onValueChange={(value) => setData('payment_type', value)}>
-                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select payment type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Cash">Cash</SelectItem>
-                                <SelectItem value="Bank">Bank</SelectItem>
-                                <SelectItem value="Mobile Bank">Mobile Bank</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {errors.payment_type && <span className="text-sm text-red-500">{errors.payment_type}</span>}
                     </div>
 
                     {data.payment_type === 'Bank' && (
@@ -666,8 +597,11 @@ export default function OfficePayments({ officePayments, employees = [], account
                                             <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="Cheque">Cheque</SelectItem>
                                             <SelectItem value="Cash Deposit">Cash Deposit</SelectItem>
                                             <SelectItem value="Online">Online</SelectItem>
+                                            <SelectItem value="CHT">CHT</SelectItem>
+                                            <SelectItem value="RTGS">RTGS</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -681,6 +615,17 @@ export default function OfficePayments({ officePayments, employees = [], account
                                     />
                                 </div>
                             </div>
+                            {data.bank_type === 'Cheque' && (
+                                <div>
+                                    <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque Number</Label>
+                                    <Input
+                                        id="cheque_no"
+                                        value={data.cheque_no}
+                                        onChange={(e) => setData('cheque_no', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -711,17 +656,211 @@ export default function OfficePayments({ officePayments, employees = [], account
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <Label htmlFor="mobile_transaction_id" className="dark:text-gray-200">Transaction ID</Label>
-                                <Input
-                                    id="mobile_transaction_id"
-                                    value={data.mobile_transaction_id}
-                                    onChange={(e) => setData('mobile_transaction_id', e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
+                        </div>
+                    )}
+
+                    <div>
+                        <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            step="0.01"
+                            value={data.amount}
+                            onChange={(e) => setData('amount', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
+                    </div>
+
+                    <div>
+                        <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
+                        <Input
+                            id="remarks"
+                            value={data.remarks}
+                            onChange={(e) => setData('remarks', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                </FormModal>
+
+                <FormModal
+                    isOpen={!!editingPayment}
+                    onClose={() => setEditingPayment(null)}
+                    title="Update Office Payment"
+                    onSubmit={handleSubmit}
+                    processing={processing}
+                    submitText="Update"
+                >
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="date" className="dark:text-gray-200">Date</Label>
+                            <Input
+                                id="date"
+                                type="date"
+                                value={data.date}
+                                onChange={(e) => setData('date', e.target.value)}
+                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                            {errors.date && <span className="text-sm text-red-500">{errors.date}</span>}
+                        </div>
+                        <div>
+                            <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
+                            <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Select shift" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {shifts?.map((shift) => (
+                                        <SelectItem key={shift.id} value={shift.id.toString()}>
+                                            {shift.name}
+                                        </SelectItem>
+                                    )) || []}
+                                </SelectContent>
+                            </Select>
+                            {errors.shift_id && <span className="text-sm text-red-500">{errors.shift_id}</span>}
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
+                        <Select value={data.payment_type} onValueChange={(value) => {
+                            setData('payment_type', value);
+                            setData('to_account_id', '');
+                        }}>
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select payment type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {paymentTypes?.map((paymentType) => (
+                                    <SelectItem key={paymentType.code} value={paymentType.type}>
+                                        {paymentType.type}
+                                    </SelectItem>
+                                )) || []}
+                            </SelectContent>
+                        </Select>
+                        {errors.payment_type && <span className="text-sm text-red-500">{errors.payment_type}</span>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
+                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Select from account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {accounts?.map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name} ({account.ac_number})
+                                        </SelectItem>
+                                    )) || []}
+                                </SelectContent>
+                            </Select>
+                            {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
+                        </div>
+                        <div>
+                            <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account (Office)</Label>
+                            <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Select office account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {getFilteredAccounts().map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
+                        </div>
+                    </div>
+
+                    {data.payment_type === 'Bank' && (
+                        <div className="space-y-4 border-t pt-4">
+                            <h4 className="font-medium dark:text-white">Bank Payment Details</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="bank_type" className="dark:text-gray-200">Bank Type</Label>
+                                    <Select value={data.bank_type} onValueChange={(value) => setData('bank_type', value)}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Cheque">Cheque</SelectItem>
+                                            <SelectItem value="Cash Deposit">Cash Deposit</SelectItem>
+                                            <SelectItem value="Online">Online</SelectItem>
+                                            <SelectItem value="CHT">CHT</SelectItem>
+                                            <SelectItem value="RTGS">RTGS</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label htmlFor="bank_name" className="dark:text-gray-200">Bank Name</Label>
+                                    <Input
+                                        id="bank_name"
+                                        value={data.bank_name}
+                                        onChange={(e) => setData('bank_name', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            {data.bank_type === 'Cheque' && (
+                                <div>
+                                    <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque Number</Label>
+                                    <Input
+                                        id="cheque_no"
+                                        value={data.cheque_no}
+                                        onChange={(e) => setData('cheque_no', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {data.payment_type === 'Mobile Bank' && (
+                        <div className="space-y-4 border-t pt-4">
+                            <h4 className="font-medium dark:text-white">Mobile Bank Details</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="mobile_bank" className="dark:text-gray-200">Mobile Bank</Label>
+                                    <Select value={data.mobile_bank} onValueChange={(value) => setData('mobile_bank', value)}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select mobile bank" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="bKash">bKash</SelectItem>
+                                            <SelectItem value="Nagad">Nagad</SelectItem>
+                                            <SelectItem value="Rocket">Rocket</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label htmlFor="mobile_number" className="dark:text-gray-200">Mobile Number</Label>
+                                    <Input
+                                        id="mobile_number"
+                                        value={data.mobile_number}
+                                        onChange={(e) => setData('mobile_number', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}
+
+                    <div>
+                        <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            step="0.01"
+                            value={data.amount}
+                            onChange={(e) => setData('amount', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
+                    </div>
 
                     <div>
                         <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
