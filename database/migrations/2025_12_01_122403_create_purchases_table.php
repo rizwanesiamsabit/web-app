@@ -10,20 +10,23 @@ return new class extends Migration
     {
         Schema::create('purchases', function (Blueprint $table) {
             $table->id();
-            $table->string('ac_number', 150);
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->decimal('quantity', 10, 2);
-            $table->decimal('unit_price', 18, 2);
-            $table->decimal('total_amount', 18, 2);
+            
+            // Basic Fields
+            $table->date('purchase_date');
+            $table->foreignId('supplier_id')->constrained('suppliers');
+            $table->foreignId('transaction_id')->constrained('transactions');
+            $table->string('supplier_invoice_no');
+            $table->text('remarks')->nullable();
+            
+            // Payment Method Fields
+            $table->foreignId('from_account_id')->constrained('accounts');
+            
+            // Summary Fields
+            $table->decimal('net_total_amount', 18, 2);
             $table->decimal('paid_amount', 18, 2)->default(0.00);
             $table->decimal('due_amount', 18, 2);
-            $table->enum('payment_method', ['cash', 'bank', 'credit'])->default('cash');
-            $table->date('purchase_date');
-            $table->time('purchase_time');
-            $table->text('notes')->nullable();
-            $table->timestamps();
             
-            $table->foreign('ac_number')->references('ac_number')->on('accounts')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 

@@ -7,24 +7,32 @@ use Illuminate\Database\Eloquent\Model;
 class Transaction extends Model
 {
     protected $fillable = [
-        'ac_number',
+        'transaction_id',
         'transaction_type',
-        'reference_type',
-        'reference_id',
         'amount',
         'description',
         'transaction_date',
-        'transaction_time'
+        'transaction_time',
+        'payment_type',
+        'bank_name',
+        'branch_name',
+        'account_number',
+        'cheque_type',
+        'cheque_no',
+        'cheque_date',
+        'mobile_bank_name',
+        'mobile_number'
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'transaction_date' => 'date',
-        'transaction_time' => 'datetime:H:i:s'
+        'transaction_time' => 'datetime:H:i:s',
+        'cheque_date' => 'date'
     ];
 
-    public function account()
+    public function sales()
     {
-        return $this->belongsTo(Account::class, 'ac_number', 'ac_number');
+        return $this->hasMany(Sale::class, 'transaction_id', 'transaction_id');
     }
 }

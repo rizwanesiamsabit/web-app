@@ -116,7 +116,7 @@ const mainNavItems = [
         title: 'Purchase',
         icon: ShoppingCart,
         children: [
-            { title: 'Purchase', href: '#', icon: ShoppingCart },
+            { title: 'Purchase', href: '/purchases', icon: ShoppingCart },
             {
                 title: 'Invoice Wise Purchase Report',
                 href: '#',
@@ -181,17 +181,17 @@ const mainNavItems = [
             // },
             {
                 title: 'Received Voucher',
-                href: '#',
+                href: '/vouchers/received',
                 icon: FileText,
             },
             {
                 title: 'Payment Voucher',
-                href: '#',
+                href: '/vouchers/payment',
                 icon: FileText,
             },
             {
                 title: 'Office Payment',
-                href: '#',
+                href: '/office-payments',
                 icon: CreditCard,
             },
         ],

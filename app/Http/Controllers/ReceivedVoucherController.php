@@ -1,0 +1,229 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Voucher;
+use App\Models\Account;
+use App\Models\Shift;
+use App\Models\Transaction;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+
+class ReceivedVoucherController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'fromTransaction', 'toTransaction'])
+            ->where('voucher_type', 'Received');
+
+        // Apply filters
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('party_name', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('fromAccount', function($q) use ($request) {
+                      $q->where('name', 'like', '%' . $request->search . '%');
+                  })
+                  ->orWhereHas('toAccount', function($q) use ($request) {
+                      $q->where('name', 'like', '%' . $request->search . '%');
+                  });
+            });
+        }
+
+        if ($request->shift && $request->shift !== 'all') {
+            $query->whereHas('shift', function($q) use ($request) {
+                $q->where('name', $request->shift);
+            });
+        }
+
+        if ($request->payment_type && $request->payment_type !== 'all') {
+            $query->whereHas('fromTransaction', function($q) use ($request) {
+                $q->where('payment_type', $request->payment_type);
+            });
+        }
+
+        if ($request->start_date) {
+            $query->where('date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->where('date', '<=', $request->end_date);
+        }
+
+        // Apply sorting
+        $sortBy = $request->sort_by ?? 'created_at';
+        $sortOrder = $request->sort_order ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        $vouchers = $query->paginate($request->per_page ?? 10);
+
+        // Add payment_type and amount from transaction
+        $vouchers->getCollection()->transform(function ($voucher) {
+            $voucher->payment_type = $voucher->fromTransaction->payment_type ?? 'N/A';
+            $voucher->amount = $voucher->toTransaction->amount ?? 0;
+            return $voucher;
+        });
+
+        return Inertia::render('Vouchers/ReceivedVoucher', [
+            'vouchers' => $vouchers,
+            'accounts' => Account::select('id', 'name', 'ac_number')->get(),
+            'shifts' => Shift::select('id', 'name')->where('status', true)->get(),
+            'filters' => $request->only(['search', 'shift', 'payment_type', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'shift_id' => 'required|exists:shifts,id',
+            'from_account_id' => 'required|exists:accounts,id',
+            'to_account_id' => 'required|exists:accounts,id',
+            'party_name' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
+            'remarks' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            // Get account numbers
+            $fromAccount = Account::find($request->from_account_id);
+            $toAccount = Account::find($request->to_account_id);
+
+            // Create debit transaction (from account - sender)
+            $debitTransaction = Transaction::create([
+                'ac_number' => $fromAccount->ac_number,
+                'transaction_type' => 'Dr',
+                'amount' => $request->amount,
+                'description' => 'Payment sent to ' . $toAccount->name,
+                'payment_type' => strtolower($request->payment_type),
+                'bank_name' => $request->bank_name,
+                'branch_name' => $request->branch_name,
+                'account_number' => $request->account_no,
+                'cheque_type' => $request->bank_type,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'mobile_bank_name' => $request->mobile_bank,
+                'mobile_number' => $request->mobile_number,
+                'transaction_date' => $request->date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+
+            // Create credit transaction (to account - receiver)
+            $creditTransaction = Transaction::create([
+                'ac_number' => $toAccount->ac_number,
+                'transaction_type' => 'Cr',
+                'amount' => $request->amount,
+                'description' => 'Payment received from ' . $request->party_name,
+                'payment_type' => strtolower($request->payment_type),
+                'bank_name' => $request->bank_name,
+                'branch_name' => $request->branch_name,
+                'account_number' => $request->account_no,
+                'cheque_type' => $request->bank_type,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'mobile_bank_name' => $request->mobile_bank,
+                'mobile_number' => $request->mobile_number,
+                'transaction_date' => $request->date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+
+            // Create voucher
+            Voucher::create([
+                'voucher_type' => 'Received',
+                'date' => $request->date,
+                'shift_id' => $request->shift_id,
+                'from_account_id' => $request->from_account_id,
+                'to_account_id' => $request->to_account_id,
+                'from_transaction_id' => $debitTransaction->id,
+                'to_transaction_id' => $creditTransaction->id,
+                'party_name' => $request->party_name,
+                'remarks' => $request->remarks,
+            ]);
+        });
+
+        return redirect()->back()->with('success', 'Received voucher created successfully.');
+    }
+
+    public function update(Request $request, Voucher $voucher)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'shift_id' => 'required|exists:shifts,id',
+            'from_account_id' => 'required|exists:accounts,id',
+            'to_account_id' => 'required|exists:accounts,id',
+            'party_name' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
+            'remarks' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request, $voucher) {
+            // Update voucher
+            $voucher->update([
+                'date' => $request->date,
+                'shift_id' => $request->shift_id,
+                'from_account_id' => $request->from_account_id,
+                'to_account_id' => $request->to_account_id,
+                'party_name' => $request->party_name,
+                'remarks' => $request->remarks,
+            ]);
+
+            // Update transactions
+            $fromAccount = Account::find($request->from_account_id);
+            $toAccount = Account::find($request->to_account_id);
+
+            $voucher->fromTransaction->update([
+                'ac_number' => $fromAccount->ac_number,
+                'amount' => $request->amount,
+                'description' => 'Payment sent to ' . $toAccount->name,
+                'payment_type' => strtolower($request->payment_type),
+                'transaction_date' => $request->date,
+            ]);
+
+            $voucher->toTransaction->update([
+                'ac_number' => $toAccount->ac_number,
+                'amount' => $request->amount,
+                'description' => 'Payment received from ' . $request->party_name,
+                'payment_type' => strtolower($request->payment_type),
+                'transaction_date' => $request->date,
+            ]);
+        });
+
+        return redirect()->back()->with('success', 'Received voucher updated successfully.');
+    }
+
+    public function destroy(Voucher $voucher)
+    {
+        DB::transaction(function () use ($voucher) {
+            // Delete related transactions
+            $voucher->fromTransaction?->delete();
+            $voucher->toTransaction?->delete();
+            
+            // Delete voucher
+            $voucher->delete();
+        });
+
+        return redirect()->back()->with('success', 'Received voucher deleted successfully.');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:vouchers,id'
+        ]);
+
+        DB::transaction(function () use ($request) {
+            $vouchers = Voucher::whereIn('id', $request->ids)->get();
+            
+            foreach ($vouchers as $voucher) {
+                $voucher->fromTransaction?->delete();
+                $voucher->toTransaction?->delete();
+                $voucher->delete();
+            }
+        });
+
+        return redirect()->back()->with('success', 'Received vouchers deleted successfully.');
+    }
+}

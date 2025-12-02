@@ -20,6 +20,10 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\PaymentVoucherController;
+use App\Http\Controllers\ReceivedVoucherController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\OfficePaymentController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -177,6 +181,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
     Route::delete('suppliers/bulk/delete', [SupplierController::class, 'bulkDelete'])->name('suppliers.bulk.delete');
     Route::get('suppliers/download-pdf', [SupplierController::class, 'downloadPdf'])->name('suppliers.download.pdf');
+    
+    // Payment Voucher routes
+    Route::get('vouchers/payment', [PaymentVoucherController::class, 'index'])->name('vouchers.payment.index');
+    Route::post('vouchers/payment', [PaymentVoucherController::class, 'store'])->name('vouchers.payment.store');
+    Route::put('vouchers/payment/{voucher}', [PaymentVoucherController::class, 'update'])->name('vouchers.payment.update');
+    Route::delete('vouchers/payment/{voucher}', [PaymentVoucherController::class, 'destroy'])->name('vouchers.payment.destroy');
+    Route::delete('vouchers/payment/bulk/delete', [PaymentVoucherController::class, 'bulkDelete'])->name('vouchers.payment.bulk.delete');
+    Route::get('vouchers/payment/download-pdf', [PaymentVoucherController::class, 'downloadPdf'])->name('vouchers.payment.download.pdf');
+    
+    // Received Voucher routes
+    Route::get('vouchers/received', [ReceivedVoucherController::class, 'index'])->name('vouchers.received.index');
+    Route::post('vouchers/received', [ReceivedVoucherController::class, 'store'])->name('vouchers.received.store');
+    Route::put('vouchers/received/{voucher}', [ReceivedVoucherController::class, 'update'])->name('vouchers.received.update');
+    Route::delete('vouchers/received/{voucher}', [ReceivedVoucherController::class, 'destroy'])->name('vouchers.received.destroy');
+    Route::delete('vouchers/received/bulk/delete', [ReceivedVoucherController::class, 'bulkDelete'])->name('vouchers.received.bulk.delete');
+    Route::get('vouchers/received/download-pdf', [ReceivedVoucherController::class, 'downloadPdf'])->name('vouchers.received.download.pdf');
+    
+    // Purchase routes
+    Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
+    Route::post('purchases', [PurchaseController::class, 'store'])->name('purchases.store');
+    Route::put('purchases/{purchase}', [PurchaseController::class, 'update'])->name('purchases.update');
+    Route::delete('purchases/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
+    Route::delete('purchases/bulk/delete', [PurchaseController::class, 'bulkDelete'])->name('purchases.bulk.delete');
+    Route::get('purchases/download-pdf', [PurchaseController::class, 'downloadPdf'])->name('purchases.download.pdf');
+    
+    // Office Payment routes
+    Route::get('office-payments', [OfficePaymentController::class, 'index'])->name('office-payments.index');
+    Route::post('office-payments', [OfficePaymentController::class, 'store'])->name('office-payments.store');
+    Route::put('office-payments/{officePayment}', [OfficePaymentController::class, 'update'])->name('office-payments.update');
+    Route::delete('office-payments/{officePayment}', [OfficePaymentController::class, 'destroy'])->name('office-payments.destroy');
+    Route::delete('office-payments/bulk/delete', [OfficePaymentController::class, 'bulkDelete'])->name('office-payments.bulk.delete');
+    Route::get('office-payments/download-pdf', [OfficePaymentController::class, 'downloadPdf'])->name('office-payments.download.pdf');
 });
 
 require __DIR__.'/settings.php';
