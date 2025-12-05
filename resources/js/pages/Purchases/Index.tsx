@@ -859,7 +859,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], pr
                                                 type="number"
                                                 value={data.net_total_amount || '0.00'}
                                                 readOnly
-                                                className="text-lg font-semibold bg-gray-100 dark:bg-gray-600 dark:text-white"
+                                                className="bg-gray-100 dark:bg-gray-600 dark:text-white"
                                             />
                                         </div>
                                     </div>
