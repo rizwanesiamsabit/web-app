@@ -6,6 +6,7 @@ use App\Models\Voucher;
 use App\Models\Account;
 use App\Models\Shift;
 use App\Models\Transaction;
+use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -113,6 +114,7 @@ class ReceivedVoucherController extends Controller
             $toAccount = Account::findOrFail($request->to_account_id);
 
             $creditTransaction = Transaction::create([
+                'transaction_id' => TransactionHelper::generateTransactionId(),
                 'ac_number' => $fromAccount->ac_number,
                 'transaction_type' => 'Cr',
                 'amount' => $request->amount,
@@ -131,6 +133,7 @@ class ReceivedVoucherController extends Controller
             ]);
 
             $debitTransaction = Transaction::create([
+                'transaction_id' => TransactionHelper::generateTransactionId(),
                 'ac_number' => $toAccount->ac_number,
                 'transaction_type' => 'Dr',
                 'amount' => $request->amount,

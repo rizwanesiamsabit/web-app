@@ -6,6 +6,7 @@ use App\Models\Voucher;
 use App\Models\Account;
 use App\Models\Shift;
 use App\Models\Transaction;
+use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -88,6 +89,7 @@ class PaymentVoucherController extends Controller
             $fromAccount->decrement('total_amount', $request->amount);
             $toAccount->increment('total_amount', $request->amount);
             $debitTransaction = Transaction::create([
+                'transaction_id' => TransactionHelper::generateTransactionId(),
                 'ac_number' => $fromAccount->ac_number,
                 'transaction_type' => 'Dr',
                 'amount' => $request->amount,
@@ -105,6 +107,7 @@ class PaymentVoucherController extends Controller
                 'transaction_time' => now()->format('H:i:s'),
             ]);
             $creditTransaction = Transaction::create([
+                'transaction_id' => TransactionHelper::generateTransactionId(),
                 'ac_number' => $toAccount->ac_number,
                 'transaction_type' => 'Cr',
                 'amount' => $request->amount,
@@ -191,9 +194,9 @@ class PaymentVoucherController extends Controller
             $amount = $voucher->fromTransaction->amount;
             $fromAccount->increment('total_amount', $amount);
             $toAccount->decrement('total_amount', $amount);
+            $voucher->delete();
             $voucher->fromTransaction?->delete();
             $voucher->toTransaction?->delete();
-            $voucher->delete();
         });
 
         return redirect()->back()->with('success', 'Payment voucher deleted successfully.');
@@ -214,9 +217,9 @@ class PaymentVoucherController extends Controller
                 $amount = $voucher->fromTransaction->amount;
                 $fromAccount->increment('total_amount', $amount);
                 $toAccount->decrement('total_amount', $amount);
+                $voucher->delete();
                 $voucher->fromTransaction?->delete();
                 $voucher->toTransaction?->delete();
-                $voucher->delete();
             }
         });
 

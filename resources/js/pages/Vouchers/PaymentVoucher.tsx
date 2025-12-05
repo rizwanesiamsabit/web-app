@@ -35,6 +35,7 @@ interface PaymentVoucher {
     date: string;
     from_account: { id: number; name: string };
     to_account: { id: number; name: string };
+    shift?: { name: string };
     amount: number;
     payment_type: string;
     remarks: string;
@@ -408,7 +409,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
                                                 checked={selectedVouchers.length === vouchers.data.length && vouchers.data.length > 0}
