@@ -62,9 +62,18 @@ class PaymentVoucherController extends Controller
 
         $shifts = Shift::where("status", true)->get();
 
+        $accounts = Account::select('id', 'name', 'ac_number')->get();
+        $groupedAccounts = Account::with('group')
+            ->select('id', 'name', 'ac_number', 'group_code')
+            ->get()
+            ->groupBy(function ($account) {
+                return $account->group ? $account->group->name : 'Other';
+            });
+
         return Inertia::render('Vouchers/PaymentVoucher', [
             'vouchers' => $vouchers,
-            'accounts' => Account::select('id', 'name', 'ac_number')->get(),
+            'accounts' => $accounts,
+            'groupedAccounts' => $groupedAccounts,
             'shifts' => $shifts,
             'filters' => $request->only(['search', 'payment_type', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);

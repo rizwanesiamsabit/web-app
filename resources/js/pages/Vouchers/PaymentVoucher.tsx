@@ -75,6 +75,7 @@ interface PaymentVoucherProps {
         to: number;
     };
     accounts: Account[];
+    groupedAccounts: Record<string, Account[]>;
     shifts: Shift[];
     filters: {
         search?: string;
@@ -88,7 +89,7 @@ interface PaymentVoucherProps {
     };
 }
 
-export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], filters }: PaymentVoucherProps) {
+export default function PaymentVoucher({ vouchers, accounts = [], groupedAccounts = {}, shifts = [], filters }: PaymentVoucherProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState<PaymentVoucher | null>(null);
     const [deletingVoucher, setDeletingVoucher] = useState<PaymentVoucher | null>(null);
@@ -117,6 +118,13 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
         mobile_number: '',
         remarks: '',
     });
+
+    const getFilteredAccounts = () => {
+        const groupName = data.payment_type === 'Cash' ? 'Cash in hand' : 
+                         data.payment_type === 'Bank' ? 'Bank Account' :
+                         data.payment_type === 'Mobile Bank' ? 'Mobile Bank' : 'Other';
+        return groupedAccounts[groupName] || [];
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -217,7 +225,6 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
             '/vouchers/payment',
             {
                 search: search || undefined,
-                shift: shift === 'all' ? undefined : shift,
                 payment_type: paymentType === 'all' ? undefined : paymentType,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -234,7 +241,6 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
             '/vouchers/payment',
             {
                 search: search || undefined,
-                shift: shift === 'all' ? undefined : shift,
                 payment_type: paymentType === 'all' ? undefined : paymentType,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -533,7 +539,10 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
 
                     <div>
                         <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
-                        <Select value={data.payment_type} onValueChange={(value) => setData('payment_type', value)}>
+                        <Select value={data.payment_type} onValueChange={(value) => {
+                            setData('payment_type', value);
+                            setData('from_account_id', ''); // Reset account when payment type changes
+                        }}>
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                 <SelectValue placeholder="Choose payment method" />
                             </SelectTrigger>
@@ -630,9 +639,9 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                     <SelectValue placeholder="Choose source account" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {accounts.map((account) => (
+                                    {getFilteredAccounts().map((account) => (
                                         <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.ac_number})
+                                            {account.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -648,7 +657,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                 <SelectContent>
                                     {accounts.map((account) => (
                                         <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.ac_number})
+                                            {account.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
