@@ -14,10 +14,9 @@ class PaymentVoucherController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Voucher::with(['fromAccount', 'toAccount', 'fromTransaction', 'toTransaction'])
+        $query = Voucher::with(['fromAccount', 'toAccount', 'fromTransaction', 'toTransaction', 'shift'])
             ->where('voucher_type', 'Payment');
 
-        // Apply filters
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->whereHas('fromAccount', function ($q) use ($request) {
@@ -28,24 +27,17 @@ class PaymentVoucherController extends Controller
                     });
             });
         }
-
-
-
         if ($request->payment_type && $request->payment_type !== 'all') {
             $query->whereHas('fromTransaction', function ($q) use ($request) {
                 $q->where('payment_type', $request->payment_type);
             });
         }
-
         if ($request->start_date) {
             $query->where('date', '>=', $request->start_date);
         }
-
         if ($request->end_date) {
             $query->where('date', '<=', $request->end_date);
         }
-
-        // Apply sorting
         $sortBy = $request->sort_by ?? 'created_at';
         $sortOrder = $request->sort_order ?? 'desc';
         $query->orderBy($sortBy, $sortOrder);
@@ -57,11 +49,11 @@ class PaymentVoucherController extends Controller
             $voucher->amount = $voucher->fromTransaction->amount ?? 0;
             $voucher->from_account = $voucher->fromAccount;
             $voucher->to_account = $voucher->toAccount;
+            $voucher->shift = $voucher->shift;
             return $voucher;
         });
 
-        $shifts = Shift::where("status", true)->get();
-
+        $shifts = Shift::where('status', true)->get();
         $accounts = Account::select('id', 'name', 'ac_number')->get();
         $groupedAccounts = Account::with('group')
             ->select('id', 'name', 'ac_number', 'group_code')
@@ -93,7 +85,8 @@ class PaymentVoucherController extends Controller
         DB::transaction(function () use ($request) {
             $fromAccount = Account::find($request->from_account_id);
             $toAccount = Account::find($request->to_account_id);
-
+            $fromAccount->decrement('total_amount', $request->amount);
+            $toAccount->increment('total_amount', $request->amount);
             $debitTransaction = Transaction::create([
                 'ac_number' => $fromAccount->ac_number,
                 'transaction_type' => 'Dr',
@@ -111,7 +104,6 @@ class PaymentVoucherController extends Controller
                 'transaction_date' => $request->date,
                 'transaction_time' => now()->format('H:i:s'),
             ]);
-
             $creditTransaction = Transaction::create([
                 'ac_number' => $toAccount->ac_number,
                 'transaction_type' => 'Cr',
@@ -129,10 +121,10 @@ class PaymentVoucherController extends Controller
                 'transaction_date' => $request->date,
                 'transaction_time' => now()->format('H:i:s'),
             ]);
-
             Voucher::create([
                 'voucher_type' => 'Payment',
                 'date' => $request->date,
+                'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
                 'from_transaction_id' => $debitTransaction->id,
@@ -156,28 +148,33 @@ class PaymentVoucherController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $voucher) {
+            $oldFromAccount = Account::find($voucher->from_account_id);
+            $oldToAccount = Account::find($voucher->to_account_id);
+            $oldAmount = $voucher->fromTransaction->amount;
+            $oldFromAccount->increment('total_amount', $oldAmount);
+            $oldToAccount->decrement('total_amount', $oldAmount);
+            $newFromAccount = Account::find($request->from_account_id);
+            $newToAccount = Account::find($request->to_account_id);
+            $newFromAccount->decrement('total_amount', $request->amount);
+            $newToAccount->increment('total_amount', $request->amount);
             $voucher->update([
                 'date' => $request->date,
+                'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
                 'remarks' => $request->remarks,
             ]);
-
-            $fromAccount = Account::find($request->from_account_id);
-            $toAccount = Account::find($request->to_account_id);
-
             $voucher->fromTransaction->update([
-                'ac_number' => $fromAccount->ac_number,
+                'ac_number' => $newFromAccount->ac_number,
                 'amount' => $request->amount,
-                'description' => 'Payment to ' . $toAccount->name,
+                'description' => 'Payment to ' . $newToAccount->name,
                 'payment_type' => strtolower($request->payment_type),
                 'transaction_date' => $request->date,
             ]);
-
             $voucher->toTransaction->update([
-                'ac_number' => $toAccount->ac_number,
+                'ac_number' => $newToAccount->ac_number,
                 'amount' => $request->amount,
-                'description' => 'Payment received from ' . $fromAccount->name,
+                'description' => 'Payment received from ' . $newFromAccount->name,
                 'payment_type' => strtolower($request->payment_type),
                 'transaction_date' => $request->date,
             ]);
@@ -189,11 +186,13 @@ class PaymentVoucherController extends Controller
     public function destroy(Voucher $voucher)
     {
         DB::transaction(function () use ($voucher) {
-            // Delete related transactions
+            $fromAccount = Account::find($voucher->from_account_id);
+            $toAccount = Account::find($voucher->to_account_id);
+            $amount = $voucher->fromTransaction->amount;
+            $fromAccount->increment('total_amount', $amount);
+            $toAccount->decrement('total_amount', $amount);
             $voucher->fromTransaction?->delete();
             $voucher->toTransaction?->delete();
-
-            // Delete voucher
             $voucher->delete();
         });
 
@@ -209,8 +208,12 @@ class PaymentVoucherController extends Controller
 
         DB::transaction(function () use ($request) {
             $vouchers = Voucher::whereIn('id', $request->ids)->get();
-
             foreach ($vouchers as $voucher) {
+                $fromAccount = Account::find($voucher->from_account_id);
+                $toAccount = Account::find($voucher->to_account_id);
+                $amount = $voucher->fromTransaction->amount;
+                $fromAccount->increment('total_amount', $amount);
+                $toAccount->decrement('total_amount', $amount);
                 $voucher->fromTransaction?->delete();
                 $voucher->toTransaction?->delete();
                 $voucher->delete();

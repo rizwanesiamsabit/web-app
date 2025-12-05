@@ -431,13 +431,13 @@ export default function EmployeeIndex({
                                                 ))}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Account Number</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Email</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Phone</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Department</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Designation</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Status</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Actions</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Account Number</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Email</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Phone</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Department</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Designation</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>

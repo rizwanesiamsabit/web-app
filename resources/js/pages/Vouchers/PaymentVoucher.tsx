@@ -12,7 +12,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
@@ -28,26 +27,24 @@ import {
     Receipt,
     X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface PaymentVoucher {
     id: number;
     voucher_type: string;
     date: string;
-    from_account: { name: string };
-    to_account: { name: string };
+    from_account: { id: number; name: string };
+    to_account: { id: number; name: string };
     amount: number;
     payment_type: string;
     remarks: string;
     created_at: string;
 }
-
 interface Account {
     id: number;
     name: string;
     ac_number: string;
 }
-
 interface Shift {
     id: number;
     name: string;
@@ -79,7 +76,6 @@ interface PaymentVoucherProps {
     shifts: Shift[];
     filters: {
         search?: string;
-
         payment_type?: string;
         start_date?: string;
         end_date?: string;
@@ -114,17 +110,20 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
         bank_type: '',
         bank_name: '',
         cheque_no: '',
+        cheque_date: '',
+        account_no: '',
+        branch_name: '',
         mobile_bank: '',
         mobile_number: '',
         remarks: '',
     });
 
-    const getFilteredAccounts = () => {
-        const groupName = data.payment_type === 'Cash' ? 'Cash in hand' : 
+    const getFilteredAccounts = useCallback(() => {
+        const groupName = data.payment_type === 'Cash' ? 'Cash in hand' :
                          data.payment_type === 'Bank' ? 'Bank Account' :
                          data.payment_type === 'Mobile Bank' ? 'Mobile Bank' : 'Other';
         return groupedAccounts[groupName] || [];
-    };
+    }, [data.payment_type, groupedAccounts]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -134,6 +133,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                     setEditingVoucher(null);
                     reset();
                 },
+
             });
         } else {
             post('/vouchers/payment', {
@@ -141,6 +141,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                     setIsCreateOpen(false);
                     reset();
                 },
+
             });
         }
     };
@@ -150,10 +151,18 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
         setData({
             date: voucher.date || '',
             shift_id: '',
-            from_account_id: voucher.from_account?.name || '',
-            to_account_id: voucher.to_account?.name || '',
+            from_account_id: voucher.from_account?.id?.toString() || '',
+            to_account_id: voucher.to_account?.id?.toString() || '',
             amount: voucher.amount?.toString() || '',
             payment_type: voucher.payment_type || 'Cash',
+            bank_type: '',
+            bank_name: '',
+            cheque_no: '',
+            cheque_date: '',
+            account_no: '',
+            branch_name: '',
+            mobile_bank: '',
+            mobile_number: '',
             remarks: voucher.remarks || '',
         });
     };
@@ -166,6 +175,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
         if (deletingVoucher) {
             router.delete(`/vouchers/payment/${deletingVoucher.id}`, {
                 onSuccess: () => setDeletingVoucher(null),
+
             });
         }
     };
@@ -181,10 +191,11 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                 setSelectedVouchers([]);
                 setIsBulkDeleting(false);
             },
+
         });
     };
 
-    const applyFilters = () => {
+    const applyFilters = useCallback(() => {
         router.get(
             '/vouchers/payment',
             {
@@ -198,11 +209,10 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
             },
             { preserveState: true },
         );
-    };
+    }, [search, paymentType, startDate, endDate, sortBy, sortOrder, perPage]);
 
     const clearFilters = () => {
         setSearch('');
-
         setPaymentType('all');
         setStartDate('');
         setEndDate('');
@@ -276,7 +286,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [search]);
+    }, [search, applyFilters, filters?.search]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -285,12 +295,8 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
             <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold dark:text-white">
-                            Payment Voucher
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-400">
-                            Manage payment vouchers and transactions
-                        </p>
+                        <h1 className="text-3xl font-bold dark:text-white">Payment Voucher</h1>
+                        <p className="text-gray-600 dark:text-gray-400">Manage payment vouchers and transactions</p>
                     </div>
                     <div className="flex gap-2">
                         {selectedVouchers.length > 0 && (
@@ -307,7 +313,6 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                             onClick={() => {
                                 const params = new URLSearchParams();
                                 if (search) params.append('search', search);
-                
                                 if (paymentType !== 'all') params.append('payment_type', paymentType);
                                 if (startDate) params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
@@ -352,7 +357,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                                     value={paymentType}
                                     onValueChange={(value) => {
                                         setPaymentType(value);
-                                        applyFilters();
+                                        setTimeout(() => applyFilters(), 100);
                                     }}
                                 >
                                     <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
@@ -420,11 +425,12 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                                                 {sortBy === 'date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">From Account</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">To Account</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Amount</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Payment Type</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Actions</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">From Account</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">To Account</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Amount</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -439,10 +445,11 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-white">{voucher.date}</td>
+                                                <td className="p-4 text-[13px] dark:text-white">{new Date(voucher.date).toLocaleDateString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.shift?.name || 'N/A'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.from_account?.name || 'N/A'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.to_account?.name || 'N/A'}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">৳{voucher.amount?.toLocaleString() || '0'}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.amount?.toLocaleString() || '0'}</td>
                                                 <td className="p-4">
                                                     <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                                         {voucher.payment_type}
@@ -472,7 +479,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={7} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <Receipt className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No payment vouchers found
                                             </td>
@@ -492,7 +499,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                             onPageChange={handlePageChange}
                             onPerPageChange={(newPerPage) => {
                                 setPerPage(newPerPage);
-                                applyFilters();
+                                setTimeout(() => applyFilters(), 100);
                             }}
                         />
                     </CardContent>
@@ -500,7 +507,10 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
 
                 <FormModal
                     isOpen={isCreateOpen}
-                    onClose={() => setIsCreateOpen(false)}
+                    onClose={() => {
+                        setIsCreateOpen(false);
+                        reset();
+                    }}
                     title="Create Payment Voucher"
                     onSubmit={handleSubmit}
                     processing={processing}
@@ -536,12 +546,11 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                             {errors.shift_id && <span className="text-sm text-red-500">{errors.shift_id}</span>}
                         </div>
                     </div>
-
                     <div>
                         <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
                         <Select value={data.payment_type} onValueChange={(value) => {
                             setData('payment_type', value);
-                            setData('from_account_id', ''); // Reset account when payment type changes
+                            setData('from_account_id', '');
                         }}>
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                 <SelectValue placeholder="Choose payment method" />
@@ -585,16 +594,50 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                                     />
                                 </div>
                             </div>
-                            {data.bank_type === 'Cheque' && (
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque Number</Label>
+                                    <Label htmlFor="branch_name" className="dark:text-gray-200">Branch Name</Label>
                                     <Input
-                                        id="cheque_no"
-                                        placeholder="Enter cheque number"
-                                        value={data.cheque_no}
-                                        onChange={(e) => setData('cheque_no', e.target.value)}
+                                        id="branch_name"
+                                        placeholder="Enter branch name"
+                                        value={data.branch_name}
+                                        onChange={(e) => setData('branch_name', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
+                                </div>
+                                <div>
+                                    <Label htmlFor="account_no" className="dark:text-gray-200">Account Number</Label>
+                                    <Input
+                                        id="account_no"
+                                        placeholder="Enter account number"
+                                        value={data.account_no}
+                                        onChange={(e) => setData('account_no', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            {data.bank_type === 'Cheque' && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque Number</Label>
+                                        <Input
+                                            id="cheque_no"
+                                            placeholder="Enter cheque number"
+                                            value={data.cheque_no}
+                                            onChange={(e) => setData('cheque_no', e.target.value)}
+                                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="cheque_date" className="dark:text-gray-200">Cheque Date</Label>
+                                        <Input
+                                            id="cheque_date"
+                                            type="date"
+                                            value={data.cheque_date}
+                                            onChange={(e) => setData('cheque_date', e.target.value)}
+                                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        />
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -692,12 +735,237 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                     </div>
                 </FormModal>
 
+                <FormModal
+                    isOpen={!!editingVoucher}
+                    onClose={() => {
+                        setEditingVoucher(null);
+                        reset();
+                    }}
+                    title="Edit Payment Voucher"
+                    onSubmit={handleSubmit}
+                    processing={processing}
+                    submitText="Update"
+                    className="max-w-lg"
+                >
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="date" className="dark:text-gray-200">Date</Label>
+                            <Input
+                                id="date"
+                                type="date"
+                                value={data.date}
+                                onChange={(e) => setData('date', e.target.value)}
+                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                            {errors.date && <span className="text-sm text-red-500">{errors.date}</span>}
+                        </div>
+                        <div>
+                            <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
+                            <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Choose shift" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {shifts.map((shift) => (
+                                        <SelectItem key={shift.id} value={shift.id.toString()}>
+                                            {shift.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.shift_id && <span className="text-sm text-red-500">{errors.shift_id}</span>}
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
+                        <Select value={data.payment_type} onValueChange={(value) => {
+                            setData('payment_type', value);
+                            setData('from_account_id', '');
+                        }}>
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Choose payment method" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Cash">Cash</SelectItem>
+                                <SelectItem value="Bank">Bank</SelectItem>
+                                <SelectItem value="Mobile Bank">Mobile Bank</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {errors.payment_type && <span className="text-sm text-red-500">{errors.payment_type}</span>}
+                    </div>
+                    {data.payment_type === 'Bank' && (
+                        <div className="space-y-4 border-t pt-4">
+                            <h4 className="font-medium dark:text-white">Bank Payment Details</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="bank_type" className="dark:text-gray-200">Bank Type</Label>
+                                    <Select value={data.bank_type} onValueChange={(value) => setData('bank_type', value)}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Choose bank type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Cheque">Cheque</SelectItem>
+                                            <SelectItem value="Cash Deposit">Cash Deposit</SelectItem>
+                                            <SelectItem value="Online">Online</SelectItem>
+                                            <SelectItem value="CHT">CHT</SelectItem>
+                                            <SelectItem value="RTGS">RTGS</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label htmlFor="bank_name" className="dark:text-gray-200">Bank Name</Label>
+                                    <Input
+                                        id="bank_name"
+                                        placeholder="Enter bank name"
+                                        value={data.bank_name}
+                                        onChange={(e) => setData('bank_name', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="branch_name" className="dark:text-gray-200">Branch Name</Label>
+                                    <Input
+                                        id="branch_name"
+                                        placeholder="Enter branch name"
+                                        value={data.branch_name}
+                                        onChange={(e) => setData('branch_name', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="account_no" className="dark:text-gray-200">Account Number</Label>
+                                    <Input
+                                        id="account_no"
+                                        placeholder="Enter account number"
+                                        value={data.account_no}
+                                        onChange={(e) => setData('account_no', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            {data.bank_type === 'Cheque' && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque Number</Label>
+                                        <Input
+                                            id="cheque_no"
+                                            placeholder="Enter cheque number"
+                                            value={data.cheque_no}
+                                            onChange={(e) => setData('cheque_no', e.target.value)}
+                                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="cheque_date" className="dark:text-gray-200">Cheque Date</Label>
+                                        <Input
+                                            id="cheque_date"
+                                            type="date"
+                                            value={data.cheque_date}
+                                            onChange={(e) => setData('cheque_date', e.target.value)}
+                                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {data.payment_type === 'Mobile Bank' && (
+                        <div className="space-y-4 border-t pt-4">
+                            <h4 className="font-medium dark:text-white">Mobile Bank Details</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="mobile_bank" className="dark:text-gray-200">Mobile Bank</Label>
+                                    <Select value={data.mobile_bank} onValueChange={(value) => setData('mobile_bank', value)}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Choose mobile bank" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="bKash">bKash</SelectItem>
+                                            <SelectItem value="Nagad">Nagad</SelectItem>
+                                            <SelectItem value="Rocket">Rocket</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label htmlFor="mobile_number" className="dark:text-gray-200">Mobile Number</Label>
+                                    <Input
+                                        id="mobile_number"
+                                        placeholder="Enter mobile number"
+                                        value={data.mobile_number}
+                                        onChange={(e) => setData('mobile_number', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
+                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Choose source account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {getFilteredAccounts().map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
+                        </div>
+                        <div>
+                            <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account</Label>
+                            <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Choose destination account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {accounts.map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            step="0.01"
+                            placeholder="Enter amount"
+                            value={data.amount}
+                            onChange={(e) => setData('amount', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
+                    </div>
+                    <div>
+                        <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
+                        <Input
+                            id="remarks"
+                            placeholder="Enter remarks (optional)"
+                            value={data.remarks}
+                            onChange={(e) => setData('remarks', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                </FormModal>
+
                 <DeleteModal
                     isOpen={!!deletingVoucher}
                     onClose={() => setDeletingVoucher(null)}
                     onConfirm={confirmDelete}
                     title="Delete Payment Voucher"
-                    message={`Are you sure you want to delete this payment voucher? This action cannot be undone.`}
+                    message="Are you sure you want to delete this payment voucher? This action cannot be undone."
                 />
 
                 <DeleteModal
