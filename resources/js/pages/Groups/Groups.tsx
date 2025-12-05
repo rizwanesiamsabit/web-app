@@ -514,13 +514,13 @@ export default function Groups({
                                                     ))}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Parent Group
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
                                     </tr>

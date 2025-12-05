@@ -447,11 +447,11 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                             </div>
                                         </th>
                 
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Received From</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">To Account</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Amount</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Payment Type</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Actions</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Received From</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">To Account</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Amount</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>

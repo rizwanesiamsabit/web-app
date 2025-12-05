@@ -500,7 +500,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], pr
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
                                                 checked={selectedPurchases.length === purchases.data.length && purchases.data.length > 0}
@@ -517,13 +517,13 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], pr
                                                 {sortBy === 'purchase_date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Supplier</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Invoice No</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Total Amount</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Paid Amount</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Due Amount</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Status</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Actions</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Supplier</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Total Amount</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Paid Amount</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Due Amount</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>

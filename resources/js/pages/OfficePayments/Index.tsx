@@ -402,11 +402,11 @@ export default function OfficePayments({ officePayments = { data: [], current_pa
                                                 {sortBy === 'date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Shift</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">From Account</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">To Account</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Amount</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Actions</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">From Account</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">To Account</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Amount</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>

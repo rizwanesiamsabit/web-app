@@ -395,7 +395,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
                                                 checked={
@@ -424,22 +424,22 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                                     ))}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Code
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Account Number
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Mobile
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Email
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
                                     </tr>

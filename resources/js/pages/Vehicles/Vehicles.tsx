@@ -388,7 +388,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
                                                 checked={
@@ -403,25 +403,25 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             SL
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Customer
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Vehicle Name
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Vehicle Number
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Type
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Product
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
                                     </tr>
