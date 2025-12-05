@@ -34,14 +34,23 @@ interface ReceivedVoucher {
     id: number;
     voucher_type: string;
     date: string;
-    shift: { name: string };
-    from_account: { name: string };
-    to_account: { name: string };
-    party_name: string;
+    shift: { id: number; name: string };
+    from_account: { id: number; name: string };
+    to_account: { id: number; name: string };
+    from_account_id: number;
+    to_account_id: number;
     amount: number;
     payment_type: string;
     remarks: string;
     created_at: string;
+    bank_type?: string;
+    cheque_no?: string;
+    cheque_date?: string;
+    bank_name?: string;
+    branch_name?: string;
+    account_no?: string;
+    mobile_bank?: string;
+    mobile_number?: string;
 }
 
 interface Account {
@@ -111,7 +120,7 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
         shift_id: '',
         from_account_id: '',
         to_account_id: '',
-        party_name: '',
+
         amount: '',
         payment_type: 'Cash',
         bank_type: '',
@@ -155,21 +164,21 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
     const handleEdit = (voucher: ReceivedVoucher) => {
         setEditingVoucher(voucher);
         setData({
-            date: voucher.date || '',
-            shift_id: '',
-            from_account_id: voucher.from_account?.name || '',
-            to_account_id: voucher.to_account?.name || '',
-            party_name: voucher.party_name || '',
+            date: voucher.date?.split('T')[0] || '',
+            shift_id: voucher.shift?.id?.toString() || '',
+            from_account_id: voucher.from_account_id?.toString() || '',
+            to_account_id: voucher.to_account_id?.toString() || '',
+
             amount: voucher.amount?.toString() || '',
             payment_type: voucher.payment_type || 'Cash',
-            bank_type: '',
-            cheque_no: '',
-            cheque_date: '',
-            bank_name: '',
-            branch_name: '',
-            account_no: '',
-            mobile_bank: '',
-            mobile_number: '',
+            bank_type: voucher.bank_type || '',
+            cheque_no: voucher.cheque_no || '',
+            cheque_date: voucher.cheque_date || '',
+            bank_name: voucher.bank_name || '',
+            branch_name: voucher.branch_name || '',
+            account_no: voucher.account_no || '',
+            mobile_bank: voucher.mobile_bank || '',
+            mobile_number: voucher.mobile_number || '',
             mobile_transaction_id: '',
             remarks: voucher.remarks || '',
         });
@@ -293,7 +302,7 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [search]);
+    }, [search, filters?.search]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -330,7 +339,7 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                 if (endDate) params.append('end_date', endDate);
                                 if (sortBy) params.append('sort_by', sortBy);
                                 if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/vouchers/received/download-pdf?${params.toString()}`;
+                                router.visit(`/vouchers/received/download-pdf?${params.toString()}`, { method: 'get' });
                             }}
                         >
                             <FileText className="mr-2 h-4 w-4" />
@@ -437,8 +446,8 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                                 {sortBy === 'date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
+                
                                         <th className="p-4 text-left font-medium dark:text-gray-300">Received From</th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">From Account</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">To Account</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">Amount</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">Payment Type</th>
@@ -457,11 +466,11 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-white">{voucher.date}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.party_name}</td>
+                                                <td className="p-4 text-[13px] dark:text-white">{new Date(voucher.date).toLocaleDateString()}</td>
+
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.from_account.name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.to_account.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">৳{voucher.amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.amount.toLocaleString()}</td>
                                                 <td className="p-4">
                                                     <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-200">
                                                         {voucher.payment_type}
@@ -518,12 +527,16 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                 </Card>
 
                 <FormModal
-                    isOpen={isCreateOpen}
-                    onClose={() => setIsCreateOpen(false)}
-                    title="Create Received Voucher"
+                    isOpen={isCreateOpen || !!editingVoucher}
+                    onClose={() => {
+                        setIsCreateOpen(false);
+                        setEditingVoucher(null);
+                        reset();
+                    }}
+                    title={editingVoucher ? "Edit Received Voucher" : "Create Received Voucher"}
                     onSubmit={handleSubmit}
                     processing={processing}
-                    submitText="Create"
+                    submitText={editingVoucher ? "Update" : "Create"}
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -559,7 +572,9 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                         <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
                         <Select value={data.payment_type} onValueChange={(value) => {
                             setData('payment_type', value);
-                            setData('from_account_id', ''); // Reset account when payment type changes
+                            if (!editingVoucher) {
+                                setData('from_account_id', ''); // Reset account only in create mode
+                            }
                         }}>
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                 <SelectValue placeholder="Choose payment method" />
@@ -575,10 +590,10 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account</Label>
+                            <Label htmlFor="to_account_id" className="dark:text-gray-200">Received From</Label>
                             <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Choose destination account" />
+                                    <SelectValue placeholder="Choose received from account" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {accounts.map((account) => (
@@ -591,10 +606,10 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                             {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
                         </div>
                         <div>
-                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
+                            <Label htmlFor="from_account_id" className="dark:text-gray-200">To Account</Label>
                             <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Choose source account" />
+                                    <SelectValue placeholder="Choose destination account" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {getFilteredAccounts().map((account) => (
