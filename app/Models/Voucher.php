@@ -14,7 +14,6 @@ class Voucher extends Model
         'to_account_id',
         'from_transaction_id',
         'to_transaction_id',
-        'party_name',
         'remarks',
     ];
 

@@ -67,7 +67,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface ReceivedVoucherProps {
-    vouchers: {
+    vouchers?: {
         data: ReceivedVoucher[];
         current_page: number;
         last_page: number;
@@ -76,9 +76,9 @@ interface ReceivedVoucherProps {
         from: number;
         to: number;
     };
-    accounts: Account[];
-    shifts: Shift[];
-    filters: {
+    accounts?: Account[];
+    shifts?: Shift[];
+    filters?: {
         search?: string;
         shift?: string;
         payment_type?: string;
@@ -90,20 +90,20 @@ interface ReceivedVoucherProps {
     };
 }
 
-export default function ReceivedVoucher({ vouchers, accounts = [], shifts = [], filters = {} }: ReceivedVoucherProps) {
+export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, accounts = [], shifts = [], filters = {} }: ReceivedVoucherProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState<ReceivedVoucher | null>(null);
     const [deletingVoucher, setDeletingVoucher] = useState<ReceivedVoucher | null>(null);
     const [selectedVouchers, setSelectedVouchers] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-    const [search, setSearch] = useState(filters.search || '');
-    const [shift, setShift] = useState(filters.shift || 'all');
-    const [paymentType, setPaymentType] = useState(filters.payment_type || 'all');
-    const [startDate, setStartDate] = useState(filters.start_date || '');
-    const [endDate, setEndDate] = useState(filters.end_date || '');
-    const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
-    const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
-    const [perPage, setPerPage] = useState(filters.per_page || 10);
+    const [search, setSearch] = useState(filters?.search || '');
+    const [shift, setShift] = useState(filters?.shift || 'all');
+    const [paymentType, setPaymentType] = useState(filters?.payment_type || 'all');
+    const [startDate, setStartDate] = useState(filters?.start_date || '');
+    const [endDate, setEndDate] = useState(filters?.end_date || '');
+    const [sortBy, setSortBy] = useState(filters?.sort_by || 'created_at');
+    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'desc');
+    const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         date: '',
@@ -283,7 +283,7 @@ export default function ReceivedVoucher({ vouchers, accounts = [], shifts = [], 
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (search !== (filters.search || '')) {
+            if (search !== (filters?.search || '')) {
                 applyFilters();
             }
         }, 500);

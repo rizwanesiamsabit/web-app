@@ -13,12 +13,14 @@ class Account extends Model
         'group_code',
         'due_amount',
         'paid_amount',
+        'total_amount',
         'status'
     ];
 
     protected $casts = [
         'due_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
         'status' => 'boolean'
     ];
 

@@ -34,10 +34,8 @@ interface PaymentVoucher {
     id: number;
     voucher_type: string;
     date: string;
-    shift: { name: string };
     from_account: { name: string };
     to_account: { name: string };
-    party_name: string;
     amount: number;
     payment_type: string;
     remarks: string;
@@ -80,7 +78,7 @@ interface PaymentVoucherProps {
     shifts: Shift[];
     filters: {
         search?: string;
-        shift?: string;
+
         payment_type?: string;
         start_date?: string;
         end_date?: string;
@@ -90,38 +88,33 @@ interface PaymentVoucherProps {
     };
 }
 
-export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], filters = {} }: PaymentVoucherProps) {
+export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], filters }: PaymentVoucherProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState<PaymentVoucher | null>(null);
     const [deletingVoucher, setDeletingVoucher] = useState<PaymentVoucher | null>(null);
     const [selectedVouchers, setSelectedVouchers] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-    const [search, setSearch] = useState(filters.search || '');
-    const [shift, setShift] = useState(filters.shift || 'all');
-    const [paymentType, setPaymentType] = useState(filters.payment_type || 'all');
-    const [startDate, setStartDate] = useState(filters.start_date || '');
-    const [endDate, setEndDate] = useState(filters.end_date || '');
-    const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
-    const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
-    const [perPage, setPerPage] = useState(filters.per_page || 10);
+    const [search, setSearch] = useState(filters?.search || '');
+
+    const [paymentType, setPaymentType] = useState(filters?.payment_type || 'all');
+    const [startDate, setStartDate] = useState(filters?.start_date || '');
+    const [endDate, setEndDate] = useState(filters?.end_date || '');
+    const [sortBy, setSortBy] = useState(filters?.sort_by || 'created_at');
+    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'desc');
+    const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         date: '',
         shift_id: '',
         from_account_id: '',
         to_account_id: '',
-        party_name: '',
         amount: '',
         payment_type: 'Cash',
         bank_type: '',
-        cheque_no: '',
-        cheque_date: '',
         bank_name: '',
-        branch_name: '',
-        account_no: '',
+        cheque_no: '',
         mobile_bank: '',
         mobile_number: '',
-        mobile_transaction_id: '',
         remarks: '',
     });
 
@@ -147,22 +140,12 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
     const handleEdit = (voucher: PaymentVoucher) => {
         setEditingVoucher(voucher);
         setData({
-            date: voucher.date,
-            shift_id: voucher.shift.name,
-            from_account_id: voucher.from_account.name,
-            to_account_id: voucher.to_account.name,
-            party_name: voucher.party_name,
-            amount: voucher.amount.toString(),
-            payment_type: voucher.payment_type,
-            bank_type: '',
-            cheque_no: '',
-            cheque_date: '',
-            bank_name: '',
-            branch_name: '',
-            account_no: '',
-            mobile_bank: '',
-            mobile_number: '',
-            mobile_transaction_id: '',
+            date: voucher.date || '',
+            shift_id: '',
+            from_account_id: voucher.from_account?.name || '',
+            to_account_id: voucher.to_account?.name || '',
+            amount: voucher.amount?.toString() || '',
+            payment_type: voucher.payment_type || 'Cash',
             remarks: voucher.remarks || '',
         });
     };
@@ -198,7 +181,6 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
             '/vouchers/payment',
             {
                 search: search || undefined,
-                shift: shift === 'all' ? undefined : shift,
                 payment_type: paymentType === 'all' ? undefined : paymentType,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -212,7 +194,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
 
     const clearFilters = () => {
         setSearch('');
-        setShift('all');
+
         setPaymentType('all');
         setStartDate('');
         setEndDate('');
@@ -283,7 +265,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (search !== (filters.search || '')) {
+            if (search !== (filters?.search || '')) {
                 applyFilters();
             }
         }, 500);
@@ -319,7 +301,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                             onClick={() => {
                                 const params = new URLSearchParams();
                                 if (search) params.append('search', search);
-                                if (shift !== 'all') params.append('shift', shift);
+                
                                 if (paymentType !== 'all') params.append('payment_type', paymentType);
                                 if (startDate) params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
@@ -347,7 +329,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                             <div>
                                 <Label className="dark:text-gray-200">Search</Label>
                                 <Input
@@ -357,28 +339,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Shift</Label>
-                                <Select
-                                    value={shift}
-                                    onValueChange={(value) => {
-                                        setShift(value);
-                                        applyFilters();
-                                    }}
-                                >
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All shifts" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All shifts</SelectItem>
-                                        {shifts.map((s) => (
-                                            <SelectItem key={s.id} value={s.name}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+
                             <div>
                                 <Label className="dark:text-gray-200">Payment Type</Label>
                                 <Select
@@ -389,7 +350,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                     }}
                                 >
                                     <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All types" />
+                                        <SelectValue placeholder="Choose payment type" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All types</SelectItem>
@@ -453,7 +414,6 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                                 {sortBy === 'date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">Party Name</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">From Account</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">To Account</th>
                                         <th className="p-4 text-left font-medium dark:text-gray-300">Amount</th>
@@ -474,10 +434,9 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                                     />
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">{voucher.date}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.party_name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.from_account.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.to_account.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">৳{voucher.amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.from_account?.name || 'N/A'}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.to_account?.name || 'N/A'}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">৳{voucher.amount?.toLocaleString() || '0'}</td>
                                                 <td className="p-4">
                                                     <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                                         {voucher.payment_type}
@@ -507,7 +466,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={7} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <Receipt className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No payment vouchers found
                                             </td>
@@ -540,6 +499,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText="Create"
+                    className="max-w-lg"
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -557,7 +517,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                             <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
                             <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select shift" />
+                                    <SelectValue placeholder="Choose shift" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {shifts.map((shift) => (
@@ -571,71 +531,11 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
-                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select from account" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {accounts.map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.ac_number})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account</Label>
-                            <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select to account" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {accounts.map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.ac_number})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="party_name" className="dark:text-gray-200">Party Name</Label>
-                            <Input
-                                id="party_name"
-                                value={data.party_name}
-                                onChange={(e) => setData('party_name', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.party_name && <span className="text-sm text-red-500">{errors.party_name}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
-                            <Input
-                                id="amount"
-                                type="number"
-                                step="0.01"
-                                value={data.amount}
-                                onChange={(e) => setData('amount', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
-                        </div>
-                    </div>
-
                     <div>
                         <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
                         <Select value={data.payment_type} onValueChange={(value) => setData('payment_type', value)}>
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select payment type" />
+                                <SelectValue placeholder="Choose payment method" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Cash">Cash</SelectItem>
@@ -654,7 +554,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                     <Label htmlFor="bank_type" className="dark:text-gray-200">Bank Type</Label>
                                     <Select value={data.bank_type} onValueChange={(value) => setData('bank_type', value)}>
                                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="Select type" />
+                                            <SelectValue placeholder="Choose bank type" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Cheque">Cheque</SelectItem>
@@ -669,6 +569,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                     <Label htmlFor="bank_name" className="dark:text-gray-200">Bank Name</Label>
                                     <Input
                                         id="bank_name"
+                                        placeholder="Enter bank name"
                                         value={data.bank_name}
                                         onChange={(e) => setData('bank_name', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
@@ -676,26 +577,15 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                 </div>
                             </div>
                             {data.bank_type === 'Cheque' && (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque No</Label>
-                                        <Input
-                                            id="cheque_no"
-                                            value={data.cheque_no}
-                                            onChange={(e) => setData('cheque_no', e.target.value)}
-                                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="cheque_date" className="dark:text-gray-200">Cheque Date</Label>
-                                        <Input
-                                            id="cheque_date"
-                                            type="date"
-                                            value={data.cheque_date}
-                                            onChange={(e) => setData('cheque_date', e.target.value)}
-                                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        />
-                                    </div>
+                                <div>
+                                    <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque Number</Label>
+                                    <Input
+                                        id="cheque_no"
+                                        placeholder="Enter cheque number"
+                                        value={data.cheque_no}
+                                        onChange={(e) => setData('cheque_no', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
                                 </div>
                             )}
                         </div>
@@ -709,7 +599,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                     <Label htmlFor="mobile_bank" className="dark:text-gray-200">Mobile Bank</Label>
                                     <Select value={data.mobile_bank} onValueChange={(value) => setData('mobile_bank', value)}>
                                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="Select mobile bank" />
+                                            <SelectValue placeholder="Choose mobile bank" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="bKash">bKash</SelectItem>
@@ -722,28 +612,70 @@ export default function PaymentVoucher({ vouchers, accounts = [], shifts = [], f
                                     <Label htmlFor="mobile_number" className="dark:text-gray-200">Mobile Number</Label>
                                     <Input
                                         id="mobile_number"
+                                        placeholder="Enter mobile number"
                                         value={data.mobile_number}
                                         onChange={(e) => setData('mobile_number', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <Label htmlFor="mobile_transaction_id" className="dark:text-gray-200">Transaction ID</Label>
-                                <Input
-                                    id="mobile_transaction_id"
-                                    value={data.mobile_transaction_id}
-                                    onChange={(e) => setData('mobile_transaction_id', e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
                         </div>
                     )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
+                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Choose source account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {accounts.map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name} ({account.ac_number})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
+                        </div>
+                        <div>
+                            <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account</Label>
+                            <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Choose destination account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {accounts.map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name} ({account.ac_number})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            step="0.01"
+                            placeholder="Enter amount"
+                            value={data.amount}
+                            onChange={(e) => setData('amount', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
+                    </div>
 
                     <div>
                         <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
                         <Input
                             id="remarks"
+                            placeholder="Enter remarks (optional)"
                             value={data.remarks}
                             onChange={(e) => setData('remarks', e.target.value)}
                             className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"

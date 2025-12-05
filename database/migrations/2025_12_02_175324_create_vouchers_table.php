@@ -10,8 +10,6 @@ return new class extends Migration
     {
         Schema::create('vouchers', function (Blueprint $table) {
             $table->id();
-            
-            // Basic Fields
             $table->enum('voucher_type', ['Payment', 'Received']);
             $table->date('date');
             $table->foreignId('shift_id')->constrained('shifts');
@@ -19,9 +17,8 @@ return new class extends Migration
             $table->foreignId('to_account_id')->constrained('accounts');
             $table->foreignId('from_transaction_id')->constrained('transactions');
             $table->foreignId('to_transaction_id')->constrained('transactions');
-            $table->string('party_name');
             $table->text('remarks')->nullable();
-            
+
             $table->timestamps();
         });
     }
