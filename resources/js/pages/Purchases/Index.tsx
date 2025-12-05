@@ -611,225 +611,334 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], pr
                     title="Create Purchase"
                     onSubmit={handleSubmit}
                     processing={processing}
-                    submitText="Create"
-                    size="large"
+                    submitText="Create Purchase..."
+                    className="max-w-7xl"
                 >
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="purchase_date" className="dark:text-gray-200">Purchase Date</Label>
-                            <Input
-                                id="purchase_date"
-                                type="date"
-                                value={data.purchase_date}
-                                onChange={(e) => setData('purchase_date', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.purchase_date && <span className="text-sm text-red-500">{errors.purchase_date}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="supplier_id" className="dark:text-gray-200">Supplier</Label>
-                            <Select value={data.supplier_id} onValueChange={(value) => setData('supplier_id', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select supplier" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {suppliers.map((supplier) => (
-                                        <SelectItem key={supplier.id} value={supplier.id.toString()}>
-                                            {supplier.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.supplier_id && <span className="text-sm text-red-500">{errors.supplier_id}</span>}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="supplier_invoice_no" className="dark:text-gray-200">Supplier Invoice No</Label>
-                            <Input
-                                id="supplier_invoice_no"
-                                value={data.supplier_invoice_no}
-                                onChange={(e) => setData('supplier_invoice_no', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.supplier_invoice_no && <span className="text-sm text-red-500">{errors.supplier_invoice_no}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
-                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select account" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {accounts.map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.ac_number})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
-                        </div>
-                    </div>
-
-                    {/* Product Selection */}
-                    <div className="space-y-4 border-t pt-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="font-medium dark:text-white">Product Selection</h4>
-                            <Button type="button" onClick={addProduct} size="sm">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add Product
-                            </Button>
-                        </div>
-                        
-                        {data.products.map((product, index) => (
-                            <div key={index} className="grid grid-cols-6 gap-2 items-end border rounded p-3">
+                    <div className="grid grid-cols-12 gap-6">
+                        {/* Left Section */}
+                        <div className="col-span-9 space-y-4">
+                            {/* Row 1: Purchase Date | Supplier | Supplier Invoice No | Product */}
+                            <div className="grid grid-cols-4 gap-4">
                                 <div>
-                                    <Label className="dark:text-gray-200">Product</Label>
-                                    <Select 
-                                        value={product.product_id} 
-                                        onValueChange={(value) => updateProduct(index, 'product_id', value)}
-                                    >
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Purchase Date <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        type="date"
+                                        value={data.purchase_date}
+                                        onChange={(e) => setData('purchase_date', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                    {errors.purchase_date && (
+                                        <p className="text-sm text-red-500">{errors.purchase_date}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Supplier <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={data.supplier_id} onValueChange={(value) => setData('supplier_id', value)}>
+                                        <SelectTrigger className={errors.supplier_id ? 'border-red-500' : ''}>
+                                            <SelectValue placeholder="Select supplier" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {suppliers.map((supplier) => (
+                                                <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                                                    {supplier.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.supplier_id && (
+                                        <p className="text-sm text-red-500">{errors.supplier_id}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Supplier Invoice No</Label>
+                                    <Input
+                                        value={data.supplier_invoice_no}
+                                        onChange={(e) => setData('supplier_invoice_no', e.target.value)}
+                                        placeholder="Enter supplier invoice number"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Product</Label>
+                                    <Select value={data.products[0]?.product_id || ''} onValueChange={(value) => updateProduct(0, 'product_id', value)}>
+                                        <SelectTrigger>
                                             <SelectValue placeholder="Select product" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {products.map((p) => (
-                                                <SelectItem key={p.id} value={p.id.toString()}>
-                                                    {p.product_name} ({p.product_code})
+                                            {products.map((product) => (
+                                                <SelectItem key={product.id} value={product.id.toString()}>
+                                                    {product.product_name} ({product.product_code})
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            </div>
+
+                            {/* Row 2: Present Stock | Product Name | Code | Unit Name */}
+                            <div className="grid grid-cols-4 gap-4">
                                 <div>
-                                    <Label className="dark:text-gray-200">Unit Price</Label>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Present Stock</Label>
                                     <Input
                                         type="number"
-                                        step="0.01"
-                                        value={product.unit_price}
-                                        onChange={(e) => updateProduct(index, 'unit_price', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="dark:text-gray-200">Quantity</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={product.quantity}
-                                        onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="dark:text-gray-200">Amount</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={product.amount}
+                                        value="0"
                                         readOnly
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white bg-gray-100"
+                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />
                                 </div>
                                 <div>
-                                    <Label className="dark:text-gray-200">Discount</Label>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Product Name</Label>
                                     <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={product.discount}
-                                        onChange={(e) => updateProduct(index, 'discount', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.product_name || ''}
+                                        readOnly
+                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />
                                 </div>
                                 <div>
-                                    {data.products.length > 1 && (
-                                        <Button 
-                                            type="button" 
-                                            variant="destructive" 
-                                            size="sm"
-                                            onClick={() => removeProduct(index)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    )}
+                                    <Label className="text-sm font-medium dark:text-gray-200">Code</Label>
+                                    <Input
+                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.product_code || ''}
+                                        readOnly
+                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Unit Name</Label>
+                                    <Input
+                                        value="Unit"
+                                        readOnly
+                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                    />
                                 </div>
                             </div>
-                        ))}
-                    </div>
 
-                    {/* Payment Method */}
-                    <div>
-                        <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
-                        <Select value={data.payment_type} onValueChange={(value) => setData('payment_type', value)}>
-                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select payment type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Cash">Cash</SelectItem>
-                                <SelectItem value="Bank">Bank</SelectItem>
-                                <SelectItem value="Mobile Bank">Mobile Bank</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {errors.payment_type && <span className="text-sm text-red-500">{errors.payment_type}</span>}
-                    </div>
+                            {/* Row 3: Unit Price | Quantity | Amount | Discount Type | Percentage | Discount */}
+                            <div className="grid grid-cols-6 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Unit Price</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={data.products[0]?.unit_price || ''}
+                                        onChange={(e) => updateProduct(0, 'unit_price', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Quantity</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={data.products[0]?.quantity || ''}
+                                        onChange={(e) => updateProduct(0, 'quantity', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Amount</Label>
+                                    <Input
+                                        type="number"
+                                        value={data.products[0]?.amount || '0.00'}
+                                        readOnly
+                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Discount Type</Label>
+                                    <Select value={data.products[0]?.discount_type || 'Fixed'} onValueChange={(value) => updateProduct(0, 'discount_type', value)}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Fixed">Fixed</SelectItem>
+                                            <SelectItem value="Percentage">Percentage</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Percentage</Label>
+                                    <Input
+                                        type="number"
+                                        value="0"
+                                        readOnly
+                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Discount</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={data.products[0]?.discount || ''}
+                                        onChange={(e) => updateProduct(0, 'discount', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
 
-                    {/* Summary Fields */}
-                    <div className="grid grid-cols-3 gap-4 border-t pt-4">
-                        <div>
-                            <Label htmlFor="net_total_amount" className="dark:text-gray-200">Net Total Amount</Label>
-                            <Input
-                                id="net_total_amount"
-                                type="number"
-                                step="0.01"
-                                value={data.net_total_amount}
-                                onChange={(e) => setData('net_total_amount', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.net_total_amount && <span className="text-sm text-red-500">{errors.net_total_amount}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="paid_amount" className="dark:text-gray-200">Paid Amount</Label>
-                            <Input
-                                id="paid_amount"
-                                type="number"
-                                step="0.01"
-                                value={data.paid_amount}
-                                onChange={(e) => {
-                                    const paid = parseFloat(e.target.value) || 0;
-                                    const total = parseFloat(data.net_total_amount) || 0;
-                                    setData({
-                                        ...data,
-                                        paid_amount: e.target.value,
-                                        due_amount: (total - paid).toString()
-                                    });
-                                }}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.paid_amount && <span className="text-sm text-red-500">{errors.paid_amount}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="due_amount" className="dark:text-gray-200">Due Amount</Label>
-                            <Input
-                                id="due_amount"
-                                type="number"
-                                step="0.01"
-                                value={data.due_amount}
-                                readOnly
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white bg-gray-100"
-                            />
-                        </div>
-                    </div>
+                            {/* Row 4: Remarks | Add Button */}
+                            <div className="grid grid-cols-6 gap-4">
+                                <div className="col-span-5">
+                                    <Label className="text-sm font-medium dark:text-gray-200">Remarks</Label>
+                                    <Input
+                                        value={data.remarks}
+                                        onChange={(e) => setData('remarks', e.target.value)}
+                                        placeholder="Enter any remarks"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">&nbsp;</Label>
+                                    <Button
+                                        type="button"
+                                        onClick={addProduct}
+                                        className="w-full bg-blue-600 hover:bg-blue-700"
+                                    >
+                                        <Plus className="h-4 w-4 mr-1" />
+                                        Add to Cart
+                                    </Button>
+                                </div>
+                            </div>
 
-                    <div>
-                        <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
-                        <Input
-                            id="remarks"
-                            value={data.remarks}
-                            onChange={(e) => setData('remarks', e.target.value)}
-                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
+                            {/* Cart Table */}
+                            <div className="mt-6">
+                                <table className="w-full border border-gray-300 dark:border-gray-600">
+                                    <thead className="bg-gray-100 dark:bg-gray-700">
+                                        <tr>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">SL</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product Name</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Unit Price</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Discount</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Total</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.products.filter(p => p.product_id).map((product, index) => {
+                                            const selectedProduct = products.find(p => p.id.toString() === product.product_id);
+                                            return (
+                                                <tr key={index} className="border-t dark:border-gray-600">
+                                                    <td className="p-2 text-sm dark:text-white">{index + 1}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{selectedProduct?.product_name}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.unit_price}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.discount}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.amount}</td>
+                                                    <td className="p-2">
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => removeProduct(index)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Right Panel - Summary */}
+                        <div className="col-span-3">
+                            <div className="space-y-4">
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4 dark:text-white">Purchase Summary</h3>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <Label className="text-sm font-medium dark:text-gray-200">Net Total Amount</Label>
+                                            <Input
+                                                type="number"
+                                                value={data.net_total_amount || '0.00'}
+                                                readOnly
+                                                className="text-lg font-semibold bg-gray-100 dark:bg-gray-600 dark:text-white"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-sm font-medium mb-3 dark:text-gray-200">Payment Method</h3>
+                                    <div className="flex gap-1 mb-4">
+                                        {['Cash', 'Bank', 'mBank'].map((type) => (
+                                            <button
+                                                key={type}
+                                                type="button"
+                                                onClick={() => setData('payment_type', type === 'mBank' ? 'Mobile Bank' : type)}
+                                                className={`flex-1 p-1 rounded border text-center transition-colors ${
+                                                    (data.payment_type === type || (type === 'mBank' && data.payment_type === 'Mobile Bank'))
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
+                                                        : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300'
+                                                }`}
+                                            >
+                                                <div className="text-xs">
+                                                    {type === 'Cash' && '💵'}
+                                                    {type === 'Bank' && '🏦'}
+                                                    {type === 'mBank' && '📱'}
+                                                </div>
+                                                <span className="text-xs font-medium">{type}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div>
+                                            <Label className="text-sm font-medium dark:text-gray-200">From Account</Label>
+                                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
+                                                <SelectTrigger className={errors.from_account_id ? 'border-red-500' : ''}>
+                                                    <SelectValue placeholder="Select payment account" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {accounts.map((account) => (
+                                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                                            {account.name} ({account.ac_number})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {errors.from_account_id && (
+                                                <p className="text-sm text-red-500">{errors.from_account_id}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <Label className="text-sm font-medium dark:text-gray-200">Paid Amount</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={data.paid_amount}
+                                                onChange={(e) => {
+                                                    const paid = parseFloat(e.target.value) || 0;
+                                                    const total = parseFloat(data.net_total_amount) || 0;
+                                                    setData({
+                                                        ...data,
+                                                        paid_amount: e.target.value,
+                                                        due_amount: (total - paid).toString()
+                                                    });
+                                                }}
+                                                className="text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-sm font-medium dark:text-gray-200">Due Amount</Label>
+                                            <Input
+                                                type="number"
+                                                value={data.due_amount || '0.00'}
+                                                readOnly
+                                                className="bg-gray-100 dark:bg-gray-600 dark:text-white"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </FormModal>
 

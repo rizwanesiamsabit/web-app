@@ -64,9 +64,18 @@ class ReceivedVoucherController extends Controller
             return $voucher;
         });
 
+        $accounts = Account::select('id', 'name', 'ac_number')->get();
+        $groupedAccounts = Account::with('group')
+            ->select('id', 'name', 'ac_number', 'group_code')
+            ->get()
+            ->groupBy(function ($account) {
+                return $account->group ? $account->group->name : 'Other';
+            });
+
         return Inertia::render('Vouchers/ReceivedVoucher', [
             'vouchers' => $vouchers,
-            'accounts' => Account::select('id', 'name', 'ac_number')->get(),
+            'accounts' => $accounts,
+            'groupedAccounts' => $groupedAccounts,
             'shifts' => Shift::select('id', 'name')->where('status', true)->get(),
             'filters' => $request->only(['search', 'shift', 'payment_type', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);

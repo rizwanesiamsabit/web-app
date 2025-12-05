@@ -77,6 +77,7 @@ interface ReceivedVoucherProps {
         to: number;
     };
     accounts?: Account[];
+    groupedAccounts?: Record<string, Account[]>;
     shifts?: Shift[];
     filters?: {
         search?: string;
@@ -90,14 +91,14 @@ interface ReceivedVoucherProps {
     };
 }
 
-export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, accounts = [], shifts = [], filters = {} }: ReceivedVoucherProps) {
+export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, accounts = [], groupedAccounts = {}, shifts = [], filters = {} }: ReceivedVoucherProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState<ReceivedVoucher | null>(null);
     const [deletingVoucher, setDeletingVoucher] = useState<ReceivedVoucher | null>(null);
     const [selectedVouchers, setSelectedVouchers] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters?.search || '');
-    const [shift, setShift] = useState(filters?.shift || 'all');
+
     const [paymentType, setPaymentType] = useState(filters?.payment_type || 'all');
     const [startDate, setStartDate] = useState(filters?.start_date || '');
     const [endDate, setEndDate] = useState(filters?.end_date || '');
@@ -125,6 +126,13 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
         remarks: '',
     });
 
+    const getFilteredAccounts = () => {
+        const groupName = data.payment_type === 'Cash' ? 'Cash in hand' : 
+                         data.payment_type === 'Bank' ? 'Bank Account' :
+                         data.payment_type === 'Mobile Bank' ? 'Mobile Bank' : 'Other';
+        return groupedAccounts[groupName] || [];
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (editingVoucher) {
@@ -147,13 +155,13 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
     const handleEdit = (voucher: ReceivedVoucher) => {
         setEditingVoucher(voucher);
         setData({
-            date: voucher.date,
-            shift_id: voucher.shift.name,
-            from_account_id: voucher.from_account.name,
-            to_account_id: voucher.to_account.name,
-            party_name: voucher.party_name,
-            amount: voucher.amount.toString(),
-            payment_type: voucher.payment_type,
+            date: voucher.date || '',
+            shift_id: '',
+            from_account_id: voucher.from_account?.name || '',
+            to_account_id: voucher.to_account?.name || '',
+            party_name: voucher.party_name || '',
+            amount: voucher.amount?.toString() || '',
+            payment_type: voucher.payment_type || 'Cash',
             bank_type: '',
             cheque_no: '',
             cheque_date: '',
@@ -198,7 +206,6 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
             '/vouchers/received',
             {
                 search: search || undefined,
-                shift: shift === 'all' ? undefined : shift,
                 payment_type: paymentType === 'all' ? undefined : paymentType,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -212,7 +219,7 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
 
     const clearFilters = () => {
         setSearch('');
-        setShift('all');
+
         setPaymentType('all');
         setStartDate('');
         setEndDate('');
@@ -235,7 +242,6 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
             '/vouchers/received',
             {
                 search: search || undefined,
-                shift: shift === 'all' ? undefined : shift,
                 payment_type: paymentType === 'all' ? undefined : paymentType,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -252,7 +258,6 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
             '/vouchers/received',
             {
                 search: search || undefined,
-                shift: shift === 'all' ? undefined : shift,
                 payment_type: paymentType === 'all' ? undefined : paymentType,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -319,7 +324,7 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                             onClick={() => {
                                 const params = new URLSearchParams();
                                 if (search) params.append('search', search);
-                                if (shift !== 'all') params.append('shift', shift);
+
                                 if (paymentType !== 'all') params.append('payment_type', paymentType);
                                 if (startDate) params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
@@ -347,7 +352,7 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                             <div>
                                 <Label className="dark:text-gray-200">Search</Label>
                                 <Input
@@ -357,28 +362,7 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Shift</Label>
-                                <Select
-                                    value={shift}
-                                    onValueChange={(value) => {
-                                        setShift(value);
-                                        applyFilters();
-                                    }}
-                                >
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All shifts" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All shifts</SelectItem>
-                                        {shifts.map((s) => (
-                                            <SelectItem key={s.id} value={s.name}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+
                             <div>
                                 <Label className="dark:text-gray-200">Payment Type</Label>
                                 <Select
@@ -557,7 +541,7 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                             <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
                             <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select shift" />
+                                    <SelectValue placeholder="Choose shift" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {shifts.map((shift) => (
@@ -571,71 +555,14 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
-                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select from account" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {accounts.map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.ac_number})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account</Label>
-                            <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select to account" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {accounts.map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.ac_number})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="party_name" className="dark:text-gray-200">Received From</Label>
-                            <Input
-                                id="party_name"
-                                value={data.party_name}
-                                onChange={(e) => setData('party_name', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.party_name && <span className="text-sm text-red-500">{errors.party_name}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
-                            <Input
-                                id="amount"
-                                type="number"
-                                step="0.01"
-                                value={data.amount}
-                                onChange={(e) => setData('amount', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
-                        </div>
-                    </div>
-
                     <div>
                         <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
-                        <Select value={data.payment_type} onValueChange={(value) => setData('payment_type', value)}>
+                        <Select value={data.payment_type} onValueChange={(value) => {
+                            setData('payment_type', value);
+                            setData('from_account_id', ''); // Reset account when payment type changes
+                        }}>
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select payment type" />
+                                <SelectValue placeholder="Choose payment method" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Cash">Cash</SelectItem>
@@ -644,6 +571,41 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                             </SelectContent>
                         </Select>
                         {errors.payment_type && <span className="text-sm text-red-500">{errors.payment_type}</span>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account</Label>
+                            <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Choose destination account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {accounts.map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
+                        </div>
+                        <div>
+                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
+                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Choose source account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {getFilteredAccounts().map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
+                        </div>
                     </div>
 
                     {data.payment_type === 'Bank' && (
@@ -726,22 +688,28 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <Label htmlFor="mobile_transaction_id" className="dark:text-gray-200">Transaction ID</Label>
-                                <Input
-                                    id="mobile_transaction_id"
-                                    value={data.mobile_transaction_id}
-                                    onChange={(e) => setData('mobile_transaction_id', e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
                         </div>
                     )}
+
+                    <div>
+                        <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            step="0.01"
+                            placeholder="Enter amount"
+                            value={data.amount}
+                            onChange={(e) => setData('amount', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
+                    </div>
 
                     <div>
                         <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
                         <Input
                             id="remarks"
+                            placeholder="Enter remarks (optional)"
                             value={data.remarks}
                             onChange={(e) => setData('remarks', e.target.value)}
                             className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
