@@ -29,6 +29,7 @@ use App\Http\Controllers\OfficePaymentController;
 use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\DailyStatementController;
 use App\Http\Controllers\CustomerSummaryBillController;
+use App\Http\Controllers\CustomerDetailsBillController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -249,6 +250,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Customer Summary Bill routes
     Route::get('customer-summary-bill', [CustomerSummaryBillController::class, 'index'])->name('customer-summary-bill.index');
     Route::get('customer-summary-bill/download-pdf', [CustomerSummaryBillController::class, 'downloadPdf'])->name('customer-summary-bill.download.pdf');
+    
+    // Customer Details Bill routes
+    Route::get('customer-details-bill', [CustomerDetailsBillController::class, 'index'])->name('customer-details-bill.index');
+    Route::get('customer-details-bill/download-pdf', [CustomerDetailsBillController::class, 'downloadPdf'])->name('customer-details-bill.download.pdf');
 });
 
 require __DIR__.'/settings.php';
