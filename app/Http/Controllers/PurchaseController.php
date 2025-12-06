@@ -7,6 +7,8 @@ use App\Models\Supplier;
 use App\Models\Account;
 use App\Models\Product;
 use App\Models\Transaction;
+use App\Models\Stock;
+use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,7 @@ class PurchaseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Purchase::with(['supplier', 'fromAccount', 'transaction']);
+        $query = Purchase::with(['supplier', 'product', 'fromAccount', 'transaction']);
 
         // Apply filters
         if ($request->search) {
@@ -87,90 +89,138 @@ class PurchaseController extends Controller
     {
         $request->validate([
             'purchase_date' => 'required|date',
-            'supplier_id' => 'required|exists:suppliers,id',
             'supplier_invoice_no' => 'required|string|max:255',
-            'from_account_id' => 'required|exists:accounts,id',
-            'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
-            'net_total_amount' => 'required|numeric|min:0',
-            'paid_amount' => 'required|numeric|min:0',
-            'due_amount' => 'required|numeric|min:0',
             'remarks' => 'nullable|string',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
+            'products.*.supplier_id' => 'required|exists:suppliers,id',
             'products.*.unit_price' => 'required|numeric|min:0',
             'products.*.quantity' => 'required|numeric|min:0',
             'products.*.amount' => 'required|numeric|min:0',
+            'products.*.payment_type' => 'required|in:Cash,Bank,Mobile Bank',
+            'products.*.from_account_id' => 'required|exists:accounts,id',
+            'products.*.paid_amount' => 'required|numeric|min:0',
+            'products.*.due_amount' => 'required|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request) {
-            // Get account numbers
-            $fromAccount = Account::find($request->from_account_id);
-            $supplier = Supplier::with('account')->find($request->supplier_id);
+            // Loop through each product and create separate purchase
+            foreach ($request->products as $productData) {
+                if (!isset($productData['product_id']) || !$productData['product_id']) {
+                    continue;
+                }
 
-            // Create transaction for payment
-            $transaction = Transaction::create([
-                'ac_number' => $fromAccount->ac_number,
-                'transaction_type' => 'Dr',
-                'amount' => $request->paid_amount,
-                'description' => 'Purchase from ' . $supplier->name . ' - Invoice: ' . $request->supplier_invoice_no,
-                'payment_type' => strtolower($request->payment_type),
-                'bank_name' => $request->bank_name,
-                'branch_name' => $request->branch_name,
-                'account_number' => $request->account_no,
-                'cheque_type' => $request->bank_type,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'mobile_bank_name' => $request->mobile_bank,
-                'mobile_number' => $request->mobile_number,
-                'transaction_date' => $request->purchase_date,
-                'transaction_time' => now()->format('H:i:s'),
-            ]);
+                $fromAccount = Account::find($productData['from_account_id']);
+                $supplier = Supplier::with('account')->find($productData['supplier_id']);
+                $product = Product::find($productData['product_id']);
 
-            // Create supplier credit transaction if paid amount > 0
-            if ($request->paid_amount > 0) {
-                Transaction::create([
-                    'ac_number' => $supplier->account->ac_number,
-                    'transaction_type' => 'Cr',
-                    'amount' => $request->paid_amount,
-                    'description' => 'Payment received for Invoice: ' . $request->supplier_invoice_no,
-                    'payment_type' => strtolower($request->payment_type),
+                $transactionId = TransactionHelper::generateTransactionId();
+
+                // Create transaction for payment
+                $transaction = Transaction::create([
+                    'transaction_id' => $transactionId,
+                    'ac_number' => $fromAccount->ac_number,
+                    'transaction_type' => 'Dr',
+                    'amount' => $productData['paid_amount'],
+                    'description' => 'Purchase ' . $product->product_name . ' from ' . $supplier->name . ' - Invoice: ' . $request->supplier_invoice_no,
+                    'payment_type' => strtolower($productData['payment_type']),
+                    'bank_name' => $productData['bank_name'] ?? null,
+                    'branch_name' => $productData['branch_name'] ?? null,
+                    'account_number' => $productData['account_no'] ?? null,
+                    'cheque_type' => $productData['bank_type'] ?? null,
+                    'cheque_no' => $productData['cheque_no'] ?? null,
+                    'cheque_date' => $productData['cheque_date'] ?? null,
+                    'mobile_bank_name' => $productData['mobile_bank'] ?? null,
+                    'mobile_number' => $productData['mobile_number'] ?? null,
                     'transaction_date' => $request->purchase_date,
                     'transaction_time' => now()->format('H:i:s'),
                 ]);
-            }
 
-            // Create accounts payable entry if due amount > 0
-            if ($request->due_amount > 0) {
-                // Find or create accounts payable account
-                $payableAccount = Account::where('name', 'Accounts Payable')->first();
-                if ($payableAccount) {
+                // Create supplier credit transaction if paid amount > 0
+                if ($productData['paid_amount'] > 0) {
                     Transaction::create([
-                        'ac_number' => $payableAccount->ac_number,
+                        'transaction_id' => $transactionId,
+                        'ac_number' => $supplier->account->ac_number,
                         'transaction_type' => 'Cr',
-                        'amount' => $request->due_amount,
-                        'description' => 'Due amount for Invoice: ' . $request->supplier_invoice_no,
-                        'payment_type' => 'credit',
+                        'amount' => $productData['paid_amount'],
+                        'description' => 'Payment received for ' . $product->product_name . ' - Invoice: ' . $request->supplier_invoice_no,
+                        'payment_type' => strtolower($productData['payment_type']),
                         'transaction_date' => $request->purchase_date,
                         'transaction_time' => now()->format('H:i:s'),
                     ]);
                 }
-            }
 
-            // Create purchase record
-            Purchase::create([
-                'purchase_date' => $request->purchase_date,
-                'supplier_id' => $request->supplier_id,
-                'transaction_id' => $transaction->id,
-                'supplier_invoice_no' => $request->supplier_invoice_no,
-                'from_account_id' => $request->from_account_id,
-                'net_total_amount' => $request->net_total_amount,
-                'paid_amount' => $request->paid_amount,
-                'due_amount' => $request->due_amount,
-                'remarks' => $request->remarks,
-            ]);
+                // Create accounts payable entry if due amount > 0
+                if ($productData['due_amount'] > 0) {
+                    $payableAccount = Account::where('name', 'Accounts Payable')->first();
+                    if ($payableAccount) {
+                        Transaction::create([
+                            'transaction_id' => $transactionId,
+                            'ac_number' => $payableAccount->ac_number,
+                            'transaction_type' => 'Cr',
+                            'amount' => $productData['due_amount'],
+                            'description' => 'Due amount for ' . $product->product_name . ' - Invoice: ' . $request->supplier_invoice_no,
+                            'payment_type' => 'credit',
+                            'transaction_date' => $request->purchase_date,
+                            'transaction_time' => now()->format('H:i:s'),
+                        ]);
+                        
+                        // Update Accounts Payable balance
+                        $payableAccount->increment('total_amount', $productData['due_amount']);
+                    }
+                }
+
+                // Update account balances
+                $fromAccount->decrement('total_amount', $productData['paid_amount']);
+                if ($productData['paid_amount'] > 0) {
+                    $supplier->account->increment('total_amount', $productData['paid_amount']);
+                }
+
+                // Calculate net total for this product
+                $netTotal = $productData['amount'] - ($productData['discount'] ?? 0);
+
+                // Create purchase record
+                Purchase::create([
+                    'purchase_date' => $request->purchase_date,
+                    'supplier_id' => $productData['supplier_id'],
+                    'product_id' => $productData['product_id'],
+                    'transaction_id' => $transaction->id,
+                    'supplier_invoice_no' => $request->supplier_invoice_no,
+                    'from_account_id' => $productData['from_account_id'],
+                    'quantity' => $productData['quantity'],
+                    'unit_price' => $productData['unit_price'],
+                    'discount' => $productData['discount'] ?? 0,
+                    'net_total_amount' => $netTotal,
+                    'paid_amount' => $productData['paid_amount'],
+                    'due_amount' => $productData['due_amount'],
+                    'remarks' => $request->remarks,
+                ]);
+
+                // Update stock
+                $stock = Stock::firstOrCreate(
+                    ['product_id' => $productData['product_id']],
+                    [
+                        'opening_stock' => 0,
+                        'current_stock' => 0,
+                        'reserved_stock' => 0,
+                        'available_stock' => 0,
+                        'minimum_stock' => 0,
+                    ]
+                );
+
+                $quantity = $productData['quantity'] ?? 0;
+                $stock->increment('current_stock', $quantity);
+                $stock->increment('available_stock', $quantity);
+            }
         });
 
         return redirect()->back()->with('success', 'Purchase created successfully.');
+    }
+
+    public function edit(Purchase $purchase)
+    {
+        $purchase->load(['supplier', 'product', 'fromAccount', 'transaction']);
+        return response()->json(['purchase' => $purchase]);
     }
 
     public function update(Request $request, Purchase $purchase)
@@ -178,39 +228,152 @@ class PurchaseController extends Controller
         $request->validate([
             'purchase_date' => 'required|date',
             'supplier_id' => 'required|exists:suppliers,id',
+            'product_id' => 'required|exists:products,id',
             'supplier_invoice_no' => 'required|string|max:255',
             'from_account_id' => 'required|exists:accounts,id',
             'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
-            'net_total_amount' => 'required|numeric|min:0',
+            'unit_price' => 'required|numeric|min:0',
+            'quantity' => 'required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
             'paid_amount' => 'required|numeric|min:0',
             'due_amount' => 'required|numeric|min:0',
             'remarks' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $purchase) {
+            // Reverse old account balances
+            $purchase->fromAccount->increment('total_amount', $purchase->paid_amount);
+            if ($purchase->paid_amount > 0) {
+                $purchase->supplier->account->decrement('total_amount', $purchase->paid_amount);
+            }
+            
+            // Reverse old Accounts Payable
+            if ($purchase->due_amount > 0) {
+                $payableAccount = Account::where('name', 'Accounts Payable')->first();
+                if ($payableAccount) {
+                    $payableAccount->decrement('total_amount', $purchase->due_amount);
+                }
+            }
+            
+            // Reverse old stock
+            $oldStock = Stock::where('product_id', $purchase->product_id)->first();
+            if ($oldStock) {
+                $oldStock->decrement('current_stock', $purchase->quantity);
+                $oldStock->decrement('available_stock', $purchase->quantity);
+            }
+
+            $fromAccount = Account::find($request->from_account_id);
+            $supplier = Supplier::with('account')->find($request->supplier_id);
+            $product = Product::find($request->product_id);
+            
+            $netTotal = ($request->unit_price * $request->quantity) - ($request->discount ?? 0);
+
             // Update purchase
             $purchase->update([
                 'purchase_date' => $request->purchase_date,
                 'supplier_id' => $request->supplier_id,
+                'product_id' => $request->product_id,
                 'supplier_invoice_no' => $request->supplier_invoice_no,
                 'from_account_id' => $request->from_account_id,
-                'net_total_amount' => $request->net_total_amount,
+                'unit_price' => $request->unit_price,
+                'quantity' => $request->quantity,
+                'discount' => $request->discount ?? 0,
+                'net_total_amount' => $netTotal,
                 'paid_amount' => $request->paid_amount,
                 'due_amount' => $request->due_amount,
                 'remarks' => $request->remarks,
             ]);
 
-            // Update main transaction
-            $fromAccount = Account::find($request->from_account_id);
-            $supplier = Supplier::with('account')->find($request->supplier_id);
-
-            $purchase->transaction->update([
+            $transactionId = $purchase->transaction->transaction_id;
+            $oldTransactionDbId = $purchase->transaction_id;
+            
+            // Create new transactions
+            $newTransactionId = TransactionHelper::generateTransactionId();
+            
+            Transaction::create([
+                'transaction_id' => $newTransactionId,
                 'ac_number' => $fromAccount->ac_number,
+                'transaction_type' => 'Dr',
                 'amount' => $request->paid_amount,
-                'description' => 'Purchase from ' . $supplier->name . ' - Invoice: ' . $request->supplier_invoice_no,
+                'description' => 'Purchase ' . $product->product_name . ' from ' . $supplier->name . ' - Invoice: ' . $request->supplier_invoice_no,
                 'payment_type' => strtolower($request->payment_type),
+                'bank_name' => $request->bank_name ?? null,
+                'branch_name' => $request->branch_name ?? null,
+                'account_number' => $request->account_no ?? null,
+                'cheque_type' => $request->bank_type ?? null,
+                'cheque_no' => $request->cheque_no ?? null,
+                'cheque_date' => $request->cheque_date ?? null,
+                'mobile_bank_name' => $request->mobile_bank ?? null,
+                'mobile_number' => $request->mobile_number ?? null,
                 'transaction_date' => $request->purchase_date,
+                'transaction_time' => now()->format('H:i:s'),
             ]);
+            
+            if ($request->paid_amount > 0) {
+                Transaction::create([
+                    'transaction_id' => $newTransactionId,
+                    'ac_number' => $supplier->account->ac_number,
+                    'transaction_type' => 'Cr',
+                    'amount' => $request->paid_amount,
+                    'description' => 'Payment received for ' . $product->product_name . ' - Invoice: ' . $request->supplier_invoice_no,
+                    'payment_type' => strtolower($request->payment_type),
+                    'transaction_date' => $request->purchase_date,
+                    'transaction_time' => now()->format('H:i:s'),
+                ]);
+            }
+            
+            if ($request->due_amount > 0) {
+                $payableAccount = Account::where('name', 'Accounts Payable')->first();
+                if ($payableAccount) {
+                    Transaction::create([
+                        'transaction_id' => $newTransactionId,
+                        'ac_number' => $payableAccount->ac_number,
+                        'transaction_type' => 'Cr',
+                        'amount' => $request->due_amount,
+                        'description' => 'Due amount for ' . $product->product_name . ' - Invoice: ' . $request->supplier_invoice_no,
+                        'payment_type' => 'credit',
+                        'transaction_date' => $request->purchase_date,
+                        'transaction_time' => now()->format('H:i:s'),
+                    ]);
+                }
+            }
+            
+            // Update purchase with new transaction_id
+            $newTransaction = Transaction::where('transaction_id', $newTransactionId)->where('transaction_type', 'Dr')->first();
+            $purchase->update([
+                'transaction_id' => $newTransaction->id,
+            ]);
+            
+            // Delete old transactions after purchase is updated
+            Transaction::where('transaction_id', $transactionId)->delete();
+
+            // Apply new account balances
+            $fromAccount->decrement('total_amount', $request->paid_amount);
+            if ($request->paid_amount > 0) {
+                $supplier->account->increment('total_amount', $request->paid_amount);
+            }
+            
+            // Apply new Accounts Payable
+            if ($request->due_amount > 0) {
+                $payableAccount = Account::where('name', 'Accounts Payable')->first();
+                if ($payableAccount) {
+                    $payableAccount->increment('total_amount', $request->due_amount);
+                }
+            }
+            
+            // Update new stock
+            $newStock = Stock::firstOrCreate(
+                ['product_id' => $request->product_id],
+                [
+                    'opening_stock' => 0,
+                    'current_stock' => 0,
+                    'reserved_stock' => 0,
+                    'available_stock' => 0,
+                    'minimum_stock' => 0,
+                ]
+            );
+            $newStock->increment('current_stock', $request->quantity);
+            $newStock->increment('available_stock', $request->quantity);
         });
 
         return redirect()->back()->with('success', 'Purchase updated successfully.');
@@ -219,11 +382,36 @@ class PurchaseController extends Controller
     public function destroy(Purchase $purchase)
     {
         DB::transaction(function () use ($purchase) {
-            // Delete related transaction
-            $purchase->transaction?->delete();
+            // Reverse account balances
+            $purchase->fromAccount->increment('total_amount', $purchase->paid_amount);
+            if ($purchase->paid_amount > 0) {
+                $purchase->supplier->account->decrement('total_amount', $purchase->paid_amount);
+            }
+
+            // Reverse Accounts Payable if due amount exists
+            if ($purchase->due_amount > 0) {
+                $payableAccount = Account::where('name', 'Accounts Payable')->first();
+                if ($payableAccount) {
+                    $payableAccount->decrement('total_amount', $purchase->due_amount);
+                }
+            }
+
+            // Reverse stock
+            $stock = Stock::where('product_id', $purchase->product_id)->first();
+            if ($stock) {
+                $stock->decrement('current_stock', $purchase->quantity);
+                $stock->decrement('available_stock', $purchase->quantity);
+            }
+
+            $transactionId = $purchase->transaction->transaction_id;
             
-            // Delete purchase
+            // Delete purchase first
             $purchase->delete();
+            
+            // Delete all related transactions (Dr, Cr, Accounts Payable)
+            if ($transactionId) {
+                Transaction::where('transaction_id', $transactionId)->delete();
+            }
         });
 
         return redirect()->back()->with('success', 'Purchase deleted successfully.');
@@ -237,11 +425,37 @@ class PurchaseController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $purchases = Purchase::whereIn('id', $request->ids)->get();
+            $purchases = Purchase::with(['fromAccount', 'supplier.account'])->whereIn('id', $request->ids)->get();
             
             foreach ($purchases as $purchase) {
-                $purchase->transaction?->delete();
+                // Reverse account balances
+                $purchase->fromAccount->increment('total_amount', $purchase->paid_amount);
+                if ($purchase->paid_amount > 0) {
+                    $purchase->supplier->account->decrement('total_amount', $purchase->paid_amount);
+                }
+
+                // Reverse Accounts Payable if due amount exists
+                if ($purchase->due_amount > 0) {
+                    $payableAccount = Account::where('name', 'Accounts Payable')->first();
+                    if ($payableAccount) {
+                        $payableAccount->decrement('total_amount', $purchase->due_amount);
+                    }
+                }
+
+                // Reverse stock
+                $stock = Stock::where('product_id', $purchase->product_id)->first();
+                if ($stock) {
+                    $stock->decrement('current_stock', $purchase->quantity);
+                    $stock->decrement('available_stock', $purchase->quantity);
+                }
+
+                $transactionId = $purchase->transaction->transaction_id;
+                
                 $purchase->delete();
+                
+                if ($transactionId) {
+                    Transaction::where('transaction_id', $transactionId)->delete();
+                }
             }
         });
 

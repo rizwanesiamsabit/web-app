@@ -201,6 +201,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Purchase routes
     Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
     Route::post('purchases', [PurchaseController::class, 'store'])->name('purchases.store');
+    Route::get('purchases/{purchase}/edit', [PurchaseController::class, 'edit'])->name('purchases.edit');
     Route::put('purchases/{purchase}', [PurchaseController::class, 'update'])->name('purchases.update');
     Route::delete('purchases/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
     Route::delete('purchases/bulk/delete', [PurchaseController::class, 'bulkDelete'])->name('purchases.bulk.delete');

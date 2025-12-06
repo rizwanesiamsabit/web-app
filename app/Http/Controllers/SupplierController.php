@@ -99,6 +99,9 @@ class SupplierController extends Controller
             'ac_number' => $ac_number,
             'group_id' => $request->group_id,
             'group_code' => $groupCode,
+            'due_amount' => 0,
+            'paid_amount' => 0,
+            'total_amount' => 0,
             'status' => $request->status ?? true,
         ]);
 
@@ -125,6 +128,11 @@ class SupplierController extends Controller
             'address' => 'nullable|string|max:255',
             'proprietor_name' => 'nullable|string|max:255',
             'status' => 'boolean'
+        ]);
+
+        $supplier->account->update([
+            'name' => $request->name,
+            'status' => $request->status ?? true,
         ]);
 
         $supplier->update([

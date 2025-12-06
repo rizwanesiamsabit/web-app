@@ -121,46 +121,87 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         purchase_date: '',
-        supplier_id: '',
         supplier_invoice_no: '',
-        from_account_id: '',
-        payment_type: 'Cash',
-        bank_type: '',
-        cheque_no: '',
-        cheque_date: '',
-        bank_name: '',
-        branch_name: '',
-        account_no: '',
-        mobile_bank: '',
-        mobile_number: '',
-        mobile_transaction_id: '',
-        net_total_amount: '',
-        paid_amount: '',
-        due_amount: '',
         remarks: '',
         products: [
             {
                 product_id: '',
+                supplier_id: '',
                 unit_price: '',
                 quantity: '',
                 amount: '',
                 discount_type: 'Fixed',
                 discount: '',
+                payment_type: 'Cash',
+                from_account_id: '',
+                paid_amount: '',
+                due_amount: '',
+                bank_type: '',
+                bank_name: '',
+                cheque_no: '',
+                cheque_date: '',
+                branch_name: '',
+                account_no: '',
+                mobile_bank: '',
+                mobile_number: '',
             }
         ],
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Filter out empty products (first product if not filled)
+        const validProducts = data.products.filter(p => p.product_id && p.supplier_id && p.quantity && p.unit_price && p.from_account_id);
+        
+
+        
+        if (validProducts.length === 0) {
+            alert('Please add at least one product to cart');
+            return;
+        }
+        
+        const submitData = {
+            purchase_date: data.purchase_date,
+            supplier_invoice_no: data.supplier_invoice_no,
+            remarks: data.remarks,
+            products: validProducts
+        };
+        
         if (editingPurchase) {
-            put(`/purchases/${editingPurchase.id}`, {
+            // For update, send single product data
+            const updateData = {
+                purchase_date: data.purchase_date,
+                supplier_invoice_no: data.supplier_invoice_no,
+                remarks: data.remarks,
+                product_id: validProducts[0].product_id,
+                supplier_id: validProducts[0].supplier_id,
+                unit_price: validProducts[0].unit_price,
+                quantity: validProducts[0].quantity,
+                discount: validProducts[0].discount || 0,
+                payment_type: validProducts[0].payment_type,
+                from_account_id: validProducts[0].from_account_id,
+                paid_amount: validProducts[0].paid_amount,
+                due_amount: validProducts[0].due_amount,
+                bank_type: validProducts[0].bank_type,
+                bank_name: validProducts[0].bank_name,
+                cheque_no: validProducts[0].cheque_no,
+                cheque_date: validProducts[0].cheque_date,
+                branch_name: validProducts[0].branch_name,
+                account_no: validProducts[0].account_no,
+                mobile_bank: validProducts[0].mobile_bank,
+                mobile_number: validProducts[0].mobile_number,
+            };
+            
+            router.put(`/purchases/${editingPurchase.id}`, updateData, {
                 onSuccess: () => {
+                    setIsCreateOpen(false);
                     setEditingPurchase(null);
                     reset();
                 },
             });
         } else {
-            post('/purchases', {
+            router.post('/purchases', submitData, {
                 onSuccess: () => {
                     setIsCreateOpen(false);
                     reset();
@@ -169,38 +210,52 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
         }
     };
 
-    const handleEdit = (purchase: Purchase) => {
+    const handleEdit = async (purchase: Purchase) => {
         setEditingPurchase(purchase);
-        setData({
-            purchase_date: purchase.purchase_date,
-            supplier_id: purchase.supplier.name,
-            supplier_invoice_no: purchase.supplier_invoice_no,
-            from_account_id: purchase.from_account.name,
-            payment_type: purchase.payment_type,
-            bank_type: '',
-            cheque_no: '',
-            cheque_date: '',
-            bank_name: '',
-            branch_name: '',
-            account_no: '',
-            mobile_bank: '',
-            mobile_number: '',
-            mobile_transaction_id: '',
-            net_total_amount: purchase.net_total_amount.toString(),
-            paid_amount: purchase.paid_amount.toString(),
-            due_amount: purchase.due_amount.toString(),
-            remarks: purchase.remarks || '',
-            products: [
-                {
-                    product_id: '',
-                    unit_price: '',
-                    quantity: '',
-                    amount: '',
-                    discount_type: 'Fixed',
-                    discount: '',
-                }
-            ],
-        });
+        // Load purchase data for editing
+        try {
+            const response = await fetch(`/purchases/${purchase.id}/edit`);
+            const data = await response.json();
+            const purchaseData = data.purchase;
+            
+            let paymentType = 'Cash';
+            const dbPaymentType = purchaseData.transaction?.payment_type?.toLowerCase();
+            if (dbPaymentType === 'cash') paymentType = 'Cash';
+            else if (dbPaymentType === 'bank') paymentType = 'Bank';
+            else if (dbPaymentType === 'mobile bank' || dbPaymentType === 'mobile_bank') paymentType = 'Mobile Bank';
+            
+            setData({
+                purchase_date: purchaseData.purchase_date.split('T')[0],
+                supplier_invoice_no: purchaseData.supplier_invoice_no,
+                remarks: purchaseData.remarks || '',
+                products: [
+                    {
+                        product_id: purchaseData.product_id?.toString() || '',
+                        supplier_id: purchaseData.supplier_id?.toString() || '',
+                        unit_price: purchaseData.unit_price?.toString() || '',
+                        quantity: purchaseData.quantity?.toString() || '',
+                        amount: (purchaseData.unit_price * purchaseData.quantity).toString(),
+                        discount_type: 'Fixed',
+                        discount: purchaseData.discount?.toString() || '',
+                        payment_type: paymentType,
+                        from_account_id: purchaseData.from_account_id?.toString() || '',
+                        paid_amount: purchaseData.paid_amount?.toString() || '',
+                        due_amount: purchaseData.due_amount?.toString() || '',
+                        bank_type: purchaseData.transaction?.cheque_type || '',
+                        bank_name: purchaseData.transaction?.bank_name || '',
+                        cheque_no: purchaseData.transaction?.cheque_no || '',
+                        cheque_date: purchaseData.transaction?.cheque_date || '',
+                        branch_name: purchaseData.transaction?.branch_name || '',
+                        account_no: purchaseData.transaction?.account_number || '',
+                        mobile_bank: purchaseData.transaction?.mobile_bank_name || '',
+                        mobile_number: purchaseData.transaction?.mobile_number || '',
+                    }
+                ],
+            });
+            setIsCreateOpen(true);
+        } catch (error) {
+            console.error('Error loading purchase:', error);
+        }
     };
 
     const handleDelete = (purchase: Purchase) => {
@@ -320,8 +375,8 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
     const addProduct = () => {
         // Check if first product has required fields
         const firstProduct = data.products[0];
-        if (!firstProduct.product_id || !firstProduct.quantity || !firstProduct.unit_price) {
-            alert('Please fill product, quantity and unit price');
+        if (!firstProduct.product_id || !firstProduct.supplier_id || !firstProduct.quantity || !firstProduct.unit_price || !firstProduct.from_account_id) {
+            alert('Please fill product, supplier, quantity, unit price and payment account');
             return;
         }
 
@@ -329,79 +384,70 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
         const newProducts = [
             {
                 product_id: '',
+                supplier_id: '',
                 unit_price: '',
                 quantity: '',
                 amount: '',
                 discount_type: 'Fixed',
                 discount: '',
+                payment_type: 'Cash',
+                from_account_id: '',
+                paid_amount: '',
+                due_amount: '',
+                bank_type: '',
+                bank_name: '',
+                cheque_no: '',
+                cheque_date: '',
+                branch_name: '',
+                account_no: '',
+                mobile_bank: '',
+                mobile_number: '',
             },
             ...data.products
         ];
 
-        // Calculate net total from all products except first one (which is empty)
-        const total = newProducts.slice(1).reduce((sum, p) => {
-            if (p.product_id) {
-                const amount = parseFloat(p.amount) || 0;
-                const discount = parseFloat(p.discount) || 0;
-                return sum + (amount - discount);
-            }
-            return sum;
-        }, 0);
-
         setData({
             ...data,
-            products: newProducts,
-            net_total_amount: total.toFixed(2),
-            due_amount: (total - (parseFloat(data.paid_amount) || 0)).toFixed(2)
+            products: newProducts
         });
     };
 
     const removeProduct = (index: number) => {
         const newProducts = data.products.filter((_, i) => i !== index);
-        
-        // Calculate net total after removing product
-        const total = newProducts.slice(1).reduce((sum, p) => {
-            if (p.product_id) {
-                const amount = parseFloat(p.amount) || 0;
-                const discount = parseFloat(p.discount) || 0;
-                return sum + (amount - discount);
-            }
-            return sum;
-        }, 0);
-
-        setData({
-            ...data,
-            products: newProducts,
-            net_total_amount: total.toFixed(2),
-            due_amount: (total - (parseFloat(data.paid_amount) || 0)).toFixed(2)
-        });
+        setData('products', newProducts);
     };
 
-    const getFilteredAccounts = () => {
-        const groupName = data.payment_type === 'Cash' ? 'Cash in hand' : data.payment_type === 'Bank' ? 'Bank Account' : data.payment_type;
+    const getFilteredAccounts = (paymentType: string) => {
+        const groupName = paymentType === 'Cash' ? 'Cash in hand' : paymentType === 'Bank' ? 'Bank Account' : paymentType;
         return groupedAccounts[groupName] || [];
     };
 
     const updateProduct = (index: number, field: string, value: string) => {
-        const newProducts = [...data.products];
-        newProducts[index] = { ...newProducts[index], [field]: value };
-        
-        // Auto-fill unit price when product is selected
-        if (field === 'product_id' && value) {
-            const selectedProduct = products.find(p => p.id.toString() === value);
-            if (selectedProduct && selectedProduct.purchase_price) {
-                newProducts[index].unit_price = selectedProduct.purchase_price.toString();
+        setData(prevData => {
+            const newProducts = [...prevData.products];
+            newProducts[index] = { ...newProducts[index], [field]: value };
+            
+
+            // Auto-fill unit price when product is selected
+            if (field === 'product_id' && value) {
+                const selectedProduct = products.find(p => p.id.toString() === value);
+                if (selectedProduct && selectedProduct.purchase_price) {
+                    newProducts[index].unit_price = selectedProduct.purchase_price.toString();
+                }
             }
-        }
-        
-        // Calculate amount if unit_price and quantity are provided
-        if (field === 'unit_price' || field === 'quantity' || field === 'product_id') {
-            const unitPrice = parseFloat(newProducts[index].unit_price) || 0;
-            const quantity = parseFloat(newProducts[index].quantity) || 0;
-            newProducts[index].amount = (unitPrice * quantity).toString();
-        }
-        
-        setData('products', newProducts);
+            
+            // Calculate amount if unit_price and quantity are provided
+            if (field === 'unit_price' || field === 'quantity' || field === 'product_id') {
+                const unitPrice = parseFloat(newProducts[index].unit_price) || 0;
+                const quantity = parseFloat(newProducts[index].quantity) || 0;
+                newProducts[index].amount = (unitPrice * quantity).toString();
+            }
+            
+            return {
+                ...prevData,
+                products: newProducts
+            };
+        });
     };
 
     useEffect(() => {
@@ -597,21 +643,21 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-white">{purchase.purchase_date}</td>
+                                                <td className="p-4 text-[13px] dark:text-white">{new Date(purchase.purchase_date).toLocaleDateString('en-GB')}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{purchase.supplier.name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{purchase.supplier_invoice_no}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">৳{purchase.net_total_amount.toLocaleString()}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">৳{purchase.paid_amount.toLocaleString()}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">৳{purchase.due_amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{purchase.net_total_amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{purchase.paid_amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{purchase.due_amount.toLocaleString()}</td>
                                                 <td className="p-4">
                                                     <span className={`rounded px-2 py-1 text-xs ${
-                                                        purchase.due_amount === 0 
+                                                        parseFloat(purchase.due_amount.toString()) === 0 
                                                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                            : purchase.paid_amount > 0
+                                                            : parseFloat(purchase.paid_amount.toString()) > 0
                                                             ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                                                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                                     }`}>
-                                                        {purchase.due_amount === 0 ? 'Paid' : purchase.paid_amount > 0 ? 'Partial' : 'Due'}
+                                                        {parseFloat(purchase.due_amount.toString()) === 0 ? 'Paid' : parseFloat(purchase.paid_amount.toString()) > 0 ? 'Partial' : 'Due'}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
@@ -666,15 +712,19 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
                 <FormModal
                     isOpen={isCreateOpen}
-                    onClose={() => setIsCreateOpen(false)}
-                    title="Create Purchase"
+                    onClose={() => {
+                        setIsCreateOpen(false);
+                        setEditingPurchase(null);
+                        reset();
+                    }}
+                    title={editingPurchase ? "Update Purchase" : "Create Purchase"}
                     onSubmit={handleSubmit}
                     processing={processing}
-                    submitText="Create Purchase..."
+                    submitText={editingPurchase ? "Update Purchase" : "Create Purchase"}
                     className="max-w-7xl"
                 >
                     <div className="space-y-4">
-                            {/* Row 1: Purchase Date | Supplier | Supplier Invoice No | Product | Present Stock | Product Name | Code */}
+                            {/* Row 1: Purchase Date | Supplier Invoice No | Supplier | Product | Present Stock | Product Name | Code */}
                             <div className="grid grid-cols-7 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
@@ -691,11 +741,20 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     )}
                                 </div>
                                 <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Supplier Invoice No</Label>
+                                    <Input
+                                        value={data.supplier_invoice_no}
+                                        onChange={(e) => setData('supplier_invoice_no', e.target.value)}
+                                        placeholder="Enter supplier invoice number"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Supplier <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select value={data.supplier_id} onValueChange={(value) => setData('supplier_id', value)}>
-                                        <SelectTrigger className={errors.supplier_id ? 'border-red-500' : ''}>
+                                    <Select value={data.products[0]?.supplier_id || ''} onValueChange={(value) => updateProduct(0, 'supplier_id', value)}>
+                                        <SelectTrigger>
                                             <SelectValue placeholder="Select supplier" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -706,18 +765,6 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.supplier_id && (
-                                        <p className="text-sm text-red-500">{errors.supplier_id}</p>
-                                    )}
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Supplier Invoice No</Label>
-                                    <Input
-                                        value={data.supplier_invoice_no}
-                                        onChange={(e) => setData('supplier_invoice_no', e.target.value)}
-                                        placeholder="Enter supplier invoice number"
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Product</Label>
@@ -834,14 +881,18 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                             </div>
 
                             {/* Row 3: Payment Method | From Account | Bank/Mobile Bank Details | Paid Amount | Due Amount */}
-                            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${data.payment_type === 'Bank' ? (data.bank_type === 'Cheque' ? 7 : 6) : data.payment_type === 'Mobile Bank' ? 6 : 4}, minmax(0, 1fr))` }}>
+                            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${data.products[0]?.payment_type === 'Bank' ? (data.products[0]?.bank_type === 'Cheque' ? 7 : 6) : data.products[0]?.payment_type === 'Mobile Bank' ? 6 : 4}, minmax(0, 1fr))` }}>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Payment Method</Label>
-                                    <Select value={data.payment_type} onValueChange={(value) => {
-                                        setData('payment_type', value);
-                                        setData('from_account_id', ''); // Reset account when payment type changes
-                                    }}>
-                                        <SelectTrigger>
+                                    <Select 
+                                        value={data.products[0]?.payment_type || 'Cash'} 
+                                        onValueChange={(value) => {
+                                
+                                            updateProduct(0, 'payment_type', value);
+                                            updateProduct(0, 'from_account_id', ''); // Reset account when payment type changes
+                                        }}
+                                    >
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                             <SelectValue placeholder="Select payment method" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -853,27 +904,24 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">From Account</Label>
-                                    <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
-                                        <SelectTrigger className={errors.from_account_id ? 'border-red-500' : ''}>
+                                    <Select value={data.products[0]?.from_account_id || ''} onValueChange={(value) => updateProduct(0, 'from_account_id', value)}>
+                                        <SelectTrigger>
                                             <SelectValue placeholder="Select payment account" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {getFilteredAccounts().map((account) => (
+                                            {getFilteredAccounts(data.products[0]?.payment_type || 'Cash').map((account) => (
                                                 <SelectItem key={account.id} value={account.id.toString()}>
                                                     {account.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.from_account_id && (
-                                        <p className="text-sm text-red-500">{errors.from_account_id}</p>
-                                    )}
                                 </div>
-                                {data.payment_type === 'Bank' && (
+                                {data.products[0]?.payment_type === 'Bank' && (
                                     <>
                                         <div>
                                             <Label className="text-sm font-medium dark:text-gray-200">Bank Type</Label>
-                                            <Select value={data.bank_type} onValueChange={(value) => setData('bank_type', value)}>
+                                            <Select value={data.products[0]?.bank_type || ''} onValueChange={(value) => updateProduct(0, 'bank_type', value)}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select type" />
                                                 </SelectTrigger>
@@ -889,28 +937,28 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         <div>
                                             <Label className="text-sm font-medium dark:text-gray-200">Bank Name</Label>
                                             <Input
-                                                value={data.bank_name}
-                                                onChange={(e) => setData('bank_name', e.target.value)}
+                                                value={data.products[0]?.bank_name || ''}
+                                                onChange={(e) => updateProduct(0, 'bank_name', e.target.value)}
                                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                             />
                                         </div>
-                                        {data.bank_type === 'Cheque' && (
+                                        {data.products[0]?.bank_type === 'Cheque' && (
                                             <div>
                                                 <Label className="text-sm font-medium dark:text-gray-200">Cheque No</Label>
                                                 <Input
-                                                    value={data.cheque_no}
-                                                    onChange={(e) => setData('cheque_no', e.target.value)}
+                                                    value={data.products[0]?.cheque_no || ''}
+                                                    onChange={(e) => updateProduct(0, 'cheque_no', e.target.value)}
                                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                 />
                                             </div>
                                         )}
                                     </>
                                 )}
-                                {data.payment_type === 'Mobile Bank' && (
+                                {data.products[0]?.payment_type === 'Mobile Bank' && (
                                     <>
                                         <div>
                                             <Label className="text-sm font-medium dark:text-gray-200">Mobile Bank</Label>
-                                            <Select value={data.mobile_bank} onValueChange={(value) => setData('mobile_bank', value)}>
+                                            <Select value={data.products[0]?.mobile_bank || ''} onValueChange={(value) => updateProduct(0, 'mobile_bank', value)}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select mobile bank" />
                                                 </SelectTrigger>
@@ -924,8 +972,8 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         <div>
                                             <Label className="text-sm font-medium dark:text-gray-200">Mobile Number</Label>
                                             <Input
-                                                value={data.mobile_number}
-                                                onChange={(e) => setData('mobile_number', e.target.value)}
+                                                value={data.products[0]?.mobile_number || ''}
+                                                onChange={(e) => updateProduct(0, 'mobile_number', e.target.value)}
                                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                             />
                                         </div>
@@ -936,15 +984,34 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     <Input
                                         type="number"
                                         step="0.01"
-                                        value={data.paid_amount}
+                                        value={data.products[0]?.paid_amount || ''}
                                         onChange={(e) => {
+                                            const newProducts = [...data.products];
                                             const paid = parseFloat(e.target.value) || 0;
-                                            const total = parseFloat(data.net_total_amount) || 0;
-                                            setData({
-                                                ...data,
+                                            const amount = parseFloat(newProducts[0]?.amount) || 0;
+                                            const discount = parseFloat(newProducts[0]?.discount) || 0;
+                                            const total = amount - discount;
+                                            newProducts[0] = {
+                                                ...newProducts[0],
                                                 paid_amount: e.target.value,
-                                                due_amount: (total - paid).toString()
-                                            });
+                                                due_amount: (total - paid).toFixed(2)
+                                            };
+                                            setData('products', newProducts);
+                                        }}
+                                        onBlur={(e) => {
+                                            // Auto-fill with total if empty
+                                            if (!e.target.value) {
+                                                const newProducts = [...data.products];
+                                                const amount = parseFloat(newProducts[0]?.amount) || 0;
+                                                const discount = parseFloat(newProducts[0]?.discount) || 0;
+                                                const total = amount - discount;
+                                                newProducts[0] = {
+                                                    ...newProducts[0],
+                                                    paid_amount: total.toFixed(2),
+                                                    due_amount: '0.00'
+                                                };
+                                                setData('products', newProducts);
+                                            }
                                         }}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -953,7 +1020,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     <Label className="text-sm font-medium dark:text-gray-200">Due Amount</Label>
                                     <Input
                                         type="number"
-                                        value={data.due_amount || '0.00'}
+                                        value={data.products[0]?.due_amount || '0.00'}
                                         readOnly
                                         className="bg-gray-100 dark:bg-gray-600 dark:text-white"
                                     />
@@ -962,7 +1029,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
                             {/* Row 4: Remarks | Add Button */}
                             <div className="grid grid-cols-12 gap-4">
-                                <div className="col-span-10">
+                                <div className={editingPurchase ? "col-span-12" : "col-span-10"}>
                                     <Label className="text-sm font-medium dark:text-gray-200">Remarks</Label>
                                     <Input
                                         value={data.remarks}
@@ -971,19 +1038,22 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
-                                <div className="col-span-2 flex flex-col justify-end">
-                                    <Button
-                                        type="button"
-                                        onClick={addProduct}
-                                        className="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        <Plus className="h-4 w-4 mr-1" />
-                                        Add to Cart
-                                    </Button>
-                                </div>
+                                {!editingPurchase && (
+                                    <div className="col-span-2 flex flex-col justify-end">
+                                        <Button
+                                            type="button"
+                                            onClick={addProduct}
+                                            className="bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            <Plus className="h-4 w-4 mr-1" />
+                                            Add to Cart
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Row 5: Cart Table */}
+                            {!editingPurchase && (
                             <div className="mt-6">
                                 <table className="w-full border border-gray-300 dark:border-gray-600">
                                     <thead className="bg-gray-100 dark:bg-gray-700">
@@ -995,13 +1065,16 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Unit Price</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Discount</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Total</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Payment</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Paid</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Due</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {data.products.slice(1).filter(p => p.product_id).map((product, index) => {
                                             const selectedProduct = products.find(p => p.id.toString() === product.product_id);
-                                            const selectedSupplier = suppliers.find(s => s.id.toString() === data.supplier_id);
+                                            const selectedSupplier = suppliers.find(s => s.id.toString() === product.supplier_id);
                                             const actualIndex = index + 1; // Actual index in data.products array
                                             return (
                                                 <tr key={actualIndex} className="border-t dark:border-gray-600">
@@ -1012,6 +1085,9 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                                     <td className="p-2 text-sm dark:text-white">{product.unit_price}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.discount || '0'}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.amount}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.payment_type || 'Cash'}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.paid_amount || '0'}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.due_amount || '0'}</td>
                                                     <td className="p-2">
                                                         <div className="flex gap-2">
                                                             <Button
@@ -1045,6 +1121,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     </tbody>
                                 </table>
                             </div>
+                            )}
                     </div>
                 </FormModal>
 

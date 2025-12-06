@@ -12,10 +12,14 @@ return new class extends Migration
             $table->id();
             $table->date('purchase_date');
             $table->foreignId('supplier_id')->constrained('suppliers');
+            $table->foreignId('product_id')->constrained('products');
             $table->foreignId('transaction_id')->constrained('transactions');
             $table->string('supplier_invoice_no');
             $table->text('remarks')->nullable();
             $table->foreignId('from_account_id')->constrained('accounts');
+            $table->decimal('quantity', 18, 2);
+            $table->decimal('unit_price', 18, 2);
+            $table->decimal('discount', 18, 2)->default(0.00);
             $table->decimal('net_total_amount', 18, 2);
             $table->decimal('paid_amount', 18, 2)->default(0.00);
             $table->decimal('due_amount', 18, 2);

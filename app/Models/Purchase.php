@@ -9,10 +9,14 @@ class Purchase extends Model
     protected $fillable = [
         'purchase_date',
         'supplier_id',
+        'product_id',
         'transaction_id',
         'supplier_invoice_no',
         'remarks',
         'from_account_id',
+        'quantity',
+        'unit_price',
+        'discount',
         'net_total_amount',
         'paid_amount',
         'due_amount'
@@ -20,6 +24,9 @@ class Purchase extends Model
 
     protected $casts = [
         'purchase_date' => 'date',
+        'quantity' => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'discount' => 'decimal:2',
         'net_total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2'
@@ -28,6 +35,11 @@ class Purchase extends Model
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
     }
 
     public function transaction()
