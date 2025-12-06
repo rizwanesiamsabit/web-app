@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Account;
-use App\Models\Group;
 
 class AccountSeeder extends Seeder
 {
@@ -39,7 +38,6 @@ class AccountSeeder extends Seeder
         ];
 
         foreach ($accounts as $accountData) {
-            // Generate dynamic account number
             $lastAccount = Account::orderBy('ac_number', 'desc')->first();
             if ($lastAccount) {
                 $ac_number = str_pad((int)$lastAccount->ac_number + 1, 13, '0', STR_PAD_LEFT);

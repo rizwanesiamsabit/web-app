@@ -64,11 +64,21 @@ class PurchaseController extends Controller
             return $purchase;
         });
 
+        $accountsWithGroups = Account::with('group')
+            ->select('id', 'name', 'ac_number', 'group_id', 'group_code')
+            ->get();
+        
+        $accounts = $accountsWithGroups;
+        $groupedAccounts = $accountsWithGroups->groupBy(function ($account) {
+            return $account->group ? $account->group->name : 'Other';
+        });
+
         return Inertia::render('Purchases/Index', [
             'purchases' => $purchases,
             'suppliers' => Supplier::select('id', 'name')->get(),
-            'accounts' => Account::select('id', 'name', 'ac_number')->get(),
-            'products' => Product::with('unit')->select('id', 'product_name', 'product_code', 'unit_id', 'purchase_price')->get(),
+            'accounts' => $accounts,
+            'groupedAccounts' => $groupedAccounts,
+            'products' => Product::with(['unit', 'stock'])->select('id', 'product_name', 'product_code', 'unit_id', 'purchase_price')->get(),
             'filters' => $request->only(['search', 'supplier', 'payment_status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }

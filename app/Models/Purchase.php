@@ -7,36 +7,36 @@ use Illuminate\Database\Eloquent\Model;
 class Purchase extends Model
 {
     protected $fillable = [
-        'ac_number',
-        'product_id',
-        'quantity',
-        'unit_price',
-        'total_amount',
-        'paid_amount',
-        'due_amount',
-        'payment_method',
         'purchase_date',
-        'purchase_time',
-        'notes'
+        'supplier_id',
+        'transaction_id',
+        'supplier_invoice_no',
+        'remarks',
+        'from_account_id',
+        'net_total_amount',
+        'paid_amount',
+        'due_amount'
     ];
 
     protected $casts = [
-        'quantity' => 'decimal:2',
-        'unit_price' => 'decimal:2',
-        'total_amount' => 'decimal:2',
-        'paid_amount' => 'decimal:2',
-        'due_amount' => 'decimal:2',
         'purchase_date' => 'date',
-        'purchase_time' => 'datetime:H:i:s'
+        'net_total_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'due_amount' => 'decimal:2'
     ];
 
-    public function account()
+    public function supplier()
     {
-        return $this->belongsTo(Account::class, 'ac_number', 'ac_number');
+        return $this->belongsTo(Supplier::class);
     }
 
-    public function product()
+    public function transaction()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Transaction::class);
+    }
+
+    public function fromAccount()
+    {
+        return $this->belongsTo(Account::class, 'from_account_id');
     }
 }

@@ -49,12 +49,17 @@ class ProductController extends Controller
         $products = $query->paginate($perPage)->withQueryString()->through(function ($product) {
             return [
                 'id' => $product->id,
+                'category_id' => $product->category_id,
+                'unit_id' => $product->unit_id,
                 'product_code' => $product->product_code,
                 'product_name' => $product->product_name,
+                'product_slug' => $product->product_slug,
+                'country_Of_origin' => $product->country_Of_origin,
                 'category' => $product->category ? $product->category->name : null,
                 'unit' => $product->unit ? $product->unit->name : null,
                 'purchase_price' => $product->purchase_price,
                 'sales_price' => $product->sales_price,
+                'remarks' => $product->remarks,
                 'status' => $product->status,
                 'created_at' => $product->created_at->format('Y-m-d'),
             ];

@@ -123,14 +123,14 @@ export default function Products({ products, categories, units, filters }: Produ
     const handleEdit = (product: any) => {
         setEditingProduct(product);
         setData({
-            category_id: product.category_id || '',
-            unit_id: product.unit_id || '',
+            category_id: product.category_id ? product.category_id.toString() : '',
+            unit_id: product.unit_id ? product.unit_id.toString() : '',
             product_code: product.product_code || '',
             product_name: product.product_name || '',
             product_slug: product.product_slug || '',
             country_Of_origin: product.country_Of_origin || '',
-            purchase_price: product.purchase_price || '',
-            sales_price: product.sales_price || '',
+            purchase_price: product.purchase_price ? product.purchase_price.toString() : '',
+            sales_price: product.sales_price ? product.sales_price.toString() : '',
             remarks: product.remarks || '',
             status: product.status || 1
         });
