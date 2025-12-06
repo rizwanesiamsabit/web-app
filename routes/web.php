@@ -26,6 +26,8 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\CreditSaleController;
 use App\Http\Controllers\OfficePaymentController;
+use App\Http\Controllers\StockReportController;
+use App\Http\Controllers\DailyStatementController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -234,6 +236,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('office-payments/{officePayment}', [OfficePaymentController::class, 'destroy'])->name('office-payments.destroy');
     Route::delete('office-payments/bulk/delete', [OfficePaymentController::class, 'bulkDelete'])->name('office-payments.bulk.delete');
     Route::get('office-payments/download-pdf', [OfficePaymentController::class, 'downloadPdf'])->name('office-payments.download.pdf');
+    
+    // Stock Report routes
+    Route::get('stock-report', [StockReportController::class, 'index'])->name('stock-report.index');
+    Route::get('stock-report/download-pdf', [StockReportController::class, 'downloadPdf'])->name('stock-report.download.pdf');
+    
+    // Daily Statement routes
+    Route::get('daily-statement', [DailyStatementController::class, 'index'])->name('daily-statement.index');
+    Route::get('daily-statement/download-pdf', [DailyStatementController::class, 'downloadPdf'])->name('daily-statement.download.pdf');
 });
 
 require __DIR__.'/settings.php';

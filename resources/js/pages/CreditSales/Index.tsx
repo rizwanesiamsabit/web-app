@@ -1090,7 +1090,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                                     <td className="p-2 text-sm dark:text-white">{selectedProduct?.product_name}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.discount || '0'}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{product.paid_amount || '0'}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.due_amount || '0'}</td>
                                                     <td className="p-2">
                                                         <div className="flex gap-2">
                                                             <Button

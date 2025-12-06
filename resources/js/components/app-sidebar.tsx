@@ -78,7 +78,7 @@ const mainNavItems = [
             { title: 'Customer Summary Bill', href: '#', icon: FileText },
             {
                 title: 'Daily Statement Report',
-                href: '#',
+                href: '/daily-statement',
                 icon: BarChart3,
             },
         ],
@@ -109,7 +109,7 @@ const mainNavItems = [
         title: 'Product Stock',
         icon: Warehouse,
         children: [
-            { title: 'Today Stock Report', href: '#', icon: BarChart3 },
+            { title: 'Today Stock Report', href: '/stock-report', icon: BarChart3 },
         ],
     },
     {

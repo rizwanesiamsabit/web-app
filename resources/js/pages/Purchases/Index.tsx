@@ -486,6 +486,15 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                 newProducts[index].amount = (unitPrice * quantity).toString();
             }
             
+            // Calculate quantity if amount is changed
+            if (field === 'amount' && value) {
+                const unitPrice = parseFloat(newProducts[index].unit_price) || 0;
+                if (unitPrice > 0) {
+                    const amount = parseFloat(value) || 0;
+                    newProducts[index].quantity = (amount / unitPrice).toFixed(2);
+                }
+            }
+            
             return {
                 ...prevData,
                 products: newProducts
@@ -883,9 +892,10 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     <Label className="text-sm font-medium dark:text-gray-200">Amount</Label>
                                     <Input
                                         type="number"
-                                        value={data.products[0]?.amount || '0.00'}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                        step="0.01"
+                                        value={data.products[0]?.amount || ''}
+                                        onChange={(e) => updateProduct(0, 'amount', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
                                 <div>
