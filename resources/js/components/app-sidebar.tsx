@@ -75,7 +75,7 @@ const mainNavItems = [
                 icon: FileText,
             },
             { title: 'Customer Details Bill', href: '#', icon: FileText },
-            { title: 'Customer Summary Bill', href: '#', icon: FileText },
+            { title: 'Customer Summary Bill', href: '/customer-summary-bill', icon: FileText },
             {
                 title: 'Daily Statement Report',
                 href: '/daily-statement',

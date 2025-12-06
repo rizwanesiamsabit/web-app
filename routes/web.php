@@ -28,6 +28,7 @@ use App\Http\Controllers\CreditSaleController;
 use App\Http\Controllers\OfficePaymentController;
 use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\DailyStatementController;
+use App\Http\Controllers\CustomerSummaryBillController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -244,6 +245,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Daily Statement routes
     Route::get('daily-statement', [DailyStatementController::class, 'index'])->name('daily-statement.index');
     Route::get('daily-statement/download-pdf', [DailyStatementController::class, 'downloadPdf'])->name('daily-statement.download.pdf');
+    
+    // Customer Summary Bill routes
+    Route::get('customer-summary-bill', [CustomerSummaryBillController::class, 'index'])->name('customer-summary-bill.index');
+    Route::get('customer-summary-bill/download-pdf', [CustomerSummaryBillController::class, 'downloadPdf'])->name('customer-summary-bill.download.pdf');
 });
 
 require __DIR__.'/settings.php';
