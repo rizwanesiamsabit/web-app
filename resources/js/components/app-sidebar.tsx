@@ -54,7 +54,7 @@ const mainNavItems = [
         title: 'Dispenser',
         icon: Fuel,
         children: [
-            { title: 'Credit Sales', href: '#', icon: CreditCard },
+            { title: 'Credit Sales', href: '/credit-sales', icon: CreditCard },
             {
                 title: 'Dispensers Calculation',
                 href: '#',
