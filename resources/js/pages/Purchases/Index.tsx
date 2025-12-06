@@ -16,7 +16,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     ChevronDown,
     ChevronUp,
@@ -119,7 +119,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
     const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
     const [perPage, setPerPage] = useState(filters.per_page || 10);
 
-    const { data, setData, post, put, processing, errors, reset } = useForm({
+    const [data, setDataState] = useState({
         purchase_date: '',
         supplier_invoice_no: '',
         remarks: '',
@@ -148,14 +148,51 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
         ],
     });
 
+    const setData = (key: string | any, value?: any) => {
+        if (typeof key === 'string') {
+            setDataState(prev => ({ ...prev, [key]: value }));
+        } else {
+            setDataState(key as any);
+        }
+    };
+
+    const reset = () => {
+        setDataState({
+            purchase_date: '',
+            supplier_invoice_no: '',
+            remarks: '',
+            products: [
+                {
+                    product_id: '',
+                    supplier_id: '',
+                    unit_price: '',
+                    quantity: '',
+                    amount: '',
+                    discount_type: 'Fixed',
+                    discount: '',
+                    payment_type: 'Cash',
+                    from_account_id: '',
+                    paid_amount: '',
+                    due_amount: '',
+                    bank_type: '',
+                    bank_name: '',
+                    cheque_no: '',
+                    cheque_date: '',
+                    branch_name: '',
+                    account_no: '',
+                    mobile_bank: '',
+                    mobile_number: '',
+                }
+            ],
+        });
+    };
+
+    const [errors, setErrors] = useState<any>({});
+    const [processing, setProcessing] = useState(false);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Filter out empty products (first product if not filled)
         const validProducts = data.products.filter(p => p.product_id && p.supplier_id && p.quantity && p.unit_price && p.from_account_id);
-        
-
-        
         if (validProducts.length === 0) {
             alert('Please add at least one product to cart');
             return;
@@ -423,7 +460,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
     };
 
     const updateProduct = (index: number, field: string, value: string) => {
-        setData(prevData => {
+        setData((prevData: any) => {
             const newProducts = [...prevData.products];
             newProducts[index] = { ...newProducts[index], [field]: value };
             
@@ -736,9 +773,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         onChange={(e) => setData('purchase_date', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
-                                    {errors.purchase_date && (
-                                        <p className="text-sm text-red-500">{errors.purchase_date}</p>
-                                    )}
+
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Supplier Invoice No</Label>
@@ -886,10 +921,9 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     <Label className="text-sm font-medium dark:text-gray-200">Payment Method</Label>
                                     <Select 
                                         value={data.products[0]?.payment_type || 'Cash'} 
-                                        onValueChange={(value) => {
-                                
+                        onValueChange={(value) => {
                                             updateProduct(0, 'payment_type', value);
-                                            updateProduct(0, 'from_account_id', ''); // Reset account when payment type changes
+                                            updateProduct(0, 'from_account_id', '');
                                         }}
                                     >
                                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
