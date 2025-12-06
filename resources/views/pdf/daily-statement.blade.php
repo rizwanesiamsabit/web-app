@@ -137,42 +137,247 @@
     </div>
 
     <div class="title-section">
-        <div class="title-box">Daily Statement Report</div>
+        <div class="title-box">Daily Statement Report ({{ $startDate }} to {{ $endDate }})</div>
     </div>
 
+    <h3 style="margin: 20px 0 10px 0; font-size: 14px;">1. Sales Summary (Product Wise)</h3>
     <table>
         <thead>
             <tr>
-                <th class="text-center" style="width: 50px;">SL</th>
-                <th>Date</th>
-                <th>Invoice No</th>
-                <th>Customer</th>
-                <th>Vehicle No</th>
-                <th>Product</th>
+                <th>Product Name</th>
+                <th>Unit Name</th>
+                <th class="text-right">Unit Price</th>
                 <th class="text-right">Quantity</th>
-                <th class="text-right">Amount</th>
-                <th class="text-right">Due Amount</th>
+                <th class="text-right">Total Amount</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($statements as $index => $statement)
+            @forelse($allProductSales as $sale)
             <tr>
-                <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ $statement->sale_date }}</td>
-                <td>{{ $statement->invoice_no }}</td>
-                <td>{{ $statement->customer->name ?? 'N/A' }}</td>
-                <td>{{ $statement->vehicle->vehicle_no ?? 'N/A' }}</td>
-                <td>{{ $statement->product->product_name ?? 'N/A' }}</td>
-                <td class="text-right">{{ number_format($statement->quantity, 2) }} {{ $statement->product->unit->name ?? '' }}</td>
-                <td class="text-right">{{ number_format($statement->total_amount, 2) }}</td>
-                <td class="text-right">{{ number_format($statement->due_amount, 2) }}</td>
+                <td>{{ $sale['product_name'] }}</td>
+                <td>{{ $sale['unit_name'] }}</td>
+                <td class="text-right">{{ number_format($sale['unit_price'], 2) }}</td>
+                <td class="text-right">{{ number_format($sale['total_quantity'], 2) }}</td>
+                <td class="text-right">{{ number_format($sale['total_amount'], 2) }}</td>
             </tr>
             @empty
-            <tr>
-                <td colspan="9" class="text-center" style="padding: 20px; color: #999;">No records found</td>
-            </tr>
+            <tr><td colspan="5" class="text-center">No records</td></tr>
             @endforelse
+            @if(count($allProductSales) > 0)
+            <tr style="font-weight: bold; background-color: #e0e0e0;">
+                <td colspan="3">Total:</td>
+                <td class="text-right">{{ number_format(collect($allProductSales)->sum('total_quantity'), 2) }}</td>
+                <td class="text-right">{{ number_format(collect($allProductSales)->sum('total_amount'), 2) }}</td>
+            </tr>
+            @endif
         </tbody>
+    </table>
+
+    <h3 style="margin: 20px 0 10px 0; font-size: 14px;">2. Sales Summary (Cash & Bank)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Unit Name</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($cashBankSales as $sale)
+            <tr>
+                <td>{{ $sale->product_name }}</td>
+                <td>{{ $sale->unit_name }}</td>
+                <td class="text-right">{{ number_format($sale->unit_price, 2) }}</td>
+                <td class="text-right">{{ number_format($sale->total_quantity, 2) }}</td>
+                <td class="text-right">{{ number_format($sale->total_amount, 2) }}</td>
+            </tr>
+            @empty
+            <tr><td colspan="5" class="text-center">No records</td></tr>
+            @endforelse
+            @if(count($cashBankSales) > 0)
+            <tr style="font-weight: bold; background-color: #e0e0e0;">
+                <td colspan="3">Total:</td>
+                <td class="text-right">{{ number_format($cashBankSales->sum('total_quantity'), 2) }}</td>
+                <td class="text-right">{{ number_format($cashBankSales->sum('total_amount'), 2) }}</td>
+            </tr>
+            @endif
+        </tbody>
+    </table>
+
+    <h3 style="margin: 20px 0 10px 0; font-size: 14px;">3. Sales Summary (Credit)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Unit Name</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($creditSales as $sale)
+            <tr>
+                <td>{{ $sale->product_name }}</td>
+                <td>{{ $sale->unit_name }}</td>
+                <td class="text-right">{{ number_format($sale->unit_price, 2) }}</td>
+                <td class="text-right">{{ number_format($sale->total_quantity, 2) }}</td>
+                <td class="text-right">{{ number_format($sale->total_amount, 2) }}</td>
+            </tr>
+            @empty
+            <tr><td colspan="5" class="text-center">No records</td></tr>
+            @endforelse
+            @if(count($creditSales) > 0)
+            <tr style="font-weight: bold; background-color: #e0e0e0;">
+                <td colspan="3">Total:</td>
+                <td class="text-right">{{ number_format($creditSales->sum('total_quantity'), 2) }}</td>
+                <td class="text-right">{{ number_format($creditSales->sum('total_amount'), 2) }}</td>
+            </tr>
+            @endif
+        </tbody>
+    </table>
+
+    <h3 style="margin: 20px 0 10px 0; font-size: 14px;">4. Customer Wise Sales Summary (Credit)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Customer Name</th>
+                <th>Vehicle Number</th>
+                <th>Product Name</th>
+                <th>Unit Name</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($customerWiseSales as $sale)
+            <tr>
+                <td>{{ $sale->customer_name }}</td>
+                <td>{{ $sale->vehicle_no }}</td>
+                <td>{{ $sale->product_name }}</td>
+                <td>{{ $sale->unit_name }}</td>
+                <td class="text-right">{{ number_format($sale->unit_price, 2) }}</td>
+                <td class="text-right">{{ number_format($sale->quantity, 2) }}</td>
+                <td class="text-right">{{ number_format($sale->total_amount, 2) }}</td>
+            </tr>
+            @empty
+            <tr><td colspan="7" class="text-center">No records</td></tr>
+            @endforelse
+            @if(count($customerWiseSales) > 0)
+            <tr style="font-weight: bold; background-color: #e0e0e0;">
+                <td colspan="5">Total:</td>
+                <td class="text-right">{{ number_format($customerWiseSales->sum('quantity'), 2) }}</td>
+                <td class="text-right">{{ number_format($customerWiseSales->sum('total_amount'), 2) }}</td>
+            </tr>
+            @endif
+        </tbody>
+    </table>
+
+    <h3 style="margin: 20px 0 10px 0; font-size: 14px;">5. Cash Received Summary</h3>
+    <table>
+        <thead>
+            <tr>
+                <th class="text-center" style="width: 50px;">Sl</th>
+                <th>Name</th>
+                <th>Received Type</th>
+                <th class="text-right">Received Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($cashReceived as $index => $item)
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td>{{ $item->account_name }}</td>
+                <td>{{ $item->payment_type ?? '-' }}</td>
+                <td class="text-right">{{ number_format($item->amount, 2) }}</td>
+            </tr>
+            @empty
+            <tr><td colspan="4" class="text-center">No records</td></tr>
+            @endforelse
+            @if(count($cashReceived) > 0)
+            <tr style="font-weight: bold; background-color: #e0e0e0;">
+                <td colspan="3">Total:</td>
+                <td class="text-right">{{ number_format($cashReceived->sum('amount'), 2) }}</td>
+            </tr>
+            @endif
+        </tbody>
+    </table>
+
+    <h3 style="margin: 20px 0 10px 0; font-size: 14px;">6. Cash Payment Summary</h3>
+    <table>
+        <thead>
+            <tr>
+                <th class="text-center" style="width: 50px;">Sl</th>
+                <th>Name</th>
+                <th>Payment Type</th>
+                <th class="text-right">Payment Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($cashPayment as $index => $item)
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td>{{ $item->account_name }}</td>
+                <td>{{ $item->payment_type ?? '-' }}</td>
+                <td class="text-right">{{ number_format($item->amount, 2) }}</td>
+            </tr>
+            @empty
+            <tr><td colspan="4" class="text-center">No records</td></tr>
+            @endforelse
+            @if(count($cashPayment) > 0)
+            <tr style="font-weight: bold; background-color: #e0e0e0;">
+                <td colspan="3">Total:</td>
+                <td class="text-right">{{ number_format($cashPayment->sum('amount'), 2) }}</td>
+            </tr>
+            @endif
+        </tbody>
+    </table>
+
+    <table style="margin-top: 30px; border: 1px solid #000;">
+        <tr>
+            <td style="width: 50%; border-right: 1px solid #000; padding: 80px 20px 20px 20px; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; width: 200px; padding-top: 5px;">Manager Signature</div>
+            </td>
+            <td style="width: 50%; padding: 20px;">
+                <table style="width: 100%; border: none;">
+                    <tr>
+                        <td style="border: none; padding: 5px; font-weight: bold;">Sales Summary (Product Wise):</td>
+                        <td style="border: none; padding: 5px; text-align: right; font-weight: bold;">{{ number_format(collect($allProductSales)->sum('total_amount'), 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none; padding: 5px;">Cash Received Summary:</td>
+                        <td style="border: none; padding: 5px; text-align: right;">{{ number_format($cashReceived->sum('amount'), 2) }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #000;">
+                        <td style="border: none; padding: 5px; font-weight: bold;">Total Received:</td>
+                        <td style="border: none; padding: 5px; text-align: right; font-weight: bold; border-bottom: 1px solid #000;">{{ number_format(collect($allProductSales)->sum('total_amount') + $cashReceived->sum('amount'), 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none; padding: 5px; padding-top: 15px;">Sales Summary (Credit):</td>
+                        <td style="border: none; padding: 5px; padding-top: 15px; text-align: right;">{{ number_format($creditSales->sum('total_amount'), 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none; padding: 5px;">Sales Summary (Bank):</td>
+                        <td style="border: none; padding: 5px; text-align: right;">{{ number_format($cashBankSales->sum('total_amount'), 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none; padding: 5px;">Cash Payment Summary:</td>
+                        <td style="border: none; padding: 5px; text-align: right;">{{ number_format($cashPayment->sum('amount'), 2) }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #000;">
+                        <td style="border: none; padding: 5px; font-weight: bold;">Total Payment:</td>
+                        <td style="border: none; padding: 5px; text-align: right; font-weight: bold; border-bottom: 1px solid #000;">{{ number_format($creditSales->sum('total_amount') + $cashBankSales->sum('total_amount') + $cashPayment->sum('amount'), 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none; padding: 5px; padding-top: 15px; font-weight: bold; font-size: 14px;">CASH IN HAND</td>
+                        <td style="border: none; padding: 5px; padding-top: 15px; text-align: right; font-weight: bold; font-size: 14px;">{{ number_format((collect($allProductSales)->sum('total_amount') + $cashReceived->sum('amount')) - ($creditSales->sum('total_amount') + $cashBankSales->sum('total_amount') + $cashPayment->sum('amount')), 2) }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
     </table>
 
     <div class="footer">
@@ -180,7 +385,7 @@
             Generated on: {{ date('Y-m-d H:i:s') }}
         </div>
         <div class="footer-right">
-            Total Records: {{ count($statements) }}
+            Date Range: {{ $startDate }} to {{ $endDate }}
         </div>
     </div>
 </body>

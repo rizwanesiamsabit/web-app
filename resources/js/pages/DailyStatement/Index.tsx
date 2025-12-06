@@ -21,13 +21,19 @@ interface ProductSale {
 
 interface CustomerSale {
     customer_name: string;
+    vehicle_no: string;
+    product_name: string;
+    unit_name: string;
+    unit_price: number;
+    quantity: number;
     total_amount: number;
 }
 
 interface CashTransaction {
     account_name: string;
+    payment_type?: string;
     amount: number;
-    description: string;
+    description?: string;
 }
 
 interface Customer {
@@ -151,11 +157,11 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b dark:border-gray-700">
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Product Name</th>
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Unit Name</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Unit Price</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Quantity</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Total Amount</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Product Name</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Unit Name</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Unit Price</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Quantity</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -163,22 +169,22 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                                             <>
                                                 {productWiseSales.map((sale, index) => (
                                                     <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-                                                        <td className="p-2 text-[11px] dark:text-white">{sale.product_name}</td>
-                                                        <td className="p-2 text-[11px] dark:text-gray-300">{sale.unit_name}</td>
-                                                        <td className="p-2 text-right text-[11px] dark:text-gray-300">{sale.unit_price?.toLocaleString() || '0'}</td>
-                                                        <td className="p-2 text-right text-[11px] dark:text-gray-300">{sale.total_quantity.toLocaleString()}</td>
-                                                        <td className="p-2 text-right text-[11px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
+                                                        <td className="p-2 text-[13px] dark:text-white">{sale.product_name}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{sale.unit_name}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.unit_price?.toLocaleString() || '0'}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.total_quantity.toLocaleString()}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
                                                     </tr>
                                                 ))}
-                                                <tr className="border-t-2 border-gray-800 dark:border-gray-300 font-bold">
-                                                    <td colSpan={3} className="p-2 text-[11px] dark:text-white">Total:</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-white">{productWiseSales.reduce((sum, sale) => sum + sale.total_quantity, 0).toLocaleString()}</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-white">{productWiseSales.reduce((sum, sale) => sum + sale.total_amount, 0).toLocaleString()}</td>
+                                                <tr className="border-b font-bold dark:border-gray-700">
+                                                    <td colSpan={3} className="p-2 text-[13px] dark:text-white">Total:</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{productWiseSales.reduce((sum, sale) => sum + Number(sale.total_quantity), 0).toFixed(2)}</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{productWiseSales.reduce((sum, sale) => sum + Number(sale.total_amount), 0).toFixed(2)}</td>
                                                 </tr>
                                             </>
                                         ) : (
                                             <tr>
-                                                <td colSpan={5} className="p-4 text-center text-[11px] text-gray-500 dark:text-gray-400">No records</td>
+                                                <td colSpan={5} className="p-4 text-center text-[13px] text-gray-500 dark:text-gray-400">No records</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -196,23 +202,34 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b dark:border-gray-700">
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Product</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Quantity</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Amount</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Product Name</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Unit Name</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Unit Price</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Quantity</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {cashBankSales.length > 0 ? (
-                                            cashBankSales.map((sale, index) => (
-                                                <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-                                                    <td className="p-2 text-[11px] dark:text-white">{sale.product_name}</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-gray-300">{sale.total_quantity.toLocaleString()} {sale.unit_name}</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
+                                            <>
+                                                {cashBankSales.map((sale, index) => (
+                                                    <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                        <td className="p-2 text-[13px] dark:text-white">{sale.product_name}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{sale.unit_name}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.unit_price?.toLocaleString() || '0'}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.total_quantity.toLocaleString()}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="border-b font-bold dark:border-gray-700">
+                                                    <td colSpan={3} className="p-2 text-[13px] dark:text-white">Total:</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{cashBankSales.reduce((sum, sale) => sum + Number(sale.total_quantity), 0).toFixed(2)}</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{cashBankSales.reduce((sum, sale) => sum + Number(sale.total_amount), 0).toFixed(2)}</td>
                                                 </tr>
-                                            ))
+                                            </>
                                         ) : (
                                             <tr>
-                                                <td colSpan={3} className="p-4 text-center text-[11px] text-gray-500 dark:text-gray-400">No records</td>
+                                                <td colSpan={5} className="p-4 text-center text-[13px] text-gray-500 dark:text-gray-400">No records</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -230,23 +247,34 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b dark:border-gray-700">
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Product</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Quantity</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Amount</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Product Name</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Unit Name</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Unit Price</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Quantity</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {creditSales.length > 0 ? (
-                                            creditSales.map((sale, index) => (
-                                                <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-                                                    <td className="p-2 text-[11px] dark:text-white">{sale.product_name}</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-gray-300">{sale.total_quantity.toLocaleString()} {sale.unit_name}</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
+                                            <>
+                                                {creditSales.map((sale, index) => (
+                                                    <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                        <td className="p-2 text-[13px] dark:text-white">{sale.product_name}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{sale.unit_name}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.unit_price?.toLocaleString() || '0'}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.total_quantity.toLocaleString()}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="border-b font-bold dark:border-gray-700">
+                                                    <td colSpan={3} className="p-2 text-[13px] dark:text-white">Total:</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{creditSales.reduce((sum, sale) => sum + Number(sale.total_quantity), 0).toFixed(2)}</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{creditSales.reduce((sum, sale) => sum + Number(sale.total_amount), 0).toFixed(2)}</td>
                                                 </tr>
-                                            ))
+                                            </>
                                         ) : (
                                             <tr>
-                                                <td colSpan={3} className="p-4 text-center text-[11px] text-gray-500 dark:text-gray-400">No records</td>
+                                                <td colSpan={5} className="p-4 text-center text-[13px] text-gray-500 dark:text-gray-400">No records</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -264,21 +292,38 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b dark:border-gray-700">
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Customer</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Total Amount</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Customer Name</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Vehicle Number</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Product Name</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Unit Name</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Unit Price</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Quantity</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {customerWiseSales.length > 0 ? (
-                                            customerWiseSales.map((sale, index) => (
-                                                <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-                                                    <td className="p-2 text-[11px] dark:text-white">{sale.customer_name}</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
+                                            <>
+                                                {customerWiseSales.map((sale, index) => (
+                                                    <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                        <td className="p-2 text-[13px] dark:text-white">{sale.customer_name}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{sale.vehicle_no}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{sale.product_name}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{sale.unit_name}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.unit_price.toLocaleString()}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.quantity.toLocaleString()}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="border-b font-bold dark:border-gray-700">
+                                                    <td colSpan={5} className="p-2 text-[13px] dark:text-white">Total:</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{customerWiseSales.reduce((sum, sale) => sum + Number(sale.quantity), 0).toFixed(2)}</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{customerWiseSales.reduce((sum, sale) => sum + Number(sale.total_amount), 0).toFixed(2)}</td>
                                                 </tr>
-                                            ))
+                                            </>
                                         ) : (
                                             <tr>
-                                                <td colSpan={2} className="p-4 text-center text-[11px] text-gray-500 dark:text-gray-400">No records</td>
+                                                <td colSpan={7} className="p-4 text-center text-[13px] text-gray-500 dark:text-gray-400">No records</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -296,23 +341,31 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b dark:border-gray-700">
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Account</th>
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Description</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Amount</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Sl</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Name</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Received Type</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Received Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {cashReceived.length > 0 ? (
-                                            cashReceived.map((item, index) => (
-                                                <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-                                                    <td className="p-2 text-[11px] dark:text-white">{item.account_name}</td>
-                                                    <td className="p-2 text-[11px] dark:text-gray-300">{item.description}</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-gray-300">{item.amount.toLocaleString()}</td>
+                                            <>
+                                                {cashReceived.map((item, index) => (
+                                                    <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                        <td className="p-2 text-[13px] dark:text-white">{index + 1}</td>
+                                                        <td className="p-2 text-[13px] dark:text-white">{item.account_name}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{item.payment_type || '-'}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.amount.toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="border-b font-bold dark:border-gray-700">
+                                                    <td colSpan={3} className="p-2 text-[13px] dark:text-white">Total:</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{cashReceived.reduce((sum, item) => sum + Number(item.amount), 0).toFixed(2)}</td>
                                                 </tr>
-                                            ))
+                                            </>
                                         ) : (
                                             <tr>
-                                                <td colSpan={3} className="p-4 text-center text-[11px] text-gray-500 dark:text-gray-400">No records</td>
+                                                <td colSpan={4} className="p-4 text-center text-[13px] text-gray-500 dark:text-gray-400">No records</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -330,23 +383,31 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b dark:border-gray-700">
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Account</th>
-                                            <th className="p-2 text-left text-[11px] font-medium dark:text-gray-300">Description</th>
-                                            <th className="p-2 text-right text-[11px] font-medium dark:text-gray-300">Amount</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Sl</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Name</th>
+                                            <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
+                                            <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Payment Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {cashPayment.length > 0 ? (
-                                            cashPayment.map((item, index) => (
-                                                <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-                                                    <td className="p-2 text-[11px] dark:text-white">{item.account_name}</td>
-                                                    <td className="p-2 text-[11px] dark:text-gray-300">{item.description}</td>
-                                                    <td className="p-2 text-right text-[11px] dark:text-gray-300">{item.amount.toLocaleString()}</td>
+                                            <>
+                                                {cashPayment.map((item, index) => (
+                                                    <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                        <td className="p-2 text-[13px] dark:text-white">{index + 1}</td>
+                                                        <td className="p-2 text-[13px] dark:text-white">{item.account_name}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{item.payment_type || '-'}</td>
+                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.amount.toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="border-b font-bold dark:border-gray-700">
+                                                    <td colSpan={3} className="p-2 text-[13px] dark:text-white">Total:</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">{cashPayment.reduce((sum, item) => sum + Number(item.amount), 0).toFixed(2)}</td>
                                                 </tr>
-                                            ))
+                                            </>
                                         ) : (
                                             <tr>
-                                                <td colSpan={3} className="p-4 text-center text-[11px] text-gray-500 dark:text-gray-400">No records</td>
+                                                <td colSpan={4} className="p-4 text-center text-[13px] text-gray-500 dark:text-gray-400">No records</td>
                                             </tr>
                                         )}
                                     </tbody>
