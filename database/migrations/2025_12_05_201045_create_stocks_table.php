@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('stocks', function (Blueprint $table) {
@@ -21,14 +18,10 @@ return new class extends Migration
             $table->decimal('minimum_stock', 18, 2)->default(0.00);
             $table->decimal('maximum_stock', 18, 2)->nullable();
             $table->timestamps();
-            
+
             $table->unique('product_id');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('stocks');

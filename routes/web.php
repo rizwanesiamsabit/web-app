@@ -23,6 +23,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PaymentVoucherController;
 use App\Http\Controllers\ReceivedVoucherController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\OfficePaymentController;
 
 Route::get('/', function () {
@@ -206,6 +207,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('purchases/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
     Route::delete('purchases/bulk/delete', [PurchaseController::class, 'bulkDelete'])->name('purchases.bulk.delete');
     Route::get('purchases/download-pdf', [PurchaseController::class, 'downloadPdf'])->name('purchases.download.pdf');
+
+    // Sale routes
+    Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
+    Route::post('sales', [SaleController::class, 'store'])->name('sales.store');
+    Route::get('sales/{sale}/edit', [SaleController::class, 'edit'])->name('sales.edit');
+    Route::put('sales/{sale}', [SaleController::class, 'update'])->name('sales.update');
+    Route::delete('sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
+    Route::delete('sales/bulk/delete', [SaleController::class, 'bulkDelete'])->name('sales.bulk.delete');
+    Route::get('sales/download-pdf', [SaleController::class, 'downloadPdf'])->name('sales.download.pdf');
     
     // Office Payment routes
     Route::get('office-payments', [OfficePaymentController::class, 'index'])->name('office-payments.index');

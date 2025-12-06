@@ -15,11 +15,11 @@ return new class extends Migration
             $table->string('memo_no', 50)->nullable();
             $table->string('invoice_no')->nullable();
             $table->string('delivery_challan_no', 200)->nullable();
-            $table->foreignId('transaction_id')->constrained('transactions');
             $table->foreignId('shift_id')->constrained('shifts');
-            $table->foreignId('customer_id')->constrained('customers');
+            $table->foreignId('transaction_id')->nullable()->constrained('transactions');
+            $table->string('customer')->nullable();
+            $table->string('vehicle_no')->nullable();
             $table->foreignId('product_id')->constrained('products');
-            $table->foreignId('vehicle_id')->constrained('vehicles');
             $table->decimal('purchase_price', 18, 2)->default(0.00);
             $table->decimal('quantity', 18, 2)->default(0.00);
             $table->decimal('amount', 18, 2)->default(0.00);

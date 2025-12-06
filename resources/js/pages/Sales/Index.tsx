@@ -12,7 +12,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
@@ -30,23 +29,19 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-interface Purchase {
+interface Sale {
     id: number;
-    purchase_date: string;
-    supplier: { name: string };
-    supplier_invoice_no: string;
-    from_account: { name: string };
-    net_total_amount: number;
+    sale_date: string;
+    invoice_no: string;
+    customer: string;
+    vehicle_no: string;
+    product_id: number;
+    shift: { name: string };
+    total_amount: number;
     paid_amount: number;
     due_amount: number;
-    payment_type: string;
     remarks: string;
     created_at: string;
-}
-
-interface Supplier {
-    id: number;
-    name: string;
 }
 
 interface Account {
@@ -60,11 +55,27 @@ interface Product {
     product_name: string;
     product_code: string;
     unit: { name: string };
-    purchase_price: number;
+    sales_price: number;
     stock?: {
         current_stock: number;
         available_stock: number;
     };
+}
+
+interface Vehicle {
+    id: number;
+    vehicle_number: string;
+    customer_id: number;
+    product_id: number;
+    customer: {
+        id: number;
+        name: string;
+    } | null;
+}
+
+interface Shift {
+    id: number;
+    name: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -73,14 +84,20 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard().url,
     },
     {
-        title: 'Purchases',
-        href: '/purchases',
+        title: 'Sales',
+        href: '/sales',
     },
 ];
 
-interface PurchasesProps {
-    purchases: {
-        data: Purchase[];
+interface SalesHistory {
+    vehicle_no: string;
+    customer: string;
+    product_id: number;
+}
+
+interface SalesProps {
+    sales: {
+        data: Sale[];
         current_page: number;
         last_page: number;
         per_page: number;
@@ -88,13 +105,17 @@ interface PurchasesProps {
         from: number;
         to: number;
     };
-    suppliers: Supplier[];
     accounts: Account[];
     groupedAccounts: Record<string, Account[]>;
     products: Product[];
+    vehicles: Vehicle[];
+    salesHistory: SalesHistory[];
+    shifts: Shift[];
+    uniqueCustomers: string[];
+    uniqueVehicles: string[];
     filters: {
         search?: string;
-        supplier?: string;
+        customer?: string;
         payment_status?: string;
         start_date?: string;
         end_date?: string;
@@ -104,14 +125,14 @@ interface PurchasesProps {
     };
 }
 
-export default function Purchases({ purchases, suppliers = [], accounts = [], groupedAccounts = {}, products = [], filters = {} }: PurchasesProps) {
+export default function Sales({ sales, accounts = [], groupedAccounts = {}, products = [], vehicles = [], salesHistory = [], shifts = [], uniqueCustomers = [], uniqueVehicles = [], filters = {} }: SalesProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
-    const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
-    const [selectedPurchases, setSelectedPurchases] = useState<number[]>([]);
+    const [editingSale, setEditingSale] = useState<Sale | null>(null);
+    const [deletingSale, setDeletingSale] = useState<Sale | null>(null);
+    const [selectedSales, setSelectedSales] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters.search || '');
-    const [supplier, setSupplier] = useState(filters.supplier || 'all');
+    const [customer, setCustomer] = useState(filters.customer || 'all');
     const [paymentStatus, setPaymentStatus] = useState(filters.payment_status || 'all');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
@@ -120,20 +141,21 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
     const [perPage, setPerPage] = useState(filters.per_page || 10);
 
     const [data, setDataState] = useState({
-        purchase_date: '',
-        supplier_invoice_no: '',
+        sale_date: '',
+        invoice_no: '',
+        shift_id: '',
         remarks: '',
         products: [
             {
                 product_id: '',
-                supplier_id: '',
-                unit_price: '',
+                customer: '',
+                vehicle_no: '',
                 quantity: '',
                 amount: '',
                 discount_type: 'Fixed',
                 discount: '',
                 payment_type: 'Cash',
-                from_account_id: '',
+                to_account_id: '',
                 paid_amount: '',
                 due_amount: '',
                 bank_type: '',
@@ -158,20 +180,21 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
     const reset = () => {
         setDataState({
-            purchase_date: '',
-            supplier_invoice_no: '',
+            sale_date: '',
+            invoice_no: '',
+            shift_id: '',
             remarks: '',
             products: [
                 {
                     product_id: '',
-                    supplier_id: '',
-                    unit_price: '',
+                    customer: '',
+                    vehicle_no: '',
                     quantity: '',
                     amount: '',
                     discount_type: 'Fixed',
                     discount: '',
                     payment_type: 'Cash',
-                    from_account_id: '',
+                    to_account_id: '',
                     paid_amount: '',
                     due_amount: '',
                     bank_type: '',
@@ -192,34 +215,34 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const validProducts = data.products.filter(p => p.product_id && p.supplier_id && p.quantity && p.unit_price && p.from_account_id);
+        const validProducts = data.products.filter(p => p.product_id && p.customer && p.vehicle_no && p.quantity);
         if (validProducts.length === 0) {
             alert('Please add at least one product to cart');
             return;
         }
         
         const submitData = {
-            purchase_date: data.purchase_date,
-            supplier_invoice_no: data.supplier_invoice_no,
+            sale_date: data.sale_date,
+            invoice_no: data.invoice_no,
+            shift_id: data.shift_id,
             remarks: data.remarks,
             products: validProducts
         };
         
-        if (editingPurchase) {
-            // For update, send single product data
+        if (editingSale) {
             const updateData = {
-                purchase_date: data.purchase_date,
-                supplier_invoice_no: data.supplier_invoice_no,
+                sale_date: data.sale_date,
+                invoice_no: data.invoice_no,
+                shift_id: data.shift_id,
                 remarks: data.remarks,
                 product_id: validProducts[0].product_id,
-                supplier_id: validProducts[0].supplier_id,
-                unit_price: validProducts[0].unit_price,
+                customer: validProducts[0].customer,
+                vehicle_no: validProducts[0].vehicle_no,
                 quantity: validProducts[0].quantity,
                 discount: validProducts[0].discount || 0,
                 payment_type: validProducts[0].payment_type,
-                from_account_id: validProducts[0].from_account_id,
+                to_account_id: validProducts[0].to_account_id,
                 paid_amount: validProducts[0].paid_amount,
-                due_amount: validProducts[0].due_amount,
                 bank_type: validProducts[0].bank_type,
                 bank_name: validProducts[0].bank_name,
                 cheque_no: validProducts[0].cheque_no,
@@ -230,79 +253,85 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                 mobile_number: validProducts[0].mobile_number,
             };
             
-            router.put(`/purchases/${editingPurchase.id}`, updateData, {
+            router.put(`/sales/${editingSale.id}`, updateData, {
                 onSuccess: () => {
                     setIsCreateOpen(false);
-                    setEditingPurchase(null);
+                    setEditingSale(null);
                     reset();
                 },
             });
         } else {
-            router.post('/purchases', submitData, {
+            setProcessing(true);
+            router.post('/sales', submitData, {
                 onSuccess: () => {
                     setIsCreateOpen(false);
                     reset();
+                    setProcessing(false);
+                },
+                onError: (errors) => {
+                    setErrors(errors);
+                    setProcessing(false);
                 },
             });
         }
     };
 
-    const handleEdit = async (purchase: Purchase) => {
-        setEditingPurchase(purchase);
-        // Load purchase data for editing
+    const handleEdit = async (sale: Sale) => {
+        setEditingSale(sale);
         try {
-            const response = await fetch(`/purchases/${purchase.id}/edit`);
+            const response = await fetch(`/sales/${sale.id}/edit`);
             const data = await response.json();
-            const purchaseData = data.purchase;
+            const saleData = data.sale;
             
             let paymentType = 'Cash';
-            const dbPaymentType = purchaseData.transaction?.payment_type?.toLowerCase();
+            const dbPaymentType = saleData.transaction?.payment_type?.toLowerCase();
             if (dbPaymentType === 'cash') paymentType = 'Cash';
             else if (dbPaymentType === 'bank') paymentType = 'Bank';
             else if (dbPaymentType === 'mobile bank' || dbPaymentType === 'mobile_bank') paymentType = 'Mobile Bank';
             
             setData({
-                purchase_date: purchaseData.purchase_date.split('T')[0],
-                supplier_invoice_no: purchaseData.supplier_invoice_no,
-                remarks: purchaseData.remarks || '',
+                sale_date: saleData.sale_date.split('T')[0],
+                invoice_no: saleData.invoice_no,
+                shift_id: saleData.shift_id?.toString() || '',
+                remarks: saleData.remarks || '',
                 products: [
                     {
-                        product_id: purchaseData.product_id?.toString() || '',
-                        supplier_id: purchaseData.supplier_id?.toString() || '',
-                        unit_price: purchaseData.unit_price?.toString() || '',
-                        quantity: purchaseData.quantity?.toString() || '',
-                        amount: (purchaseData.unit_price * purchaseData.quantity).toString(),
+                        product_id: saleData.product_id?.toString() || '',
+                        customer: saleData.customer || '',
+                        vehicle_no: saleData.vehicle_no || '',
+                        quantity: saleData.quantity?.toString() || '',
+                        amount: saleData.amount?.toString() || '',
                         discount_type: 'Fixed',
-                        discount: purchaseData.discount?.toString() || '',
+                        discount: saleData.discount?.toString() || '',
                         payment_type: paymentType,
-                        from_account_id: purchaseData.from_account_id?.toString() || '',
-                        paid_amount: purchaseData.paid_amount?.toString() || '',
-                        due_amount: purchaseData.due_amount?.toString() || '',
-                        bank_type: purchaseData.transaction?.cheque_type || '',
-                        bank_name: purchaseData.transaction?.bank_name || '',
-                        cheque_no: purchaseData.transaction?.cheque_no || '',
-                        cheque_date: purchaseData.transaction?.cheque_date || '',
-                        branch_name: purchaseData.transaction?.branch_name || '',
-                        account_no: purchaseData.transaction?.account_number || '',
-                        mobile_bank: purchaseData.transaction?.mobile_bank_name || '',
-                        mobile_number: purchaseData.transaction?.mobile_number || '',
+                        to_account_id: saleData.transaction?.ac_number ? accounts.find(a => a.ac_number === saleData.transaction.ac_number)?.id.toString() || '' : '',
+                        paid_amount: saleData.paid_amount?.toString() || '',
+                        due_amount: saleData.due_amount?.toString() || '',
+                        bank_type: saleData.transaction?.cheque_type || '',
+                        bank_name: saleData.transaction?.bank_name || '',
+                        cheque_no: saleData.transaction?.cheque_no || '',
+                        cheque_date: saleData.transaction?.cheque_date || '',
+                        branch_name: saleData.transaction?.branch_name || '',
+                        account_no: saleData.transaction?.account_number || '',
+                        mobile_bank: saleData.transaction?.mobile_bank_name || '',
+                        mobile_number: saleData.transaction?.mobile_number || '',
                     }
                 ],
             });
             setIsCreateOpen(true);
         } catch (error) {
-            console.error('Error loading purchase:', error);
+            console.error('Error loading sale:', error);
         }
     };
 
-    const handleDelete = (purchase: Purchase) => {
-        setDeletingPurchase(purchase);
+    const handleDelete = (sale: Sale) => {
+        setDeletingSale(sale);
     };
 
     const confirmDelete = () => {
-        if (deletingPurchase) {
-            router.delete(`/purchases/${deletingPurchase.id}`, {
-                onSuccess: () => setDeletingPurchase(null),
+        if (deletingSale) {
+            router.delete(`/sales/${deletingSale.id}`, {
+                onSuccess: () => setDeletingSale(null),
             });
         }
     };
@@ -312,10 +341,10 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
     };
 
     const confirmBulkDelete = () => {
-        router.delete('/purchases/bulk/delete', {
-            data: { ids: selectedPurchases },
+        router.delete('/sales/bulk/delete', {
+            data: { ids: selectedSales },
             onSuccess: () => {
-                setSelectedPurchases([]);
+                setSelectedSales([]);
                 setIsBulkDeleting(false);
             },
         });
@@ -323,10 +352,10 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
     const applyFilters = () => {
         router.get(
-            '/purchases',
+            '/sales',
             {
                 search: search || undefined,
-                supplier: supplier === 'all' ? undefined : supplier,
+                customer: customer === 'all' ? undefined : customer,
                 payment_status: paymentStatus === 'all' ? undefined : paymentStatus,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -340,12 +369,12 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
     const clearFilters = () => {
         setSearch('');
-        setSupplier('all');
+        setCustomer('all');
         setPaymentStatus('all');
         setStartDate('');
         setEndDate('');
         router.get(
-            '/purchases',
+            '/sales',
             {
                 sort_by: sortBy,
                 sort_order: sortOrder,
@@ -360,10 +389,10 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
         setSortBy(column);
         setSortOrder(newOrder);
         router.get(
-            '/purchases',
+            '/sales',
             {
                 search: search || undefined,
-                supplier: supplier === 'all' ? undefined : supplier,
+                customer: customer === 'all' ? undefined : customer,
                 payment_status: paymentStatus === 'all' ? undefined : paymentStatus,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -377,10 +406,10 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
     const handlePageChange = (page: number) => {
         router.get(
-            '/purchases',
+            '/sales',
             {
                 search: search || undefined,
-                supplier: supplier === 'all' ? undefined : supplier,
+                customer: customer === 'all' ? undefined : customer,
                 payment_status: paymentStatus === 'all' ? undefined : paymentStatus,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
@@ -394,41 +423,39 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
     };
 
     const toggleSelectAll = () => {
-        if (selectedPurchases.length === purchases.data.length) {
-            setSelectedPurchases([]);
+        if (selectedSales.length === sales.data.length) {
+            setSelectedSales([]);
         } else {
-            setSelectedPurchases(purchases.data.map((purchase) => purchase.id));
+            setSelectedSales(sales.data.map((sale) => sale.id));
         }
     };
 
-    const toggleSelectPurchase = (purchaseId: number) => {
-        if (selectedPurchases.includes(purchaseId)) {
-            setSelectedPurchases(selectedPurchases.filter((id) => id !== purchaseId));
+    const toggleSelectSale = (saleId: number) => {
+        if (selectedSales.includes(saleId)) {
+            setSelectedSales(selectedSales.filter((id) => id !== saleId));
         } else {
-            setSelectedPurchases([...selectedPurchases, purchaseId]);
+            setSelectedSales([...selectedSales, saleId]);
         }
     };
 
     const addProduct = () => {
-        // Check if first product has required fields
         const firstProduct = data.products[0];
-        if (!firstProduct.product_id || !firstProduct.supplier_id || !firstProduct.quantity || !firstProduct.unit_price || !firstProduct.from_account_id) {
-            alert('Please fill product, supplier, quantity, unit price and payment account');
+        if (!firstProduct.product_id || !firstProduct.customer || !firstProduct.vehicle_no || !firstProduct.quantity) {
+            alert('Please fill product, customer, vehicle and quantity');
             return;
         }
 
-        // Add current product to cart and reset first product
         const newProducts = [
             {
                 product_id: '',
-                supplier_id: '',
-                unit_price: '',
+                customer: '',
+                vehicle_no: '',
                 quantity: '',
                 amount: '',
                 discount_type: 'Fixed',
                 discount: '',
                 payment_type: 'Cash',
-                from_account_id: '',
+                to_account_id: '',
                 paid_amount: '',
                 due_amount: '',
                 bank_type: '',
@@ -469,21 +496,47 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
         setData((prevData: any) => {
             const newProducts = [...prevData.products];
             newProducts[index] = { ...newProducts[index], [field]: value };
-            
 
-            // Auto-fill unit price when product is selected
             if (field === 'product_id' && value) {
                 const selectedProduct = products.find(p => p.id.toString() === value);
-                if (selectedProduct && selectedProduct.purchase_price) {
-                    newProducts[index].unit_price = selectedProduct.purchase_price.toString();
+                if (selectedProduct && selectedProduct.sales_price) {
+                    const quantity = parseFloat(newProducts[index].quantity) || 0;
+                    const amount = selectedProduct.sales_price * quantity;
+                    const discount = parseFloat(newProducts[index].discount) || 0;
+                    newProducts[index].amount = amount.toString();
+                    newProducts[index].paid_amount = (amount - discount).toFixed(2);
+                    newProducts[index].due_amount = '0.00';
                 }
             }
             
-            // Calculate amount if unit_price and quantity are provided
-            if (field === 'unit_price' || field === 'quantity' || field === 'product_id') {
-                const unitPrice = parseFloat(newProducts[index].unit_price) || 0;
-                const quantity = parseFloat(newProducts[index].quantity) || 0;
-                newProducts[index].amount = (unitPrice * quantity).toString();
+            if (field === 'quantity' && value) {
+                const selectedProduct = products.find(p => p.id.toString() === newProducts[index].product_id);
+                if (selectedProduct && selectedProduct.sales_price) {
+                    const quantity = parseFloat(value) || 0;
+                    const amount = selectedProduct.sales_price * quantity;
+                    const discount = parseFloat(newProducts[index].discount) || 0;
+                    newProducts[index].amount = amount.toString();
+                    newProducts[index].paid_amount = (amount - discount).toFixed(2);
+                    newProducts[index].due_amount = '0.00';
+                }
+            }
+            
+            if (field === 'amount' && value) {
+                const selectedProduct = products.find(p => p.id.toString() === newProducts[index].product_id);
+                if (selectedProduct && selectedProduct.sales_price && selectedProduct.sales_price > 0) {
+                    const amount = parseFloat(value) || 0;
+                    const discount = parseFloat(newProducts[index].discount) || 0;
+                    newProducts[index].quantity = (amount / selectedProduct.sales_price).toFixed(2);
+                    newProducts[index].paid_amount = (amount - discount).toFixed(2);
+                    newProducts[index].due_amount = '0.00';
+                }
+            }
+            
+            if (field === 'discount' && value !== undefined) {
+                const amount = parseFloat(newProducts[index].amount) || 0;
+                const discount = parseFloat(value) || 0;
+                newProducts[index].paid_amount = (amount - discount).toFixed(2);
+                newProducts[index].due_amount = '0.00';
             }
             
             return {
@@ -491,6 +544,44 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                 products: newProducts
             };
         });
+    };
+
+    const handleVehicleBlur = (index: number, value: string) => {
+        if (value) {
+            const vehicle = vehicles.find(v => v.vehicle_number === value);
+            if (vehicle) {
+                setData((prevData: any) => {
+                    const newProducts = [...prevData.products];
+                    newProducts[index].customer = vehicle.customer?.name || '';
+                    if (vehicle.product_id) {
+                        newProducts[index].product_id = vehicle.product_id.toString();
+                        const selectedProduct = products.find(p => p.id === vehicle.product_id);
+                        if (selectedProduct && selectedProduct.sales_price) {
+                            const quantity = parseFloat(newProducts[index].quantity) || 0;
+                            newProducts[index].amount = (selectedProduct.sales_price * quantity).toString();
+                        }
+                    }
+                    return { ...prevData, products: newProducts };
+                });
+            } else {
+                const saleHistory = salesHistory.find(s => s.vehicle_no === value);
+                if (saleHistory) {
+                    setData((prevData: any) => {
+                        const newProducts = [...prevData.products];
+                        newProducts[index].customer = saleHistory.customer || '';
+                        if (saleHistory.product_id) {
+                            newProducts[index].product_id = saleHistory.product_id.toString();
+                            const selectedProduct = products.find(p => p.id === saleHistory.product_id);
+                            if (selectedProduct && selectedProduct.sales_price) {
+                                const quantity = parseFloat(newProducts[index].quantity) || 0;
+                                newProducts[index].amount = (selectedProduct.sales_price * quantity).toString();
+                            }
+                        }
+                        return { ...prevData, products: newProducts };
+                    });
+                }
+            }
+        }
     };
 
     useEffect(() => {
@@ -504,26 +595,26 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Purchases" />
+            <Head title="Sales" />
 
             <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold dark:text-white">
-                            Purchases
+                            Sales
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400">
-                            Manage purchase orders and supplier transactions
+                            Manage sales orders and customer transactions
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedPurchases.length > 0 && (
+                        {selectedSales.length > 0 && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Selected ({selectedPurchases.length})
+                                Delete Selected ({selectedSales.length})
                             </Button>
                         )}
                         <Button
@@ -531,13 +622,13 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                             onClick={() => {
                                 const params = new URLSearchParams();
                                 if (search) params.append('search', search);
-                                if (supplier !== 'all') params.append('supplier', supplier);
+                                if (customer !== 'all') params.append('customer', customer);
                                 if (paymentStatus !== 'all') params.append('payment_status', paymentStatus);
                                 if (startDate) params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
                                 if (sortBy) params.append('sort_by', sortBy);
                                 if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/purchases/download-pdf?${params.toString()}`;
+                                window.location.href = `/sales/download-pdf?${params.toString()}`;
                             }}
                         >
                             <FileText className="mr-2 h-4 w-4" />
@@ -545,12 +636,11 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                         </Button>
                         <Button onClick={() => setIsCreateOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Add Purchase
+                            Add Sale
                         </Button>
                     </div>
                 </div>
 
-                {/* Filter Card */}
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -563,29 +653,32 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                             <div>
                                 <Label className="dark:text-gray-200">Search</Label>
                                 <Input
-                                    placeholder="Search purchases..."
+                                    placeholder="Search sales..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
                             <div>
-                                <Label className="dark:text-gray-200">Supplier</Label>
+                                <Label className="dark:text-gray-200">Customer</Label>
                                 <Select
-                                    value={supplier}
+                                    value={customer}
                                     onValueChange={(value) => {
-                                        setSupplier(value);
+                                        setCustomer(value);
                                         applyFilters();
                                     }}
                                 >
                                     <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All suppliers" />
+                                        <SelectValue placeholder="All customers" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All suppliers</SelectItem>
-                                        {suppliers.map((s) => (
-                                            <SelectItem key={s.id} value={s.name}>
-                                                {s.name}
+                                        <SelectItem value="all">All customers</SelectItem>
+                                        {Array.from(new Set([
+                                            ...vehicles.filter(v => v.customer).map(v => v.customer!.name),
+                                            ...uniqueCustomers
+                                        ])).sort().map((name) => (
+                                            <SelectItem key={name} value={name}>
+                                                {name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -651,22 +744,23 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedPurchases.length === purchases.data.length && purchases.data.length > 0}
+                                                checked={selectedSales.length === sales.data.length && sales.data.length > 0}
                                                 onChange={toggleSelectAll}
                                                 className="rounded border-gray-300 dark:border-gray-600"
                                             />
                                         </th>
                                         <th
                                             className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
-                                            onClick={() => handleSort('purchase_date')}
+                                            onClick={() => handleSort('sale_date')}
                                         >
                                             <div className="flex items-center gap-1">
                                                 Date
-                                                {sortBy === 'purchase_date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                {sortBy === 'sale_date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Supplier</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Customer</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Vehicle</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Paid Amount</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Due Amount</th>
@@ -675,32 +769,33 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {purchases.data.length > 0 ? (
-                                        purchases.data.map((purchase) => (
-                                            <tr key={purchase.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                    {sales.data.length > 0 ? (
+                                        sales.data.map((sale) => (
+                                            <tr key={sale.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
                                                 <td className="p-4">
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedPurchases.includes(purchase.id)}
-                                                        onChange={() => toggleSelectPurchase(purchase.id)}
+                                                        checked={selectedSales.includes(sale.id)}
+                                                        onChange={() => toggleSelectSale(sale.id)}
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-white">{new Date(purchase.purchase_date).toLocaleDateString('en-GB')}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{purchase.supplier.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{purchase.supplier_invoice_no}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{purchase.net_total_amount.toLocaleString()}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{purchase.paid_amount.toLocaleString()}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{purchase.due_amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-white">{new Date(sale.sale_date).toLocaleDateString('en-GB')}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.invoice_no}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.customer}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.vehicle_no}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.paid_amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.due_amount.toLocaleString()}</td>
                                                 <td className="p-4">
                                                     <span className={`rounded px-2 py-1 text-xs ${
-                                                        parseFloat(purchase.due_amount.toString()) === 0 
+                                                        parseFloat(sale.due_amount.toString()) === 0 
                                                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                            : parseFloat(purchase.paid_amount.toString()) > 0
+                                                            : parseFloat(sale.paid_amount.toString()) > 0
                                                             ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                                                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                                     }`}>
-                                                        {parseFloat(purchase.due_amount.toString()) === 0 ? 'Paid' : parseFloat(purchase.paid_amount.toString()) > 0 ? 'Partial' : 'Due'}
+                                                        {parseFloat(sale.due_amount.toString()) === 0 ? 'Paid' : parseFloat(sale.paid_amount.toString()) > 0 ? 'Partial' : 'Due'}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
@@ -708,7 +803,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => handleEdit(purchase)}
+                                                            onClick={() => handleEdit(sale)}
                                                             className="text-indigo-600 hover:text-indigo-800"
                                                         >
                                                             <Edit className="h-4 w-4" />
@@ -716,7 +811,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => handleDelete(purchase)}
+                                                            onClick={() => handleDelete(sale)}
                                                             className="text-red-600 hover:text-red-800"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
@@ -727,9 +822,9 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={9} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={10} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                                                No purchases found
+                                                No sales found
                                             </td>
                                         </tr>
                                     )}
@@ -738,11 +833,11 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                         </div>
 
                         <Pagination
-                            currentPage={purchases.current_page}
-                            lastPage={purchases.last_page}
-                            from={purchases.from}
-                            to={purchases.to}
-                            total={purchases.total}
+                            currentPage={sales.current_page}
+                            lastPage={sales.last_page}
+                            from={sales.from}
+                            to={sales.to}
+                            total={sales.total}
                             perPage={perPage}
                             onPageChange={handlePageChange}
                             onPerPageChange={(newPerPage) => {
@@ -757,55 +852,98 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                     isOpen={isCreateOpen}
                     onClose={() => {
                         setIsCreateOpen(false);
-                        setEditingPurchase(null);
+                        setEditingSale(null);
                         reset();
                     }}
-                    title={editingPurchase ? "Update Purchase" : "Create Purchase"}
+                    title={editingSale ? "Update Sale" : "Create Sale"}
                     onSubmit={handleSubmit}
                     processing={processing}
-                    submitText={editingPurchase ? "Update Purchase" : "Create Purchase"}
-                    className="max-w-7xl"
+                    submitText={editingSale ? "Update Sale" : "Create Sale"}
+                    className="max-w-[80vw]"
                 >
                     <div className="space-y-4">
-                            {/* Row 1: Purchase Date | Supplier Invoice No | Supplier | Product | Present Stock | Product Name | Code */}
-                            <div className="grid grid-cols-7 gap-4">
+                            <div className="grid grid-cols-8 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
-                                        Purchase Date <span className="text-red-500">*</span>
+                                        Sale Date <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
                                         type="date"
-                                        value={data.purchase_date}
-                                        onChange={(e) => setData('purchase_date', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Supplier Invoice No</Label>
-                                    <Input
-                                        value={data.supplier_invoice_no}
-                                        onChange={(e) => setData('supplier_invoice_no', e.target.value)}
-                                        placeholder="Enter supplier invoice number"
+                                        value={data.sale_date}
+                                        onChange={(e) => setData('sale_date', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
-                                        Supplier <span className="text-red-500">*</span>
+                                        Invoice No <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select value={data.products[0]?.supplier_id || ''} onValueChange={(value) => updateProduct(0, 'supplier_id', value)}>
+                                    <Input
+                                        value={data.invoice_no}
+                                        onChange={(e) => setData('invoice_no', e.target.value)}
+                                        placeholder="Enter invoice number"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Shift <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select supplier" />
+                                            <SelectValue placeholder="Select shift" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {suppliers.map((supplier) => (
-                                                <SelectItem key={supplier.id} value={supplier.id.toString()}>
-                                                    {supplier.name}
+                                            {shifts.map((shift) => (
+                                                <SelectItem key={shift.id} value={shift.id.toString()}>
+                                                    {shift.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Customer <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        list="customers-list"
+                                        value={data.products[0]?.customer || ''}
+                                        onChange={(e) => {
+                                            updateProduct(0, 'customer', e.target.value);
+                                        }}
+                                        placeholder="Type customer name"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                    <datalist id="customers-list">
+                                        {Array.from(new Set([
+                                            ...vehicles.filter(v => v.customer).map(v => v.customer!.name),
+                                            ...uniqueCustomers
+                                        ])).sort().map((name) => (
+                                            <option key={name} value={name} />
+                                        ))}
+                                    </datalist>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Vehicle <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        list="vehicles-list"
+                                        value={data.products[0]?.vehicle_no || ''}
+                                        onChange={(e) => updateProduct(0, 'vehicle_no', e.target.value)}
+                                        onBlur={(e) => handleVehicleBlur(0, e.target.value)}
+                                        placeholder="Type vehicle number"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                    <datalist id="vehicles-list">
+                                        {Array.from(new Set([
+                                            ...vehicles.map(v => v.vehicle_number),
+                                            ...uniqueVehicles
+                                        ])).sort().map((vehicleNo) => (
+                                            <option key={vehicleNo} value={vehicleNo} />
+                                        ))}
+                                    </datalist>
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Product</Label>
@@ -832,14 +970,6 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     />
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Product Name</Label>
-                                    <Input
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.product_name || ''}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                                <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Code</Label>
                                     <Input
                                         value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.product_code || ''}
@@ -849,7 +979,6 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                 </div>
                             </div>
 
-                            {/* Row 2: Unit Name | Unit Price | Quantity | Amount | Discount Type | Percentage | Discount */}
                             <div className="grid grid-cols-7 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Unit Name</Label>
@@ -860,13 +989,13 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     />
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Unit Price</Label>
+                                    <Label className="text-sm font-medium dark:text-gray-200">Sales Price</Label>
                                     <Input
                                         type="number"
                                         step="0.01"
-                                        value={data.products[0]?.unit_price || ''}
-                                        onChange={(e) => updateProduct(0, 'unit_price', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.sales_price || ''}
+                                        readOnly
+                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />
                                 </div>
                                 <div>
@@ -883,9 +1012,10 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     <Label className="text-sm font-medium dark:text-gray-200">Amount</Label>
                                     <Input
                                         type="number"
-                                        value={data.products[0]?.amount || '0.00'}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                        step="0.01"
+                                        value={data.products[0]?.amount || ''}
+                                        onChange={(e) => updateProduct(0, 'amount', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
                                 <div>
@@ -921,15 +1051,14 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                 </div>
                             </div>
 
-                            {/* Row 3: Payment Method | From Account | Bank/Mobile Bank Details | Paid Amount | Due Amount */}
-                            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${data.products[0]?.payment_type === 'Bank' ? (data.products[0]?.bank_type === 'Cheque' ? 7 : 6) : data.products[0]?.payment_type === 'Mobile Bank' ? 6 : 4}, minmax(0, 1fr))` }}>
+                            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${data.products[0]?.payment_type === 'Bank' ? (data.products[0]?.bank_type === 'Cheque' ? 6 : 5) : data.products[0]?.payment_type === 'Mobile Bank' ? 5 : 3}, minmax(0, 1fr))` }}>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Payment Method</Label>
                                     <Select 
                                         value={data.products[0]?.payment_type || 'Cash'} 
-                        onValueChange={(value) => {
+                                        onValueChange={(value) => {
                                             updateProduct(0, 'payment_type', value);
-                                            updateProduct(0, 'from_account_id', '');
+                                            updateProduct(0, 'to_account_id', '');
                                         }}
                                     >
                                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
@@ -943,8 +1072,8 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">From Account</Label>
-                                    <Select value={data.products[0]?.from_account_id || ''} onValueChange={(value) => updateProduct(0, 'from_account_id', value)}>
+                                    <Label className="text-sm font-medium dark:text-gray-200">To Account</Label>
+                                    <Select value={data.products[0]?.to_account_id || ''} onValueChange={(value) => updateProduct(0, 'to_account_id', value)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select payment account" />
                                         </SelectTrigger>
@@ -1020,56 +1149,21 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                     </>
                                 )}
                                 <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Paid Amount</Label>
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Paid Amount <span className="text-red-500">*</span>
+                                    </Label>
                                     <Input
                                         type="number"
                                         step="0.01"
                                         value={data.products[0]?.paid_amount || ''}
-                                        onChange={(e) => {
-                                            const newProducts = [...data.products];
-                                            const paid = parseFloat(e.target.value) || 0;
-                                            const amount = parseFloat(newProducts[0]?.amount) || 0;
-                                            const discount = parseFloat(newProducts[0]?.discount) || 0;
-                                            const total = amount - discount;
-                                            newProducts[0] = {
-                                                ...newProducts[0],
-                                                paid_amount: e.target.value,
-                                                due_amount: (total - paid).toFixed(2)
-                                            };
-                                            setData('products', newProducts);
-                                        }}
-                                        onBlur={(e) => {
-                                            // Auto-fill with total if empty
-                                            if (!e.target.value) {
-                                                const newProducts = [...data.products];
-                                                const amount = parseFloat(newProducts[0]?.amount) || 0;
-                                                const discount = parseFloat(newProducts[0]?.discount) || 0;
-                                                const total = amount - discount;
-                                                newProducts[0] = {
-                                                    ...newProducts[0],
-                                                    paid_amount: total.toFixed(2),
-                                                    due_amount: '0.00'
-                                                };
-                                                setData('products', newProducts);
-                                            }
-                                        }}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Due Amount</Label>
-                                    <Input
-                                        type="number"
-                                        value={data.products[0]?.due_amount || '0.00'}
                                         readOnly
-                                        className="bg-gray-100 dark:bg-gray-600 dark:text-white"
+                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />
                                 </div>
                             </div>
 
-                            {/* Row 4: Remarks | Add Button */}
                             <div className="grid grid-cols-12 gap-4">
-                                <div className={editingPurchase ? "col-span-12" : "col-span-10"}>
+                                <div className={editingSale ? "col-span-12" : "col-span-10"}>
                                     <Label className="text-sm font-medium dark:text-gray-200">Remarks</Label>
                                     <Input
                                         value={data.remarks}
@@ -1078,7 +1172,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
-                                {!editingPurchase && (
+                                {!editingSale && (
                                     <div className="col-span-2 flex flex-col justify-end">
                                         <Button
                                             type="button"
@@ -1092,42 +1186,34 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                 )}
                             </div>
 
-                            {/* Row 5: Cart Table */}
-                            {!editingPurchase && (
+                            {!editingSale && (
                             <div className="mt-6">
                                 <table className="w-full border border-gray-300 dark:border-gray-600">
                                     <thead className="bg-gray-100 dark:bg-gray-700">
                                         <tr>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">SL</th>
-                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Supplier</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Customer</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Vehicle</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product Name</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
-                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Unit Price</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Discount</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Total</th>
-                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Payment</th>
-                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Paid</th>
-                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Due</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {data.products.slice(1).filter(p => p.product_id).map((product, index) => {
                                             const selectedProduct = products.find(p => p.id.toString() === product.product_id);
-                                            const selectedSupplier = suppliers.find(s => s.id.toString() === product.supplier_id);
-                                            const actualIndex = index + 1; // Actual index in data.products array
+                                            const actualIndex = index + 1;
                                             return (
                                                 <tr key={actualIndex} className="border-t dark:border-gray-600">
                                                     <td className="p-2 text-sm dark:text-white">{index + 1}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{selectedSupplier?.name || '-'}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.customer || '-'}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.vehicle_no || '-'}</td>
                                                     <td className="p-2 text-sm dark:text-white">{selectedProduct?.product_name}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{product.unit_price}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.discount || '0'}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{product.amount}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{product.payment_type || 'Cash'}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.paid_amount || '0'}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{product.due_amount || '0'}</td>
                                                     <td className="p-2">
                                                         <div className="flex gap-2">
                                                             <Button
@@ -1135,7 +1221,6 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 onClick={() => {
-                                                                    // Move product back to first position for editing
                                                                     const editProduct = data.products[actualIndex];
                                                                     const newProducts = data.products.filter((_, i) => i !== actualIndex);
                                                                     newProducts[0] = editProduct;
@@ -1166,19 +1251,19 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                 </FormModal>
 
                 <DeleteModal
-                    isOpen={!!deletingPurchase}
-                    onClose={() => setDeletingPurchase(null)}
+                    isOpen={!!deletingSale}
+                    onClose={() => setDeletingSale(null)}
                     onConfirm={confirmDelete}
-                    title="Delete Purchase"
-                    message={`Are you sure you want to delete this purchase? This action cannot be undone.`}
+                    title="Delete Sale"
+                    message={`Are you sure you want to delete this sale? This action cannot be undone.`}
                 />
 
                 <DeleteModal
                     isOpen={isBulkDeleting}
                     onClose={() => setIsBulkDeleting(false)}
                     onConfirm={confirmBulkDelete}
-                    title="Delete Selected Purchases"
-                    message={`Are you sure you want to delete ${selectedPurchases.length} selected purchases? This action cannot be undone.`}
+                    title="Delete Selected Sales"
+                    message={`Are you sure you want to delete ${selectedSales.length} selected sales? This action cannot be undone.`}
                 />
             </div>
         </AppLayout>

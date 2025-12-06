@@ -1,0 +1,331 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Sale;
+use App\Models\Product;
+use App\Models\Shift;
+use App\Models\Stock;
+use App\Models\Vehicle;
+use App\Models\Account;
+use App\Models\Transaction;
+use App\Helpers\TransactionHelper;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+
+class SaleController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Sale::with(['product', 'shift']);
+
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('invoice_no', 'like', '%' . $request->search . '%')
+                  ->orWhere('customer', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->customer && $request->customer !== 'all') {
+            $query->where('customer', $request->customer);
+        }
+
+        if ($request->payment_status && $request->payment_status !== 'all') {
+            if ($request->payment_status === 'paid') {
+                $query->where('due_amount', 0);
+            } elseif ($request->payment_status === 'partial') {
+                $query->where('paid_amount', '>', 0)->where('due_amount', '>', 0);
+            } elseif ($request->payment_status === 'due') {
+                $query->where('paid_amount', 0);
+            }
+        }
+
+        if ($request->start_date) {
+            $query->where('sale_date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->where('sale_date', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->sort_by ?? 'created_at';
+        $sortOrder = $request->sort_order ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        $sales = $query->paginate($request->per_page ?? 10);
+
+        $uniqueCustomers = Sale::select('customer')->distinct()->whereNotNull('customer')->pluck('customer');
+        $uniqueVehicles = Sale::select('vehicle_no')->distinct()->whereNotNull('vehicle_no')->pluck('vehicle_no');
+
+        $accounts = Account::with('group')
+            ->select('id', 'name', 'ac_number', 'group_id', 'group_code')
+            ->get();
+
+        $groupedAccounts = $accounts->groupBy(function ($account) {
+            return $account->group ? $account->group->name : 'Other';
+        });
+
+        $salesHistory = Sale::select('vehicle_no', 'customer', 'product_id')
+            ->whereNotNull('vehicle_no')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->unique('vehicle_no')
+            ->values();
+
+        return Inertia::render('Sales/Index', [
+            'sales' => $sales,
+            'accounts' => $accounts,
+            'groupedAccounts' => $groupedAccounts,
+            'vehicles' => Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id', 'product_id')->get(),
+            'salesHistory' => $salesHistory,
+            'products' => Product::with(['unit', 'stock'])->select('id', 'product_name', 'product_code', 'unit_id', 'sales_price')->get(),
+            'shifts' => Shift::where('status', true)->select('id', 'name')->get(),
+            'uniqueCustomers' => $uniqueCustomers,
+            'uniqueVehicles' => $uniqueVehicles,
+            'filters' => $request->only(['search', 'customer', 'payment_status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'sale_date' => 'required|date',
+            'invoice_no' => 'required|string|max:255',
+            'shift_id' => 'required|exists:shifts,id',
+            'remarks' => 'nullable|string',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,id',
+            'products.*.customer' => 'required|string',
+            'products.*.vehicle_no' => 'required|string',
+            'products.*.quantity' => 'required|numeric|min:0',
+            'products.*.amount' => 'required|numeric|min:0',
+            'products.*.payment_type' => 'required|in:Cash,Bank,Mobile Bank',
+            'products.*.to_account_id' => 'required|exists:accounts,id',
+            'products.*.paid_amount' => 'required|numeric|min:0',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            foreach ($request->products as $productData) {
+                if (!isset($productData['product_id']) || !$productData['product_id']) {
+                    continue;
+                }
+
+                $toAccount = Account::find($productData['to_account_id']);
+                $product = Product::find($productData['product_id']);
+                $totalAmount = $productData['amount'] - ($productData['discount'] ?? 0);
+
+                $transactionId = TransactionHelper::generateTransactionId();
+
+                $transaction = Transaction::create([
+                    'transaction_id' => $transactionId,
+                    'ac_number' => $toAccount->ac_number,
+                    'transaction_type' => 'Cr',
+                    'amount' => $productData['paid_amount'],
+                    'description' => 'Sale ' . $product->product_name . ' to ' . $productData['customer'] . ' - Invoice: ' . $request->invoice_no,
+                    'payment_type' => strtolower($productData['payment_type']),
+                    'bank_name' => $productData['bank_name'] ?? null,
+                    'branch_name' => $productData['branch_name'] ?? null,
+                    'account_number' => $productData['account_no'] ?? null,
+                    'cheque_type' => $productData['bank_type'] ?? null,
+                    'cheque_no' => $productData['cheque_no'] ?? null,
+                    'cheque_date' => $productData['cheque_date'] ?? null,
+                    'mobile_bank_name' => $productData['mobile_bank'] ?? null,
+                    'mobile_number' => $productData['mobile_number'] ?? null,
+                    'transaction_date' => $request->sale_date,
+                    'transaction_time' => now()->format('H:i:s'),
+                ]);
+
+                $toAccount->increment('total_amount', $productData['paid_amount']);
+
+                Sale::create([
+                    'sale_date' => $request->sale_date,
+                    'sale_time' => now()->format('H:i:s'),
+                    'invoice_no' => $request->invoice_no,
+                    'shift_id' => $request->shift_id,
+                    'transaction_id' => $transaction->id,
+                    'customer' => $productData['customer'],
+                    'vehicle_no' => $productData['vehicle_no'],
+                    'product_id' => $productData['product_id'],
+                    'purchase_price' => $product->purchase_price ?? 0,
+                    'quantity' => $productData['quantity'],
+                    'amount' => $productData['amount'],
+                    'discount' => $productData['discount'] ?? 0,
+                    'total_amount' => $totalAmount,
+                    'paid_amount' => $productData['paid_amount'],
+                    'due_amount' => 0,
+                    'is_cash_sale' => 1,
+                    'remarks' => $request->remarks,
+                ]);
+
+                $stock = Stock::where('product_id', $productData['product_id'])->first();
+                if ($stock) {
+                    $stock->decrement('current_stock', $productData['quantity']);
+                    $stock->decrement('available_stock', $productData['quantity']);
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', 'Sale created successfully.');
+    }
+
+    public function edit(Sale $sale)
+    {
+        $sale->load(['product', 'shift', 'transaction']);
+        return response()->json(['sale' => $sale]);
+    }
+
+    public function update(Request $request, Sale $sale)
+    {
+        $request->validate([
+            'sale_date' => 'required|date',
+            'customer' => 'required|string',
+            'vehicle_no' => 'required|string',
+            'product_id' => 'required|exists:products,id',
+            'shift_id' => 'required|exists:shifts,id',
+            'invoice_no' => 'required|string|max:255',
+            'quantity' => 'required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
+            'to_account_id' => 'required|exists:accounts,id',
+            'paid_amount' => 'required|numeric|min:0',
+            'remarks' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request, $sale) {
+            if ($sale->transaction) {
+                $oldAccount = Account::where('ac_number', $sale->transaction->ac_number)->first();
+                if ($oldAccount) {
+                    $oldAccount->decrement('total_amount', $sale->paid_amount);
+                }
+            }
+
+            $oldStock = Stock::where('product_id', $sale->product_id)->first();
+            if ($oldStock) {
+                $oldStock->increment('current_stock', $sale->quantity);
+                $oldStock->increment('available_stock', $sale->quantity);
+            }
+
+            $toAccount = Account::find($request->to_account_id);
+            $product = Product::find($request->product_id);
+            $totalAmount = ($product->sales_price * $request->quantity) - ($request->discount ?? 0);
+
+            $transactionId = TransactionHelper::generateTransactionId();
+
+            $transaction = Transaction::create([
+                'transaction_id' => $transactionId,
+                'ac_number' => $toAccount->ac_number,
+                'transaction_type' => 'Cr',
+                'amount' => $request->paid_amount,
+                'description' => 'Sale ' . $product->product_name . ' to ' . $request->customer . ' - Invoice: ' . $request->invoice_no,
+                'payment_type' => strtolower($request->payment_type),
+                'bank_name' => $request->bank_name ?? null,
+                'branch_name' => $request->branch_name ?? null,
+                'account_number' => $request->account_no ?? null,
+                'cheque_type' => $request->bank_type ?? null,
+                'cheque_no' => $request->cheque_no ?? null,
+                'cheque_date' => $request->cheque_date ?? null,
+                'mobile_bank_name' => $request->mobile_bank ?? null,
+                'mobile_number' => $request->mobile_number ?? null,
+                'transaction_date' => $request->sale_date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+
+            $sale->update([
+                'sale_date' => $request->sale_date,
+                'customer' => $request->customer,
+                'vehicle_no' => $request->vehicle_no,
+                'product_id' => $request->product_id,
+                'shift_id' => $request->shift_id,
+                'transaction_id' => $transaction->id,
+                'invoice_no' => $request->invoice_no,
+                'quantity' => $request->quantity,
+                'amount' => $product->sales_price * $request->quantity,
+                'discount' => $request->discount ?? 0,
+                'total_amount' => $totalAmount,
+                'paid_amount' => $request->paid_amount,
+                'due_amount' => 0,
+                'is_cash_sale' => 1,
+                'remarks' => $request->remarks,
+            ]);
+
+            if ($sale->transaction) {
+                $oldTransactionId = $sale->transaction->transaction_id;
+                Transaction::where('transaction_id', $oldTransactionId)->delete();
+            }
+
+            $toAccount->increment('total_amount', $request->paid_amount);
+
+            $newStock = Stock::where('product_id', $request->product_id)->first();
+            if ($newStock) {
+                $newStock->decrement('current_stock', $request->quantity);
+                $newStock->decrement('available_stock', $request->quantity);
+            }
+        });
+
+        return redirect()->back()->with('success', 'Sale updated successfully.');
+    }
+
+    public function destroy(Sale $sale)
+    {
+        DB::transaction(function () use ($sale) {
+            if ($sale->transaction) {
+                $account = Account::where('ac_number', $sale->transaction->ac_number)->first();
+                if ($account) {
+                    $account->decrement('total_amount', $sale->paid_amount);
+                }
+                $transactionId = $sale->transaction->transaction_id;
+            }
+
+            $stock = Stock::where('product_id', $sale->product_id)->first();
+            if ($stock) {
+                $stock->increment('current_stock', $sale->quantity);
+                $stock->increment('available_stock', $sale->quantity);
+            }
+
+            $sale->delete();
+
+            if (isset($transactionId)) {
+                Transaction::where('transaction_id', $transactionId)->delete();
+            }
+        });
+
+        return redirect()->back()->with('success', 'Sale deleted successfully.');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:sales,id'
+        ]);
+
+        DB::transaction(function () use ($request) {
+            $sales = Sale::with('transaction')->whereIn('id', $request->ids)->get();
+
+            foreach ($sales as $sale) {
+                if ($sale->transaction) {
+                    $account = Account::where('ac_number', $sale->transaction->ac_number)->first();
+                    if ($account) {
+                        $account->decrement('total_amount', $sale->paid_amount);
+                    }
+                    $transactionId = $sale->transaction->transaction_id;
+                }
+
+                $stock = Stock::where('product_id', $sale->product_id)->first();
+                if ($stock) {
+                    $stock->increment('current_stock', $sale->quantity);
+                    $stock->increment('available_stock', $sale->quantity);
+                }
+
+                $sale->delete();
+
+                if (isset($transactionId)) {
+                    Transaction::where('transaction_id', $transactionId)->delete();
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', 'Sales deleted successfully.');
+    }
+}

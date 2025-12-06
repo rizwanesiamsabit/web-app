@@ -12,27 +12,33 @@ class Sale extends Model
         'memo_no',
         'invoice_no',
         'delivery_challan_no',
+        'shift_id',
+        'transaction_id',
+        'customer',
+        'vehicle_no',
+        'product_id',
         'purchase_price',
-        'vehicle_number',
+        'quantity',
+        'amount',
+        'discount',
+        'total_amount',
         'paid_amount',
         'due_amount',
         'is_cash_sale',
         'remarks',
-        'status',
-        'transaction_id',
-        'shift_id',
-        'product_id',
-        'customer_id',
-        'vehicle_id'
+        'status'
     ];
 
     protected $casts = [
         'sale_date' => 'date',
-        'sale_time' => 'datetime:H:i:s',
         'purchase_price' => 'decimal:2',
+        'quantity' => 'decimal:2',
+        'amount' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
-        'is_cash_sale' => 'boolean',
+        'is_cash_sale' => 'integer',
         'status' => 'boolean'
     ];
 
@@ -41,23 +47,13 @@ class Sale extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function customer()
-    {
-        return $this->belongsTo(Customer::class);
-    }
-
     public function shift()
     {
         return $this->belongsTo(Shift::class);
     }
 
-    public function vehicle()
-    {
-        return $this->belongsTo(Vehicle::class);
-    }
-
     public function transaction()
     {
-        return $this->belongsTo(Transaction::class, 'transaction_id', 'transaction_id');
+        return $this->belongsTo(Transaction::class);
     }
 }
