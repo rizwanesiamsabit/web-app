@@ -30,6 +30,8 @@ use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\DailyStatementController;
 use App\Http\Controllers\CustomerSummaryBillController;
 use App\Http\Controllers\CustomerDetailsBillController;
+use App\Http\Controllers\CustomerLedgerSummaryController;
+use App\Http\Controllers\CustomerLedgerDetailsController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -254,6 +256,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Customer Details Bill routes
     Route::get('customer-details-bill', [CustomerDetailsBillController::class, 'index'])->name('customer-details-bill.index');
     Route::get('customer-details-bill/download-pdf', [CustomerDetailsBillController::class, 'downloadPdf'])->name('customer-details-bill.download.pdf');
+    
+    // Customer Ledger Summary routes
+    Route::get('customer-ledger-summary', [CustomerLedgerSummaryController::class, 'index'])->name('customer-ledger-summary.index');
+    Route::get('customer-ledger-summary/download-pdf', [CustomerLedgerSummaryController::class, 'downloadPdf'])->name('customer-ledger-summary.download.pdf');
+    
+    // Customer Ledger Details routes
+    Route::get('customer-ledger-details', [CustomerLedgerDetailsController::class, 'index'])->name('customer-ledger-details.index');
+    Route::get('customer-ledger-details/download-pdf', [CustomerLedgerDetailsController::class, 'downloadPdf'])->name('customer-ledger-details.download.pdf');
 });
 
 require __DIR__.'/settings.php';

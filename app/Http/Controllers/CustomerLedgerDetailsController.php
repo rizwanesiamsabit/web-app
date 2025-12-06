@@ -1,0 +1,173 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Customer;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+class CustomerLedgerDetailsController extends Controller
+{
+    public function index(Request $request)
+    {
+        $startDate = $request->start_date ?? date('Y-m-d');
+        $endDate = $request->end_date ?? date('Y-m-d');
+        $customerId = $request->customer_id;
+
+        if (!$customerId) {
+            return Inertia::render('CustomerLedgerDetails/Index', [
+                'ledgers' => [],
+                'customers' => Customer::select('id', 'name')->get(),
+                'filters' => $request->only(['customer_id', 'start_date', 'end_date'])
+            ]);
+        }
+
+        $creditTransactions = DB::table('credit_sales')
+            ->join('customers', 'credit_sales.customer_id', '=', 'customers.id')
+            ->join('accounts', 'customers.account_id', '=', 'accounts.id')
+            ->join('shifts', 'credit_sales.shift_id', '=', 'shifts.id')
+            ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
+            ->whereBetween('credit_sales.sale_date', [$startDate, $endDate])
+            ->where('credit_sales.customer_id', $customerId)
+            ->select(
+                'customers.id as customer_id',
+                'customers.name as customer_name',
+                'accounts.ac_number',
+                'credit_sales.sale_date as date',
+                'shifts.name as shift',
+                DB::raw('COALESCE(transactions.transaction_id, credit_sales.invoice_no) as transaction_id'),
+                DB::raw('0 as debit'),
+                'credit_sales.total_amount as credit',
+                'credit_sales.total_amount as balance'
+            );
+
+        $debitTransactions = DB::table('vouchers')
+            ->join('transactions', 'vouchers.to_transaction_id', '=', 'transactions.id')
+            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
+            ->join('customers', 'accounts.id', '=', 'customers.account_id')
+            ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
+            ->where('vouchers.voucher_type', 'Received')
+            ->whereBetween('vouchers.date', [$startDate, $endDate])
+            ->where('customers.id', $customerId)
+            ->select(
+                'customers.id as customer_id',
+                'customers.name as customer_name',
+                'accounts.ac_number',
+                'vouchers.date as date',
+                'shifts.name as shift',
+                'transactions.transaction_id',
+                'transactions.amount as debit',
+                DB::raw('0 as credit'),
+                DB::raw('transactions.amount as balance')
+            );
+
+        $allTransactions = $creditTransactions->union($debitTransactions)
+            ->orderBy('customer_name')
+            ->orderBy('date')
+            ->get();
+
+        $ledgers = $allTransactions->groupBy('customer_id')->map(function($items) {
+            $runningBalance = 0;
+            $transactions = $items->map(function($item) use (&$runningBalance) {
+                $runningBalance += $item->credit - $item->debit;
+                $item->due = $runningBalance;
+                return $item;
+            });
+
+            return [
+                'customer_name' => $items->first()->customer_name,
+                'ac_number' => $items->first()->ac_number,
+                'transactions' => $transactions->values()->toArray(),
+                'total_debit' => $items->sum('debit'),
+                'total_credit' => $items->sum('credit'),
+                'total_due' => $runningBalance
+            ];
+        })->values()->toArray();
+
+        return Inertia::render('CustomerLedgerDetails/Index', [
+            'ledgers' => $ledgers,
+            'customers' => Customer::select('id', 'name')->get(),
+            'filters' => $request->only(['customer_id', 'start_date', 'end_date'])
+        ]);
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $startDate = $request->start_date ?? date('Y-m-d');
+        $endDate = $request->end_date ?? date('Y-m-d');
+        $customerId = $request->customer_id;
+
+        if (!$customerId) {
+            return redirect()->back()->with('error', 'Please select a customer');
+        }
+
+        $creditTransactions = DB::table('credit_sales')
+            ->join('customers', 'credit_sales.customer_id', '=', 'customers.id')
+            ->join('accounts', 'customers.account_id', '=', 'accounts.id')
+            ->join('shifts', 'credit_sales.shift_id', '=', 'shifts.id')
+            ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
+            ->whereBetween('credit_sales.sale_date', [$startDate, $endDate])
+            ->where('credit_sales.customer_id', $customerId)
+            ->select(
+                'customers.id as customer_id',
+                'customers.name as customer_name',
+                'accounts.ac_number',
+                'credit_sales.sale_date as date',
+                'shifts.name as shift',
+                DB::raw('COALESCE(transactions.transaction_id, credit_sales.invoice_no) as transaction_id'),
+                DB::raw('0 as debit'),
+                'credit_sales.total_amount as credit',
+                'credit_sales.total_amount as balance'
+            );
+
+        $debitTransactions = DB::table('vouchers')
+            ->join('transactions', 'vouchers.to_transaction_id', '=', 'transactions.id')
+            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
+            ->join('customers', 'accounts.id', '=', 'customers.account_id')
+            ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
+            ->where('vouchers.voucher_type', 'Received')
+            ->whereBetween('vouchers.date', [$startDate, $endDate])
+            ->where('customers.id', $customerId)
+            ->select(
+                'customers.id as customer_id',
+                'customers.name as customer_name',
+                'accounts.ac_number',
+                'vouchers.date as date',
+                'shifts.name as shift',
+                'transactions.transaction_id',
+                'transactions.amount as debit',
+                DB::raw('0 as credit'),
+                DB::raw('transactions.amount as balance')
+            );
+
+        $allTransactions = $creditTransactions->union($debitTransactions)
+            ->orderBy('customer_name')
+            ->orderBy('date')
+            ->get();
+
+        $ledgers = $allTransactions->groupBy('customer_id')->map(function($items) {
+            $runningBalance = 0;
+            $transactions = $items->map(function($item) use (&$runningBalance) {
+                $runningBalance += $item->credit - $item->debit;
+                $item->due = $runningBalance;
+                return $item;
+            });
+
+            return [
+                'customer_name' => $items->first()->customer_name,
+                'ac_number' => $items->first()->ac_number,
+                'transactions' => $transactions->values()->toArray(),
+                'total_debit' => $items->sum('debit'),
+                'total_credit' => $items->sum('credit'),
+                'total_due' => $runningBalance
+            ];
+        })->values()->toArray();
+
+        $companySetting = \App\Models\CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.customer-ledger-details', compact('ledgers', 'companySetting', 'startDate', 'endDate'));
+        return $pdf->download('customer-ledger-details-' . date('Y-m-d') . '.pdf');
+    }
+}
