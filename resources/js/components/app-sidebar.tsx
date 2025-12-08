@@ -60,7 +60,7 @@ const mainNavItems = [
                 href: '#',
                 icon: BarChart3,
             },
-            { title: 'Dispensers Setting', href: '#', icon: Fuel },
+            { title: 'Dispensers Setting', href: '/dispensers', icon: Fuel },
         ],
     },
     {

@@ -32,6 +32,7 @@ use App\Http\Controllers\CustomerSummaryBillController;
 use App\Http\Controllers\CustomerDetailsBillController;
 use App\Http\Controllers\CustomerLedgerSummaryController;
 use App\Http\Controllers\CustomerLedgerDetailsController;
+use App\Http\Controllers\DispenserController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -136,6 +137,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('products', [ProductController::class, 'store'])->name('products.store');
     Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    
+    // Dispenser routes
+    Route::get('dispensers', [DispenserController::class, 'index'])->name('dispensers.index');
+    Route::get('dispensers/download-pdf', [DispenserController::class, 'downloadPdf'])->name('dispensers.download.pdf');
+    Route::delete('dispensers/bulk/delete', [DispenserController::class, 'bulkDelete'])->name('dispensers.bulk.delete');
+    Route::post('dispensers', [DispenserController::class, 'store'])->name('dispensers.store');
+    Route::put('dispensers/{dispenser}', [DispenserController::class, 'update'])->name('dispensers.update');
+    Route::delete('dispensers/{dispenser}', [DispenserController::class, 'destroy'])->name('dispensers.destroy');
     
     // Group routes
     Route::get('groups', [GroupController::class, 'index'])->name('groups.index');
