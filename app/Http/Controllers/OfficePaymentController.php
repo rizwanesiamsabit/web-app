@@ -7,6 +7,7 @@ use App\Models\Account;
 use App\Models\Shift;
 use App\Models\Group;
 use App\Models\Transaction;
+use App\Models\IsShiftClose;
 use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -79,11 +80,14 @@ class OfficePaymentController extends Controller
             ['value' => 'bank', 'label' => 'Bank']
         ];
 
+        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
+
         return Inertia::render('OfficePayments/Index', [
             'officePayments' => $officePayments,
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
             'shifts' => $shifts,
+            'closedShifts' => $closedShifts,
             'paymentTypes' => $paymentTypes,
             'types' => $types,
             'filters' => $filters

@@ -9,6 +9,7 @@ use App\Models\Stock;
 use App\Models\Vehicle;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\IsShiftClose;
 use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -73,6 +74,8 @@ class SaleController extends Controller
             ->unique('vehicle_no')
             ->values();
 
+        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
+
         return Inertia::render('Sales/Index', [
             'sales' => $sales,
             'accounts' => $accounts,
@@ -81,6 +84,7 @@ class SaleController extends Controller
             'salesHistory' => $salesHistory,
             'products' => Product::with(['unit', 'stock'])->select('id', 'product_name', 'product_code', 'unit_id', 'sales_price')->get(),
             'shifts' => Shift::where('status', true)->select('id', 'name')->get(),
+            'closedShifts' => $closedShifts,
             'uniqueCustomers' => $uniqueCustomers,
             'uniqueVehicles' => $uniqueVehicles,
             'filters' => $request->only(['search', 'customer', 'payment_status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])

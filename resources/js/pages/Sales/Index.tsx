@@ -78,6 +78,11 @@ interface Shift {
     name: string;
 }
 
+interface ClosedShift {
+    close_date: string;
+    shift_id: number;
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
@@ -111,6 +116,7 @@ interface SalesProps {
     vehicles: Vehicle[];
     salesHistory: SalesHistory[];
     shifts: Shift[];
+    closedShifts: ClosedShift[];
     uniqueCustomers: string[];
     uniqueVehicles: string[];
     filters: {
@@ -125,7 +131,7 @@ interface SalesProps {
     };
 }
 
-export default function Sales({ sales, accounts = [], groupedAccounts = {}, products = [], vehicles = [], salesHistory = [], shifts = [], uniqueCustomers = [], uniqueVehicles = [], filters = {} }: SalesProps) {
+export default function Sales({ sales, accounts = [], groupedAccounts = {}, products = [], vehicles = [], salesHistory = [], shifts = [], closedShifts = [], uniqueCustomers = [], uniqueVehicles = [], filters = {} }: SalesProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
     const [deletingSale, setDeletingSale] = useState<Sale | null>(null);
@@ -212,6 +218,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
 
     const [errors, setErrors] = useState<any>({});
     const [processing, setProcessing] = useState(false);
+    const [availableShifts, setAvailableShifts] = useState<Shift[]>(shifts);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -546,6 +553,16 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
         });
     };
 
+    const getAvailableShifts = (selectedDate: string) => {
+        if (!selectedDate) return shifts;
+        
+        const closedShiftIds = closedShifts
+            .filter(cs => cs.close_date === selectedDate)
+            .map(cs => cs.shift_id);
+        
+        return shifts.filter(shift => !closedShiftIds.includes(shift.id));
+    };
+
     const handleVehicleBlur = (index: number, value: string) => {
         if (value) {
             const vehicle = vehicles.find(v => v.vehicle_number === value);
@@ -870,7 +887,11 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                     <Input
                                         type="date"
                                         value={data.sale_date}
-                                        onChange={(e) => setData('sale_date', e.target.value)}
+                                        onChange={(e) => {
+                                            setData('sale_date', e.target.value);
+                                            setAvailableShifts(getAvailableShifts(e.target.value));
+                                            setData('shift_id', '');
+                                        }}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
@@ -889,12 +910,12 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Shift <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
+                                    <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)} disabled={!data.sale_date}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select shift" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {shifts.map((shift) => (
+                                            {availableShifts.map((shift) => (
                                                 <SelectItem key={shift.id} value={shift.id.toString()}>
                                                     {shift.name}
                                                 </SelectItem>

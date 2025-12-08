@@ -10,6 +10,7 @@ use App\Models\Vehicle;
 use App\Models\Customer;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\IsShiftClose;
 use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -66,6 +67,8 @@ class CreditSaleController extends Controller
             return $account->group ? $account->group->name : 'Other';
         });
 
+        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
+
         return Inertia::render('CreditSales/Index', [
             'creditSales' => $creditSales,
             'accounts' => $accounts,
@@ -74,6 +77,7 @@ class CreditSaleController extends Controller
             'customers' => Customer::select('id', 'name')->get(),
             'products' => Product::with(['unit', 'stock'])->select('id', 'product_name', 'product_code', 'unit_id', 'sales_price')->get(),
             'shifts' => Shift::where('status', true)->select('id', 'name')->get(),
+            'closedShifts' => $closedShifts,
             'filters' => $request->only(['search', 'customer', 'payment_status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }

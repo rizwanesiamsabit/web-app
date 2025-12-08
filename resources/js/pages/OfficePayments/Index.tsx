@@ -36,6 +36,11 @@ interface Shift {
     name: string;
 }
 
+interface ClosedShift {
+    close_date: string;
+    shift_id: number;
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: dashboard().url },
     { title: 'Office Payments', href: '/office-payments' }
@@ -54,6 +59,7 @@ interface OfficePaymentsProps {
     accounts: Account[];
     groupedAccounts: Record<string, Account[]>;
     shifts: Shift[];
+    closedShifts: ClosedShift[];
     paymentTypes: Array<{code: string; name: string; type: string}>;
     types: Array<{value: string; label: string}>;
     filters: {
@@ -68,7 +74,7 @@ interface OfficePaymentsProps {
     };
 }
 
-export default function OfficePayments({ officePayments = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, accounts = [], groupedAccounts = {}, shifts = [], paymentTypes = [], types = [], filters = {} }: OfficePaymentsProps) {
+export default function OfficePayments({ officePayments = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, accounts = [], groupedAccounts = {}, shifts = [], closedShifts = [], paymentTypes = [], types = [], filters = {} }: OfficePaymentsProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingPayment, setEditingPayment] = useState<OfficePayment | null>(null);
     const [deletingPayment, setDeletingPayment] = useState<OfficePayment | null>(null);
@@ -83,6 +89,7 @@ export default function OfficePayments({ officePayments = { data: [], current_pa
     const [sortBy, setSortBy] = useState('created_at');
     const [sortOrder, setSortOrder] = useState('desc');
     const [perPage, setPerPage] = useState(10);
+    const [availableShifts, setAvailableShifts] = useState<Shift[]>(shifts);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         date: '',
@@ -105,6 +112,16 @@ export default function OfficePayments({ officePayments = { data: [], current_pa
     const getFilteredAccounts = () => {
         const groupName = data.payment_type === 'Cash' ? 'Cash in hand' : data.payment_type;
         return groupedAccounts[groupName] || [];
+    };
+
+    const getAvailableShifts = (selectedDate: string) => {
+        if (!selectedDate) return shifts;
+        
+        const closedShiftIds = closedShifts
+            .filter(cs => cs.close_date === selectedDate)
+            .map(cs => cs.shift_id);
+        
+        return shifts.filter(shift => !closedShiftIds.includes(shift.id));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -493,19 +510,23 @@ export default function OfficePayments({ officePayments = { data: [], current_pa
                                 id="date"
                                 type="date"
                                 value={data.date}
-                                onChange={(e) => setData('date', e.target.value)}
+                                onChange={(e) => {
+                                    setData('date', e.target.value);
+                                    setAvailableShifts(getAvailableShifts(e.target.value));
+                                    setData('shift_id', '');
+                                }}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
                             {errors.date && <span className="text-sm text-red-500">{errors.date}</span>}
                         </div>
                         <div>
                             <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
-                            <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
+                            <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)} disabled={!data.date}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                     <SelectValue placeholder="Select shift" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {shifts?.map((shift) => (
+                                    {availableShifts?.map((shift) => (
                                         <SelectItem key={shift.id} value={shift.id.toString()}>
                                             {shift.name}
                                         </SelectItem>
@@ -683,19 +704,23 @@ export default function OfficePayments({ officePayments = { data: [], current_pa
                                 id="date"
                                 type="date"
                                 value={data.date}
-                                onChange={(e) => setData('date', e.target.value)}
+                                onChange={(e) => {
+                                    setData('date', e.target.value);
+                                    setAvailableShifts(getAvailableShifts(e.target.value));
+                                    setData('shift_id', '');
+                                }}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
                             {errors.date && <span className="text-sm text-red-500">{errors.date}</span>}
                         </div>
                         <div>
                             <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
-                            <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
+                            <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)} disabled={!data.date}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                     <SelectValue placeholder="Select shift" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {shifts?.map((shift) => (
+                                    {availableShifts?.map((shift) => (
                                         <SelectItem key={shift.id} value={shift.id.toString()}>
                                             {shift.name}
                                         </SelectItem>

@@ -33,6 +33,7 @@ use App\Http\Controllers\CustomerDetailsBillController;
 use App\Http\Controllers\CustomerLedgerSummaryController;
 use App\Http\Controllers\CustomerLedgerDetailsController;
 use App\Http\Controllers\DispenserController;
+use App\Http\Controllers\DispenserReadingController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -145,6 +146,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('dispensers', [DispenserController::class, 'store'])->name('dispensers.store');
     Route::put('dispensers/{dispenser}', [DispenserController::class, 'update'])->name('dispensers.update');
     Route::delete('dispensers/{dispenser}', [DispenserController::class, 'destroy'])->name('dispensers.destroy');
+    
+    // Dispenser Reading routes
+    Route::get('product/dispensers-reading', [DispenserReadingController::class, 'index'])->name('dispensers-reading.index');
+    Route::get('product/dispensers-reading/shifts/{date}', [DispenserReadingController::class, 'getShiftsByDate']);
+    Route::get('product/get-shift-closing-data/{date}/{shift}', [DispenserReadingController::class, 'getShiftClosingData']);
+    Route::post('product/dispensers-reading', [DispenserReadingController::class, 'store'])->name('dispensers-reading.store');
     
     // Group routes
     Route::get('groups', [GroupController::class, 'index'])->name('groups.index');
