@@ -6,8 +6,10 @@ use App\Models\DispenserReading;
 use App\Models\Shift;
 use App\Models\Product;
 use App\Models\Account;
+use App\Models\Employee;
 use App\Models\Vehicle;
 use App\Models\IsShiftClose;
+use App\Models\DailyReading;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +25,11 @@ class DispenserReadingController extends Controller
             ->get()
             ->groupBy('dispenser_id')
             ->map(function ($items) {
-                return $items->first();
+                $latest = $items->first();
+                $latest->start_reading = $latest->end_reading;
+                $latest->end_reading = $latest->end_reading;
+                $latest->meter_test = 0;
+                return $latest;
             })
             ->values();
 
@@ -37,6 +43,7 @@ class DispenserReadingController extends Controller
         });
 
         $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
+        $employees = Employee::select('id', 'employee_name')->get();
 
         return Inertia::render('Dispensers/DispensersReading', [
             'dispenserReading' => $dispenserReading,
@@ -46,7 +53,8 @@ class DispenserReadingController extends Controller
             'customers' => $customers,
             'vehicles' => $vehicles,
             'accounts' => $accounts,
-            'groupedAccounts' => $groupedAccounts
+            'groupedAccounts' => $groupedAccounts,
+            'employees' => $employees
         ]);
     }
 
@@ -122,8 +130,9 @@ class DispenserReadingController extends Controller
         try {
             foreach ($request->dispenser_readings as $reading) {
                 DispenserReading::create([
+                    'transaction_date' => $request->transaction_date,
                     'shift_id' => $request->shift_id,
-                    'employee_id' => Auth::id(),
+                    'employee_id' => $reading['reading_by'] ?? Auth::id(),
                     'dispenser_id' => $reading['dispenser_id'],
                     'product_id' => $reading['product_id'],
                     'start_reading' => $reading['start_reading'],
@@ -134,6 +143,26 @@ class DispenserReadingController extends Controller
                     'total_sale' => $reading['total_sale'],
                 ]);
             }
+
+            DailyReading::create([
+                'shift_id' => $request->shift_id,
+                'employee_id' => Auth::id(),
+                'credit_sales' => $request->credit_sales ?? 0,
+                'bank_sales' => $request->bank_sales ?? 0,
+                'cash_sales' => $request->cash_sales ?? 0,
+                'cash_receive' => $request->cash_receive ?? 0,
+                'bank_receive' => 0,
+                'total_cash' => $request->total_cash ?? 0,
+                'cash_payment' => $request->cash_payment ?? 0,
+                'bank_payment' => 0,
+                'office_payment' => $request->office_payment ?? 0,
+                'final_due_amount' => $request->final_due_amount ?? 0,
+            ]);
+
+            IsShiftClose::create([
+                'close_date' => $request->transaction_date,
+                'shift_id' => $request->shift_id,
+            ]);
 
             DB::commit();
             return redirect()->back()->with('success', 'Shift closed successfully.');

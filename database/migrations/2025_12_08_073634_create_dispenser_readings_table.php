@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('dispenser_readings', function (Blueprint $table) {
             $table->id();
+            $table->date('transaction_date')->nullable();
             $table->foreignId('shift_id')->nullable()->default(0)->constrained('shifts')->onDelete('cascade');
             $table->foreignId('employee_id')->nullable()->constrained('employees')->onDelete('cascade');
             $table->foreignId('dispenser_id')->nullable()->constrained('dispensers')->onDelete('cascade');

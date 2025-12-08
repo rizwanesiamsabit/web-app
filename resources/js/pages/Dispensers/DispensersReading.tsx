@@ -85,6 +85,11 @@ interface Account {
     ac_number: string;
 }
 
+interface Employee {
+    id: number;
+    employee_name: string;
+}
+
 interface DispenserReadingProps {
     dispenserReading: DispenserReading[];
     shifts: Shift[];
@@ -94,9 +99,10 @@ interface DispenserReadingProps {
     vehicles?: Vehicle[];
     accounts?: Account[];
     groupedAccounts?: Record<string, Account[]>;
+    employees?: Employee[];
 }
 
-export default function DispenserReading({ dispenserReading = [], shifts = [], closedShifts = [], products = [], customers = [], vehicles = [], accounts = [], groupedAccounts = {} }: DispenserReadingProps) {
+export default function DispenserReading({ dispenserReading = [], shifts = [], closedShifts = [], products = [], customers = [], vehicles = [], accounts = [], groupedAccounts = {}, employees = [] }: DispenserReadingProps) {
     const [productWiseData, setProductWiseData] = useState<ProductWiseData>({});
     const [totalSalesSum, setTotalSalesSum] = useState(0);
     const [availableShifts, setAvailableShifts] = useState<Shift[]>([]);
@@ -222,6 +228,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
             start_reading: reading.start_reading,
             end_reading: reading.end_reading || reading.start_reading,
             meter_test: reading.meter_test || 0,
+            reading_by: '',
             net_reading: 0,
             total_sale: 0,
         })),
@@ -324,6 +331,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
             router.post('/product/dispensers-reading', data, {
                 onSuccess: () => {
                     alert('Shift closed successfully.');
+                    window.location.reload();
                 },
                 onError: () => {
                     alert('Failed to close shift.');
@@ -450,7 +458,6 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     <thead>
                                         <tr className="bg-gray-50 dark:bg-gray-700">
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">SL</th>
-                                            <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Dispenser ID</th>
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Dispenser Name</th>
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Product ID</th>
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Product Name</th>
@@ -458,6 +465,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Old Reading</th>
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">New Reading</th>
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Meter Test</th>
+                                            <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Reading By</th>
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Net Reading</th>
                                             <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Total Sales</th>
                                         </tr>
@@ -468,17 +476,26 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                             return (
                                                 <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{index + 1}</td>
-                                                                    <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{reading.dispenser_id}</td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-blue-600 dark:text-blue-400">{dispenserInfo?.dispenser?.dispenser_name || 'Unknown'}</td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{reading.product_id || 'N/A'}</td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{dispenserInfo?.product?.product_name || 'No Product Assigned'}</td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{reading.item_rate}</td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{reading.start_reading}</td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2">
-                                                        <Input type="number" step="0.01" value={reading.end_reading} onChange={(e) => calculateReading(index, 'end_reading', e.target.value)} className="w-full h-8 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                                        <Input type="number" step="0.01" value={reading.end_reading} onChange={(e) => calculateReading(index, 'end_reading', e.target.value)} className="w-32 h-8 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                                                     </td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2">
-                                                        <Input type="number" step="0.01" value={reading.meter_test} onChange={(e) => calculateReading(index, 'meter_test', e.target.value)} className="w-full h-8 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                                        <Input type="number" step="0.01" value={reading.meter_test} onChange={(e) => calculateReading(index, 'meter_test', e.target.value)} className="w-20 h-8 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                                    </td>
+                                                    <td className="border border-gray-200 dark:border-gray-600 px-3 py-2">
+                                                        <Select value={reading.reading_by} onValueChange={(value) => {
+                                                            const newReadings = [...data.dispenser_readings];
+                                                            newReadings[index] = { ...newReadings[index], reading_by: value };
+                                                            setData('dispenser_readings', newReadings);
+                                                        }}>
+                                                            <SelectTrigger className="w-32 h-8 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                            <SelectContent>{employees.map((emp) => (<SelectItem key={emp.id} value={emp.id.toString()}>{emp.employee_name}</SelectItem>))}</SelectContent>
+                                                        </Select>
                                                     </td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{reading.net_reading.toFixed(2)}</td>
                                                     <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{reading.total_sale.toFixed(2)}</td>

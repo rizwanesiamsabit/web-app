@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DispenserReading extends Model
 {
     protected $fillable = [
+        'transaction_date',
         'shift_id',
         'employee_id',
         'dispenser_id',
@@ -18,6 +19,10 @@ class DispenserReading extends Model
         'net_reading',
         'item_rate',
         'total_sale',
+    ];
+
+    protected $casts = [
+        'transaction_date' => 'date',
     ];
 
     public function shift(): BelongsTo
