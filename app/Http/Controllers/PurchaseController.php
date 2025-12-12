@@ -76,7 +76,7 @@ class PurchaseController extends Controller
             'suppliers' => Supplier::select('id', 'name')->get(),
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
-            'products' => Product::with(['unit', 'stock'])->select('id', 'product_name', 'product_code', 'unit_id', 'purchase_price')->get(),
+            'products' => Product::with('stock')->select('id', 'product_name', 'purchase_price')->get(),
             'filters' => $request->only(['search', 'supplier', 'payment_status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }

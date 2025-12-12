@@ -58,8 +58,6 @@ interface Account {
 interface Product {
     id: number;
     product_name: string;
-    product_code: string;
-    unit: { name: string };
     purchase_price: number;
     stock?: {
         current_stock: number;
@@ -130,8 +128,6 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                 unit_price: '',
                 quantity: '',
                 amount: '',
-                discount_type: 'Fixed',
-                discount: '',
                 payment_type: 'Cash',
                 from_account_id: '',
                 paid_amount: '',
@@ -168,8 +164,6 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                     unit_price: '',
                     quantity: '',
                     amount: '',
-                    discount_type: 'Fixed',
-                    discount: '',
                     payment_type: 'Cash',
                     from_account_id: '',
                     paid_amount: '',
@@ -187,7 +181,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
         });
     };
 
-    const [errors, setErrors] = useState<any>({});
+
     const [processing, setProcessing] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -215,7 +209,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                 supplier_id: validProducts[0].supplier_id,
                 unit_price: validProducts[0].unit_price,
                 quantity: validProducts[0].quantity,
-                discount: validProducts[0].discount || 0,
+
                 payment_type: validProducts[0].payment_type,
                 from_account_id: validProducts[0].from_account_id,
                 paid_amount: validProducts[0].paid_amount,
@@ -272,8 +266,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                         unit_price: purchaseData.unit_price?.toString() || '',
                         quantity: purchaseData.quantity?.toString() || '',
                         amount: (purchaseData.unit_price * purchaseData.quantity).toString(),
-                        discount_type: 'Fixed',
-                        discount: purchaseData.discount?.toString() || '',
+
                         payment_type: paymentType,
                         from_account_id: purchaseData.from_account_id?.toString() || '',
                         paid_amount: purchaseData.paid_amount?.toString() || '',
@@ -291,7 +284,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
             });
             setIsCreateOpen(true);
         } catch (error) {
-            console.error('Error loading purchase:', error);
+            // Handle error silently
         }
     };
 
@@ -425,8 +418,6 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                 unit_price: '',
                 quantity: '',
                 amount: '',
-                discount_type: 'Fixed',
-                discount: '',
                 payment_type: 'Cash',
                 from_account_id: '',
                 paid_amount: '',
@@ -776,8 +767,8 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                     className="max-w-7xl"
                 >
                     <div className="space-y-4">
-                            {/* Row 1: Purchase Date | Supplier Invoice No | Supplier | Product | Present Stock | Product Name | Code */}
-                            <div className="grid grid-cols-7 gap-4">
+                            {/* Row 1: Purchase Date | Supplier Invoice No | Supplier | Product | Present Stock */}
+                            <div className="grid grid-cols-5 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Purchase Date <span className="text-red-500">*</span>
@@ -825,7 +816,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         <SelectContent>
                                             {products.map((product) => (
                                                 <SelectItem key={product.id} value={product.id.toString()}>
-                                                    {product.product_name} ({product.product_code})
+                                                    {product.product_name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -840,30 +831,14 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />
                                 </div>
+                            </div>
+
+                            {/* Row 2: Product Name | Unit Price | Quantity | Amount */}
+                            <div className="grid grid-cols-4 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Product Name</Label>
                                     <Input
                                         value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.product_name || ''}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Code</Label>
-                                    <Input
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.product_code || ''}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Row 2: Unit Name | Unit Price | Quantity | Amount | Discount Type | Percentage | Discount */}
-                            <div className="grid grid-cols-7 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Unit Name</Label>
-                                    <Input
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.unit?.name || ''}
                                         readOnly
                                         className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />
@@ -895,37 +870,6 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                         step="0.01"
                                         value={data.products[0]?.amount || ''}
                                         onChange={(e) => updateProduct(0, 'amount', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Discount Type</Label>
-                                    <Select value={data.products[0]?.discount_type || 'Fixed'} onValueChange={(value) => updateProduct(0, 'discount_type', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Fixed">Fixed</SelectItem>
-                                            <SelectItem value="Percentage">Percentage</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Percentage</Label>
-                                    <Input
-                                        type="number"
-                                        value="0"
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Discount</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={data.products[0]?.discount || ''}
-                                        onChange={(e) => updateProduct(0, 'discount', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
@@ -1113,7 +1057,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product Name</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Unit Price</th>
-                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Discount</th>
+
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Total</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Payment</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Paid</th>
@@ -1133,7 +1077,7 @@ export default function Purchases({ purchases, suppliers = [], accounts = [], gr
                                                     <td className="p-2 text-sm dark:text-white">{selectedProduct?.product_name}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.unit_price}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{product.discount || '0'}</td>
+
                                                     <td className="p-2 text-sm dark:text-white">{product.amount}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.payment_type || 'Cash'}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.paid_amount || '0'}</td>

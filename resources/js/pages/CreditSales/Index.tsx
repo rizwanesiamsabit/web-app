@@ -59,12 +59,7 @@ interface Product {
     id: number;
     product_name: string;
     product_code: string;
-    unit: { name: string };
     sales_price: number;
-    stock?: {
-        current_stock: number;
-        available_stock: number;
-    };
 }
 
 interface Vehicle {
@@ -155,12 +150,10 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                 vehicle_id: '',
                 quantity: '',
                 amount: '',
-                discount_type: 'Fixed',
-                discount: '',
+                due_amount: '',
                 payment_type: 'Cash',
                 to_account_id: '',
                 paid_amount: '',
-                due_amount: '',
                 bank_type: '',
                 bank_name: '',
                 cheque_no: '',
@@ -194,12 +187,10 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                     vehicle_id: '',
                     quantity: '',
                     amount: '',
-                    discount_type: 'Fixed',
-                    discount: '',
+                    due_amount: '',
                     payment_type: 'Cash',
                     to_account_id: '',
                     paid_amount: '',
-                    due_amount: '',
                     bank_type: '',
                     bank_name: '',
                     cheque_no: '',
@@ -213,7 +204,6 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
         });
     };
 
-    const [errors, setErrors] = useState<any>({});
     const [processing, setProcessing] = useState(false);
     const [availableShifts, setAvailableShifts] = useState<Shift[]>(shifts);
 
@@ -243,7 +233,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                 customer_id: validProducts[0].customer_id,
                 vehicle_id: validProducts[0].vehicle_id,
                 quantity: validProducts[0].quantity,
-                discount: validProducts[0].discount || 0,
+
                 payment_type: validProducts[0].payment_type,
                 to_account_id: validProducts[0].to_account_id,
                 paid_amount: validProducts[0].paid_amount,
@@ -272,8 +262,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                     reset();
                     setProcessing(false);
                 },
-                onError: (errors) => {
-                    setErrors(errors);
+                onError: () => {
                     setProcessing(false);
                 },
             });
@@ -305,8 +294,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                         vehicle_id: saleData.vehicle_id?.toString() || '',
                         quantity: saleData.quantity?.toString() || '',
                         amount: saleData.amount?.toString() || '',
-                        discount_type: 'Fixed',
-                        discount: saleData.discount?.toString() || '',
+
                         payment_type: paymentType,
                         to_account_id: saleData.transaction?.ac_number ? accounts.find(a => a.ac_number === saleData.transaction.ac_number)?.id.toString() || '' : '',
                         paid_amount: saleData.paid_amount?.toString() || '',
@@ -456,12 +444,10 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                 vehicle_id: '',
                 quantity: '',
                 amount: '',
-                discount_type: 'Fixed',
-                discount: '',
+                due_amount: '',
                 payment_type: 'Cash',
                 to_account_id: '',
                 paid_amount: '',
-                due_amount: '',
                 bank_type: '',
                 bank_name: '',
                 cheque_no: '',
@@ -514,11 +500,8 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                 if (selectedProduct && selectedProduct.sales_price) {
                     const quantity = parseFloat(newProducts[index].quantity) || 0;
                     const amount = selectedProduct.sales_price * quantity;
-                    const discount = parseFloat(newProducts[index].discount) || 0;
-                    const totalAmount = amount - discount;
-                    const paidAmount = parseFloat(newProducts[index].paid_amount) || 0;
                     newProducts[index].amount = amount.toString();
-                    newProducts[index].due_amount = (totalAmount - paidAmount).toFixed(2);
+                    newProducts[index].due_amount = amount.toFixed(2);
                 }
             }
             
@@ -527,11 +510,8 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                 if (selectedProduct && selectedProduct.sales_price) {
                     const quantity = parseFloat(value) || 0;
                     const amount = selectedProduct.sales_price * quantity;
-                    const discount = parseFloat(newProducts[index].discount) || 0;
-                    const totalAmount = amount - discount;
-                    const paidAmount = parseFloat(newProducts[index].paid_amount) || 0;
                     newProducts[index].amount = amount.toString();
-                    newProducts[index].due_amount = (totalAmount - paidAmount).toFixed(2);
+                    newProducts[index].due_amount = amount.toFixed(2);
                 }
             }
             
@@ -539,28 +519,9 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                 const selectedProduct = products.find(p => p.id.toString() === newProducts[index].product_id);
                 if (selectedProduct && selectedProduct.sales_price && selectedProduct.sales_price > 0) {
                     const amount = parseFloat(value) || 0;
-                    const discount = parseFloat(newProducts[index].discount) || 0;
-                    const totalAmount = amount - discount;
-                    const paidAmount = parseFloat(newProducts[index].paid_amount) || 0;
                     newProducts[index].quantity = (amount / selectedProduct.sales_price).toFixed(2);
-                    newProducts[index].due_amount = (totalAmount - paidAmount).toFixed(2);
+                    newProducts[index].due_amount = amount.toFixed(2);
                 }
-            }
-            
-            if (field === 'discount' && value !== undefined) {
-                const amount = parseFloat(newProducts[index].amount) || 0;
-                const discount = parseFloat(value) || 0;
-                const totalAmount = amount - discount;
-                const paidAmount = parseFloat(newProducts[index].paid_amount) || 0;
-                newProducts[index].due_amount = (totalAmount - paidAmount).toFixed(2);
-            }
-            
-            if (field === 'paid_amount' && value !== undefined) {
-                const amount = parseFloat(newProducts[index].amount) || 0;
-                const discount = parseFloat(newProducts[index].discount) || 0;
-                const totalAmount = amount - discount;
-                const paidAmount = parseFloat(value) || 0;
-                newProducts[index].due_amount = (totalAmount - paidAmount).toFixed(2);
             }
             
             return {
@@ -862,7 +823,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                     className="max-w-[80vw]"
                 >
                     <div className="space-y-4">
-                            <div className="grid grid-cols-8 gap-4">
+                            <div className="grid grid-cols-5 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Sale Date <span className="text-red-500">*</span>
@@ -940,6 +901,9 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-5 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Product</Label>
                                     <Select value={data.products[0]?.product_id || ''} onValueChange={(value) => updateProduct(0, 'product_id', value)}>
@@ -949,39 +913,11 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                         <SelectContent>
                                             {products.map((product) => (
                                                 <SelectItem key={product.id} value={product.id.toString()}>
-                                                    {product.product_name} ({product.product_code})
+                                                    {product.product_name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Present Stock</Label>
-                                    <Input
-                                        type="number"
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.stock?.current_stock || '0'}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Code</Label>
-                                    <Input
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.product_code || ''}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-8 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Unit Name</Label>
-                                    <Input
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.unit?.name || ''}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Sales Price</Label>
@@ -1010,37 +946,6 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                         step="0.01"
                                         value={data.products[0]?.amount || ''}
                                         onChange={(e) => updateProduct(0, 'amount', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Discount Type</Label>
-                                    <Select value={data.products[0]?.discount_type || 'Fixed'} onValueChange={(value) => updateProduct(0, 'discount_type', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Fixed">Fixed</SelectItem>
-                                            <SelectItem value="Percentage">Percentage</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Percentage</Label>
-                                    <Input
-                                        type="number"
-                                        value="0"
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Discount</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={data.products[0]?.discount || ''}
-                                        onChange={(e) => updateProduct(0, 'discount', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
@@ -1092,7 +997,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Vehicle</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product Name</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
-                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Discount</th>
+
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Total</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
                                         </tr>
@@ -1110,7 +1015,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                                     <td className="p-2 text-sm dark:text-white">{selectedVehicle?.vehicle_number || '-'}</td>
                                                     <td className="p-2 text-sm dark:text-white">{selectedProduct?.product_name}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{product.discount || '0'}</td>
+
                                                     <td className="p-2 text-sm dark:text-white">{product.due_amount || '0'}</td>
                                                     <td className="p-2">
                                                         <div className="flex gap-2">

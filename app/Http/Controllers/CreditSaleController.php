@@ -74,8 +74,8 @@ class CreditSaleController extends Controller
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
             'vehicles' => Vehicle::with(['customer:id,name', 'product:id,product_name'])->select('id', 'vehicle_number', 'customer_id', 'product_id')->get(),
-            'customers' => Customer::select('id', 'name')->get(),
-            'products' => Product::with(['unit', 'stock'])->select('id', 'product_name', 'product_code', 'unit_id', 'sales_price')->get(),
+            'customers' => Customer::where('status', true)->select('id', 'name')->get(),
+            'products' => Product::select('id', 'product_name', 'sales_price')->get(),
             'shifts' => Shift::where('status', true)->select('id', 'name')->get(),
             'closedShifts' => $closedShifts,
             'filters' => $request->only(['search', 'customer', 'payment_status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
