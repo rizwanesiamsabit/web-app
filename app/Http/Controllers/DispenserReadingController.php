@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Account;
 use App\Models\Employee;
 use App\Models\Vehicle;
+use App\Models\Customer;
 use App\Models\IsShiftClose;
 use App\Models\DailyReading;
 use Illuminate\Http\Request;
@@ -34,13 +35,46 @@ class DispenserReadingController extends Controller
             ->values();
 
         $shifts = Shift::where('status', 1)->get();
-        $products = Product::with(['unit', 'stock'])->where('status', 1)->get();
-        $customers = Account::where('group_id', 3)->select('id', 'name')->get();
-        $vehicles = Vehicle::with('customer')->get();
+        $products = Product::with(['unit', 'stock', 'activeRate'])->where('status', 1)->get()->map(function ($product) {
+            $product->sales_price = $product->activeRate ? $product->activeRate->sales_price : 0;
+            return $product;
+        });
+        $customers = \App\Models\Customer::where('status', true)->select('id', 'name')->get();
+        $vehicles = Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id', 'product_id')->get();
         $accounts = Account::with('group')->select('id', 'name', 'ac_number', 'group_id', 'group_code')->get();
         $groupedAccounts = $accounts->groupBy(function ($account) {
             return $account->group ? $account->group->name : 'Other';
         });
+
+        $uniqueCustomers = DB::table('sales')
+            ->select('customer')
+            ->distinct()
+            ->whereNotNull('customer')
+            ->pluck('customer')
+            ->merge(
+                DB::table('credit_sales')
+                    ->join('accounts', 'credit_sales.customer_id', '=', 'accounts.id')
+                    ->select('accounts.name as customer')
+                    ->distinct()
+                    ->pluck('customer')
+            )
+            ->unique()
+            ->values();
+
+        $uniqueVehicles = DB::table('sales')
+            ->select('vehicle_no')
+            ->distinct()
+            ->whereNotNull('vehicle_no')
+            ->pluck('vehicle_no')
+            ->merge(
+                DB::table('credit_sales')
+                    ->join('vehicles', 'credit_sales.vehicle_id', '=', 'vehicles.id')
+                    ->select('vehicles.vehicle_number as vehicle_no')
+                    ->distinct()
+                    ->pluck('vehicle_no')
+            )
+            ->unique()
+            ->values();
 
         $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
         $employees = Employee::select('id', 'employee_name')->get();
@@ -54,7 +88,9 @@ class DispenserReadingController extends Controller
             'vehicles' => $vehicles,
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
-            'employees' => $employees
+            'employees' => $employees,
+            'uniqueCustomers' => $uniqueCustomers,
+            'uniqueVehicles' => $uniqueVehicles,
         ]);
     }
 

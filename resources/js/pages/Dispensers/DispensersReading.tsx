@@ -100,9 +100,11 @@ interface DispenserReadingProps {
     accounts?: Account[];
     groupedAccounts?: Record<string, Account[]>;
     employees?: Employee[];
+    uniqueCustomers?: string[];
+    uniqueVehicles?: string[];
 }
 
-export default function DispenserReading({ dispenserReading = [], shifts = [], closedShifts = [], products = [], customers = [], vehicles = [], accounts = [], groupedAccounts = {}, employees = [] }: DispenserReadingProps) {
+export default function DispenserReading({ dispenserReading = [], shifts = [], closedShifts = [], products = [], customers = [], vehicles = [], accounts = [], groupedAccounts = {}, employees = [], uniqueCustomers = [], uniqueVehicles = [] }: DispenserReadingProps) {
     const [productWiseData, setProductWiseData] = useState<ProductWiseData>({});
     const [totalSalesSum, setTotalSalesSum] = useState(0);
     const [availableShifts, setAvailableShifts] = useState<Shift[]>([]);
@@ -590,13 +592,21 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                     }}
                     processing={creditProcessing}
                     submitText="Create Sale"
-                    className="max-w-[80vw] max-h-[90vh]"
+                    className="max-w-[65vw] max-h-[90vh]"
                 >
                     <div className="space-y-4">
                         <div className="grid grid-cols-5 gap-4">
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Sale Date <span className="text-red-500">*</span></Label>
-                                <Input type="date" value={creditSalesData.sale_date} onChange={(e) => setCreditSalesData(prev => ({ ...prev, sale_date: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                <Input 
+                                    type="date" 
+                                    value={creditSalesData.sale_date} 
+                                    onChange={(e) => {
+                                        setCreditSalesData(prev => ({ ...prev, sale_date: e.target.value, shift_id: '' }));
+                                        setAvailableShifts(getAvailableShifts(e.target.value));
+                                    }} 
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" 
+                                />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Invoice No <span className="text-red-500">*</span></Label>
@@ -604,8 +614,8 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Shift <span className="text-red-500">*</span></Label>
-                                <Select value={creditSalesData.shift_id} onValueChange={(value) => setCreditSalesData(prev => ({ ...prev, shift_id: value }))}>
-                                    <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
+                                <Select value={creditSalesData.shift_id} onValueChange={(value) => setCreditSalesData(prev => ({ ...prev, shift_id: value }))} disabled={!creditSalesData.sale_date}>
+                                    <SelectTrigger><SelectValue placeholder={creditSalesData.sale_date ? "Select shift" : "Select date first"} /></SelectTrigger>
                                     <SelectContent>{availableShifts.map((shift) => (<SelectItem key={shift.id} value={shift.id.toString()}>{shift.name}</SelectItem>))}</SelectContent>
                                 </Select>
                             </div>
@@ -802,13 +812,21 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                     }}
                     processing={bankProcessing}
                     submitText="Create Sale"
-                    className="max-w-[80vw]"
+                    className="max-w-[65vw] max-h-[90vh]"
                 >
                     <div className="space-y-4">
-                        <div className="grid grid-cols-8 gap-4">
+                        <div className="grid grid-cols-4 gap-4">
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Sale Date <span className="text-red-500">*</span></Label>
-                                <Input type="date" value={bankSalesData.sale_date} onChange={(e) => setBankSalesData(prev => ({ ...prev, sale_date: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                <Input 
+                                    type="date" 
+                                    value={bankSalesData.sale_date} 
+                                    onChange={(e) => {
+                                        setBankSalesData(prev => ({ ...prev, sale_date: e.target.value, shift_id: '' }));
+                                        setAvailableShifts(getAvailableShifts(e.target.value));
+                                    }} 
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" 
+                                />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Invoice No <span className="text-red-500">*</span></Label>
@@ -816,47 +834,77 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Shift <span className="text-red-500">*</span></Label>
-                                <Select value={bankSalesData.shift_id} onValueChange={(value) => setBankSalesData(prev => ({ ...prev, shift_id: value }))}>
-                                    <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
+                                <Select value={bankSalesData.shift_id} onValueChange={(value) => setBankSalesData(prev => ({ ...prev, shift_id: value }))} disabled={!bankSalesData.sale_date}>
+                                    <SelectTrigger><SelectValue placeholder={bankSalesData.sale_date ? "Select shift" : "Select date first"} /></SelectTrigger>
                                     <SelectContent>{availableShifts.map((shift) => (<SelectItem key={shift.id} value={shift.id.toString()}>{shift.name}</SelectItem>))}</SelectContent>
                                 </Select>
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Customer <span className="text-red-500">*</span></Label>
-                                <Input list="bank-customers-list" value={bankSalesData.products[0]?.customer || ''} onChange={(e) => {
-                                    const newProducts = [...bankSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], customer: e.target.value };
-                                    setBankSalesData(prev => ({ ...prev, products: newProducts }));
-                                }} placeholder="Type customer name" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                <Input
+                                    list="bank-customers-list"
+                                    value={bankSalesData.products[0]?.customer || ''}
+                                    onChange={(e) => {
+                                        const newProducts = [...bankSalesData.products];
+                                        newProducts[0] = { ...newProducts[0], customer: e.target.value };
+                                        setBankSalesData(prev => ({ ...prev, products: newProducts }));
+                                    }}
+                                    placeholder="Type customer name"
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
                                 <datalist id="bank-customers-list">
-                                    {customers.map((customer) => (<option key={customer.id} value={customer.name} />))}
+                                    {Array.from(new Set([
+                                        ...customers.map(c => c.name),
+                                        ...uniqueCustomers
+                                    ])).sort().map((name) => (
+                                        <option key={name} value={name} />
+                                    ))}
                                 </datalist>
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-5 gap-4">
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Vehicle <span className="text-red-500">*</span></Label>
-                                <Input list="bank-vehicles-list" value={bankSalesData.products[0]?.vehicle_no || ''} onChange={(e) => {
-                                    const newProducts = [...bankSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], vehicle_no: e.target.value };
-                                    setBankSalesData(prev => ({ ...prev, products: newProducts }));
-                                }} onBlur={(e) => {
-                                    const vehicle = vehicles.find(v => v.vehicle_number === e.target.value);
-                                    if (vehicle) {
-                                        const customer = customers.find(c => c.id === vehicle.customer_id);
+                                <Input
+                                    list="bank-vehicles-list"
+                                    value={bankSalesData.products[0]?.vehicle_no || ''}
+                                    onChange={(e) => {
                                         const newProducts = [...bankSalesData.products];
-                                        newProducts[0].customer = customer?.name || '';
-                                        if (vehicle.product_id) {
-                                            newProducts[0].product_id = vehicle.product_id.toString();
-                                            const selectedProduct = products.find(p => p.id === vehicle.product_id);
-                                            if (selectedProduct && selectedProduct.sales_price) {
-                                                const quantity = parseFloat(newProducts[0].quantity) || 0;
-                                                newProducts[0].amount = (selectedProduct.sales_price * quantity).toString();
-                                            }
-                                        }
+                                        newProducts[0] = { ...newProducts[0], vehicle_no: e.target.value };
                                         setBankSalesData(prev => ({ ...prev, products: newProducts }));
-                                    }
-                                }} placeholder="Type vehicle number" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                    }}
+                                    onBlur={(e) => {
+                                        const vehicle = vehicles.find(v => v.vehicle_number === e.target.value);
+                                        if (vehicle) {
+                                            const customer = customers.find(c => c.id === vehicle.customer_id);
+                                            const newProducts = [...bankSalesData.products];
+                                            newProducts[0].customer = customer?.name || '';
+                                            if (vehicle.product_id) {
+                                                newProducts[0].product_id = vehicle.product_id.toString();
+                                                const selectedProduct = products.find(p => p.id === vehicle.product_id);
+                                                if (selectedProduct && selectedProduct.sales_price) {
+                                                    const quantity = parseFloat(newProducts[0].quantity) || 0;
+                                                    const discount = parseFloat(newProducts[0].discount) || 0;
+                                                    const amount = selectedProduct.sales_price * quantity;
+                                                    newProducts[0].amount = amount.toString();
+                                                    newProducts[0].paid_amount = (amount - discount).toFixed(2);
+                                                    newProducts[0].due_amount = '0.00';
+                                                }
+                                            }
+                                            setBankSalesData(prev => ({ ...prev, products: newProducts }));
+                                        }
+                                    }}
+                                    placeholder="Type vehicle number"
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
                                 <datalist id="bank-vehicles-list">
-                                    {vehicles.map((vehicle) => (<option key={vehicle.id} value={vehicle.vehicle_number} />))}
+                                    {Array.from(new Set([
+                                        ...vehicles.map(v => v.vehicle_number),
+                                        ...uniqueVehicles
+                                    ])).sort().map((vehicleNo) => (
+                                        <option key={vehicleNo} value={vehicleNo} />
+                                    ))}
                                 </datalist>
                             </div>
                             <div>
@@ -871,22 +919,14 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     setBankSalesData(prev => ({ ...prev, products: newProducts }));
                                 }}>
                                     <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
-                                    <SelectContent>{products.map((product) => (<SelectItem key={product.id} value={product.id.toString()}>{product.product_name} ({product.product_code})</SelectItem>))}</SelectContent>
+                                    <SelectContent>
+                                        {products.map((product) => (
+                                            <SelectItem key={product.id} value={product.id.toString()}>
+                                                {product.product_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
                                 </Select>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Present Stock</Label>
-                                <Input type="number" value={products.find(p => p.id.toString() === bankSalesData.products[0]?.product_id)?.stock?.current_stock || '0'} readOnly className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Code</Label>
-                                <Input value={products.find(p => p.id.toString() === bankSalesData.products[0]?.product_id)?.product_code || ''} readOnly className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-7 gap-4">
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Unit Name</Label>
-                                <Input value={products.find(p => p.id.toString() === bankSalesData.products[0]?.product_id)?.unit?.name || ''} readOnly className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Sales Price</Label>
@@ -916,32 +956,8 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     setBankSalesData(prev => ({ ...prev, products: newProducts }));
                                 }} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                             </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Discount Type</Label>
-                                <Select value={bankSalesData.products[0]?.discount_type || 'Fixed'} onValueChange={(value) => {
-                                    const newProducts = [...bankSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], discount_type: value };
-                                    setBankSalesData(prev => ({ ...prev, products: newProducts }));
-                                }}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent><SelectItem value="Fixed">Fixed</SelectItem><SelectItem value="Percentage">Percentage</SelectItem></SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Percentage</Label>
-                                <Input type="number" value="0" readOnly className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Discount</Label>
-                                <Input type="number" step="0.01" value={bankSalesData.products[0]?.discount || ''} onChange={(e) => {
-                                    const amount = parseFloat(bankSalesData.products[0]?.amount) || 0;
-                                    const discount = parseFloat(e.target.value) || 0;
-                                    const newProducts = [...bankSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], discount: e.target.value, paid_amount: (amount - discount).toFixed(2), due_amount: '0.00' };
-                                    setBankSalesData(prev => ({ ...prev, products: newProducts }));
-                                }} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                            </div>
                         </div>
+
                         <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${bankSalesData.products[0]?.payment_type === 'Bank' ? (bankSalesData.products[0]?.bank_type === 'Cheque' ? 6 : 5) : bankSalesData.products[0]?.payment_type === 'Mobile Bank' ? 5 : 3}, minmax(0, 1fr))` }}>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Payment Method</Label>
@@ -1053,7 +1069,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Vehicle</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product Name</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Discount</th>
+
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Total</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
                                     </tr>
@@ -1068,7 +1084,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                                 <td className="p-2 text-sm dark:text-white">{product.vehicle_no || '-'}</td>
                                                 <td className="p-2 text-sm dark:text-white">{selectedProduct?.product_name}</td>
                                                 <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
-                                                <td className="p-2 text-sm dark:text-white">{product.discount || '0'}</td>
+
                                                 <td className="p-2 text-sm dark:text-white">{product.paid_amount || '0'}</td>
                                                 <td className="p-2">
                                                     <div className="flex gap-2">
