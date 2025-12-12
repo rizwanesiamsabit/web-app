@@ -82,7 +82,10 @@ class SaleController extends Controller
             'groupedAccounts' => $groupedAccounts,
             'vehicles' => Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id', 'product_id')->get(),
             'salesHistory' => $salesHistory,
-            'products' => Product::with(['unit', 'stock'])->select('id', 'product_name', 'product_code', 'unit_id', 'sales_price')->get(),
+            'products' => Product::with(['unit', 'stock', 'activeRate'])->select('id', 'product_name', 'product_code', 'unit_id')->get()->map(function ($product) {
+                $product->sales_price = $product->activeRate ? $product->activeRate->sales_price : 0;
+                return $product;
+            }),
             'shifts' => Shift::where('status', true)->select('id', 'name')->get(),
             'closedShifts' => $closedShifts,
             'uniqueCustomers' => $uniqueCustomers,
@@ -151,7 +154,7 @@ class SaleController extends Controller
                     'customer' => $productData['customer'],
                     'vehicle_no' => $productData['vehicle_no'],
                     'product_id' => $productData['product_id'],
-                    'purchase_price' => $product->purchase_price ?? 0,
+                    'purchase_price' => $product->activeRate ? $product->activeRate->purchase_price : 0,
                     'quantity' => $productData['quantity'],
                     'amount' => $productData['amount'],
                     'discount' => $productData['discount'] ?? 0,
@@ -212,7 +215,8 @@ class SaleController extends Controller
 
             $toAccount = Account::find($request->to_account_id);
             $product = Product::find($request->product_id);
-            $totalAmount = ($product->sales_price * $request->quantity) - ($request->discount ?? 0);
+            $salesPrice = $product->activeRate ? $product->activeRate->sales_price : 0;
+            $totalAmount = ($salesPrice * $request->quantity) - ($request->discount ?? 0);
 
             $transactionId = TransactionHelper::generateTransactionId();
 
@@ -244,7 +248,7 @@ class SaleController extends Controller
                 'transaction_id' => $transaction->id,
                 'invoice_no' => $request->invoice_no,
                 'quantity' => $request->quantity,
-                'amount' => $product->sales_price * $request->quantity,
+                'amount' => $salesPrice * $request->quantity,
                 'discount' => $request->discount ?? 0,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $request->paid_amount,

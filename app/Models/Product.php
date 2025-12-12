@@ -13,15 +13,11 @@ class Product extends Model
         'product_name',
         'product_slug',
         'country_Of_origin',
-        'purchase_price',
-        'sales_price',
         'remarks',
         'status'
     ];
 
     protected $casts = [
-        'purchase_price' => 'decimal:2',
-        'sales_price' => 'decimal:2',
         'status' => 'integer'
     ];
 
@@ -48,5 +44,15 @@ class Product extends Model
     public function vehicles()
     {
         return $this->hasMany(Vehicle::class);
+    }
+
+    public function rates()
+    {
+        return $this->hasMany(ProductRate::class);
+    }
+
+    public function activeRate()
+    {
+        return $this->hasOne(ProductRate::class)->where('status', true)->latest('effective_date');
     }
 }

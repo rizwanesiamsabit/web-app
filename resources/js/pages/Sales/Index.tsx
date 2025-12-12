@@ -780,7 +780,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Vehicle</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Paid Amount</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Due Amount</th>
+
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
@@ -803,7 +803,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.vehicle_no}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.paid_amount.toLocaleString()}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.due_amount.toLocaleString()}</td>
+
                                                 <td className="p-4">
                                                     <span className={`rounded px-2 py-1 text-xs ${
                                                         parseFloat(sale.due_amount.toString()) === 0 
@@ -839,7 +839,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={10} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={9} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No sales found
                                             </td>
@@ -876,10 +876,10 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText={editingSale ? "Update Sale" : "Create Sale"}
-                    className="max-w-[80vw]"
+                    className="max-w-[65vw]"
                 >
                     <div className="space-y-4">
-                            <div className="grid grid-cols-8 gap-4">
+                            <div className="grid grid-cols-4 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Sale Date <span className="text-red-500">*</span>
@@ -945,6 +945,9 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         ))}
                                     </datalist>
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-5 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Vehicle <span className="text-red-500">*</span>
@@ -975,39 +978,11 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         <SelectContent>
                                             {products.map((product) => (
                                                 <SelectItem key={product.id} value={product.id.toString()}>
-                                                    {product.product_name} ({product.product_code})
+                                                    {product.product_name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Present Stock</Label>
-                                    <Input
-                                        type="number"
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.stock?.current_stock || '0'}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Code</Label>
-                                    <Input
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.product_code || ''}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-7 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Unit Name</Label>
-                                    <Input
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.unit?.name || ''}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Sales Price</Label>
@@ -1036,37 +1011,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         step="0.01"
                                         value={data.products[0]?.amount || ''}
                                         onChange={(e) => updateProduct(0, 'amount', e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Discount Type</Label>
-                                    <Select value={data.products[0]?.discount_type || 'Fixed'} onValueChange={(value) => updateProduct(0, 'discount_type', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Fixed">Fixed</SelectItem>
-                                            <SelectItem value="Percentage">Percentage</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Percentage</Label>
-                                    <Input
-                                        type="number"
-                                        value="0"
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">Discount</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={data.products[0]?.discount || ''}
-                                        onChange={(e) => updateProduct(0, 'discount', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>

@@ -16,8 +16,6 @@ return new class extends Migration
             $table->string('product_name');
             $table->string('product_slug')->nullable();
             $table->string('country_Of_origin')->nullable();
-            $table->decimal('purchase_price', 18, 2)->nullable();
-            $table->decimal('sales_price', 18, 2)->nullable();
             $table->longText('remarks')->nullable();
             $table->integer('status')->default(0);
             $table->timestamps();

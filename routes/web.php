@@ -34,6 +34,7 @@ use App\Http\Controllers\CustomerLedgerSummaryController;
 use App\Http\Controllers\CustomerLedgerDetailsController;
 use App\Http\Controllers\DispenserController;
 use App\Http\Controllers\DispenserReadingController;
+use App\Http\Controllers\ProductRateController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -138,6 +139,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('products', [ProductController::class, 'store'])->name('products.store');
     Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    
+    // Product Rate routes
+    Route::get('product-rates', [ProductRateController::class, 'index'])->name('product-rates.index');
+    Route::post('product-rates', [ProductRateController::class, 'store'])->name('product-rates.store');
+    Route::put('product-rates/{productRate}', [ProductRateController::class, 'update'])->name('product-rates.update');
+    Route::delete('product-rates/{productRate}', [ProductRateController::class, 'destroy'])->name('product-rates.destroy');
+    Route::post('product-rates/bulk-delete', [ProductRateController::class, 'bulkDelete'])->name('product-rates.bulk.delete');
     
     // Dispenser routes
     Route::get('dispensers', [DispenserController::class, 'index'])->name('dispensers.index');

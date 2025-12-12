@@ -35,7 +35,7 @@ import AppLogo from './app-logo';
 const mainNavItems = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: '/dashboard',
         icon: LayoutGrid,
     },
     {
@@ -103,6 +103,7 @@ const mainNavItems = [
         icon: Package,
         children: [
             { title: 'Products', href: '/products', icon: Package },
+            { title: 'Product Rates', href: '/product-rates', icon: DollarSign },
             { title: 'Categories', href: '/categories', icon: Package },
             { title: 'Units', href: '/units', icon: Package },
         ],
@@ -235,11 +236,10 @@ export function AppSidebar() {
         );
     };
 
-    const isActive = (href: string | object) => {
-        const hrefString = typeof href === 'object' ? href.url : href;
-        if (hrefString === '/' || hrefString === '/dashboard')
+    const isActive = (href: string) => {
+        if (href === '/' || href === '/dashboard')
             return url === '/' || url === '/dashboard';
-        return url.startsWith(hrefString);
+        return url.startsWith(href);
     };
 
     const isParentActive = (children: any[]) => {

@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Pagination } from '@/components/ui/pagination';
 import { FormModal } from '@/components/ui/form-modal';
 import { DeleteModal } from '@/components/ui/delete-modal';
@@ -11,27 +10,23 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Package, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, DollarSign, ChevronUp, ChevronDown, Filter, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface Product {
     id: number;
-    product_code: string;
     product_name: string;
-    category: string;
-    unit: string;
+}
+
+interface ProductRate {
+    id: number;
+    product_id: number;
+    product: string;
+    purchase_price: number;
+    sales_price: number;
+    effective_date: string;
     status: number;
     created_at: string;
-}
-
-interface Category {
-    id: number;
-    name: string;
-}
-
-interface Unit {
-    id: number;
-    name: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -40,14 +35,14 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard().url,
     },
     {
-        title: 'Products',
-        href: '/products',
+        title: 'Product Rates',
+        href: '/product-rates',
     },
 ];
 
-interface ProductsProps {
-    products: {
-        data: Product[];
+interface ProductRatesProps {
+    rates: {
+        data: ProductRate[];
         current_page: number;
         last_page: number;
         per_page: number;
@@ -55,13 +50,11 @@ interface ProductsProps {
         from: number;
         to: number;
     };
-    categories: Category[];
-    units: Unit[];
+    products: Product[];
     filters: {
         search?: string;
         status?: string;
-        category_id?: string;
-        unit_id?: string;
+        product_id?: number;
         start_date?: string;
         end_date?: string;
         sort_by?: string;
@@ -70,45 +63,40 @@ interface ProductsProps {
     };
 }
 
-export default function Products({ products, categories, units, filters }: ProductsProps) {
+export default function Index({ rates, products, filters }: ProductRatesProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-    const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
-    const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+    const [editingRate, setEditingRate] = useState<ProductRate | null>(null);
+    const [deletingRate, setDeletingRate] = useState<ProductRate | null>(null);
+    const [selectedRates, setSelectedRates] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters?.search || '');
     const [status, setStatus] = useState(filters?.status || 'all');
-    const [categoryId, setCategoryId] = useState(filters?.category_id || '');
-    const [unitId, setUnitId] = useState(filters?.unit_id || '');
+    const [productId, setProductId] = useState(filters?.product_id?.toString() || '');
     const [startDate, setStartDate] = useState(filters?.start_date || '');
     const [endDate, setEndDate] = useState(filters?.end_date || '');
-    const [sortBy, setSortBy] = useState(filters?.sort_by || 'product_name');
-    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'asc');
+    const [sortBy, setSortBy] = useState(filters?.sort_by || 'effective_date');
+    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'desc');
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
     
     const { data, setData, post, put, processing, errors, reset } = useForm({
-        category_id: '',
-        unit_id: '',
-        product_code: '',
-        product_name: '',
-        product_slug: '',
-        country_Of_origin: '',
-
-        remarks: '',
+        product_id: '',
+        purchase_price: '',
+        sales_price: '',
+        effective_date: '',
         status: 1
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (editingProduct) {
-            put(`/products/${editingProduct.id}`, {
+        if (editingRate) {
+            put(`/product-rates/${editingRate.id}`, {
                 onSuccess: () => {
-                    setEditingProduct(null);
+                    setEditingRate(null);
                     reset();
                 }
             });
         } else {
-            post('/products', {
+            post('/product-rates', {
                 onSuccess: () => {
                     setIsCreateOpen(false);
                     reset();
@@ -117,29 +105,25 @@ export default function Products({ products, categories, units, filters }: Produ
         }
     };
 
-    const handleEdit = (product: any) => {
-        setEditingProduct(product);
+    const handleEdit = (rate: ProductRate) => {
+        setEditingRate(rate);
         setData({
-            category_id: product.category_id ? product.category_id.toString() : '',
-            unit_id: product.unit_id ? product.unit_id.toString() : '',
-            product_code: product.product_code || '',
-            product_name: product.product_name || '',
-            product_slug: product.product_slug || '',
-            country_Of_origin: product.country_Of_origin || '',
-
-            remarks: product.remarks || '',
-            status: product.status || 1
+            product_id: rate.product_id.toString(),
+            purchase_price: rate.purchase_price ? rate.purchase_price.toString() : '',
+            sales_price: rate.sales_price ? rate.sales_price.toString() : '',
+            effective_date: rate.effective_date,
+            status: rate.status ? 1 : 0
         });
     };
 
-    const handleDelete = (product: Product) => {
-        setDeletingProduct(product);
+    const handleDelete = (rate: ProductRate) => {
+        setDeletingRate(rate);
     };
 
     const confirmDelete = () => {
-        if (deletingProduct) {
-            router.delete(`/products/${deletingProduct.id}`, {
-                onSuccess: () => setDeletingProduct(null)
+        if (deletingRate) {
+            router.delete(`/product-rates/${deletingRate.id}`, {
+                onSuccess: () => setDeletingRate(null)
             });
         }
     };
@@ -149,21 +133,21 @@ export default function Products({ products, categories, units, filters }: Produ
     };
 
     const confirmBulkDelete = () => {
-        router.delete('/products/bulk/delete', {
-            data: { ids: selectedProducts },
+        router.post('/product-rates/bulk-delete', {
+            ids: selectedRates
+        }, {
             onSuccess: () => {
-                setSelectedProducts([]);
+                setSelectedRates([]);
                 setIsBulkDeleting(false);
             }
         });
     };
 
     const applyFilters = () => {
-        router.get('/products', {
+        router.get('/product-rates', {
             search: search || undefined,
             status: status === 'all' ? undefined : status,
-            category_id: categoryId || undefined,
-            unit_id: unitId || undefined,
+            product_id: productId || undefined,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: sortBy,
@@ -175,11 +159,10 @@ export default function Products({ products, categories, units, filters }: Produ
     const clearFilters = () => {
         setSearch('');
         setStatus('all');
-        setCategoryId('');
-        setUnitId('');
+        setProductId('');
         setStartDate('');
         setEndDate('');
-        router.get('/products', {
+        router.get('/product-rates', {
             sort_by: sortBy,
             sort_order: sortOrder,
             per_page: perPage,
@@ -190,11 +173,10 @@ export default function Products({ products, categories, units, filters }: Produ
         const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
         setSortBy(column);
         setSortOrder(newOrder);
-        router.get('/products', {
+        router.get('/product-rates', {
             search: search || undefined,
             status: status === 'all' ? undefined : status,
-            category_id: categoryId || undefined,
-            unit_id: unitId || undefined,
+            product_id: productId || undefined,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: column,
@@ -204,11 +186,10 @@ export default function Products({ products, categories, units, filters }: Produ
     };
 
     const handlePageChange = (page: number) => {
-        router.get('/products', {
+        router.get('/product-rates', {
             search: search || undefined,
             status: status === 'all' ? undefined : status,
-            category_id: categoryId || undefined,
-            unit_id: unitId || undefined,
+            product_id: productId || undefined,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             sort_by: sortBy,
@@ -219,18 +200,18 @@ export default function Products({ products, categories, units, filters }: Produ
     };
 
     const toggleSelectAll = () => {
-        if (selectedProducts.length === products.data.length) {
-            setSelectedProducts([]);
+        if (selectedRates.length === rates.data.length) {
+            setSelectedRates([]);
         } else {
-            setSelectedProducts(products.data.map(product => product.id));
+            setSelectedRates(rates.data.map(rate => rate.id));
         }
     };
 
-    const toggleSelectProduct = (productId: number) => {
-        if (selectedProducts.includes(productId)) {
-            setSelectedProducts(selectedProducts.filter(id => id !== productId));
+    const toggleSelectRate = (rateId: number) => {
+        if (selectedRates.includes(rateId)) {
+            setSelectedRates(selectedRates.filter(id => id !== rateId));
         } else {
-            setSelectedProducts([...selectedProducts, productId]);
+            setSelectedRates([...selectedRates, rateId]);
         }
     };
 
@@ -245,49 +226,33 @@ export default function Products({ products, categories, units, filters }: Produ
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Products" />
+            <Head title="Product Rates" />
             
             <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold dark:text-white">
-                            Products
+                            Product Rates
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400">
-                            Manage product inventory
+                            Manage product pricing history
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedProducts.length > 0 && (
+                        {selectedRates.length > 0 && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Selected ({selectedProducts.length})
+                                Delete Selected ({selectedRates.length})
                             </Button>
                         )}
                         <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (status !== 'all') params.append('status', status);
-                                if (categoryId) params.append('category_id', categoryId);
-                                if (unitId) params.append('unit_id', unitId);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/products/download-pdf?${params.toString()}`;
-                            }}
+                            onClick={() => setIsCreateOpen(true)}
                         >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Add Product
+                            Add Rate
                         </Button>
                     </div>
                 </div>
@@ -300,7 +265,7 @@ export default function Products({ products, categories, units, filters }: Produ
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
                             <div>
                                 <Label className="dark:text-gray-200">
                                     Search
@@ -329,33 +294,16 @@ export default function Products({ products, categories, units, filters }: Produ
                             </div>
                             <div>
                                 <Label className="dark:text-gray-200">
-                                    Category
+                                    Product
                                 </Label>
-                                <Select value={categoryId} onValueChange={setCategoryId}>
+                                <Select value={productId} onValueChange={setProductId}>
                                     <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All categories" />
+                                        <SelectValue placeholder="All products" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {categories.map((category) => (
-                                            <SelectItem key={category.id} value={category.id.toString()}>
-                                                {category.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">
-                                    Unit
-                                </Label>
-                                <Select value={unitId} onValueChange={setUnitId}>
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All units" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {units.map((unit) => (
-                                            <SelectItem key={unit.id} value={unit.id.toString()}>
-                                                {unit.name}
+                                        {products.map((product) => (
+                                            <SelectItem key={product.id} value={product.id.toString()}>
+                                                {product.product_name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -412,56 +360,52 @@ export default function Products({ products, categories, units, filters }: Produ
                                         <th className="p-4 text-left font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedProducts.length === products.data.length && products.data.length > 0}
+                                                checked={selectedRates.length === rates.data.length && rates.data.length > 0}
                                                 onChange={toggleSelectAll}
                                                 className="rounded border-gray-300 dark:border-gray-600"
                                             />
                                         </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Code</th>
-                                        <th
-                                            className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
-                                            onClick={() => handleSort('product_name')}
-                                        >
-                                            <div className="flex items-center gap-1">
-                                                Product Name
-                                                {sortBy === 'product_name' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
-                                            </div>
-                                        </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Category</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Unit</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Product</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Purchase Price</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Sales Price</th>
+                                        <th
+                                            className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
+                                            onClick={() => handleSort('effective_date')}
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Effective Date
+                                                {sortBy === 'effective_date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                            </div>
+                                        </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {products.data.length > 0 ? products.data.map((product) => (
+                                    {rates.data.length > 0 ? rates.data.map((rate) => (
                                         <tr
-                                            key={product.id}
+                                            key={rate.id}
                                             className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
                                         >
                                             <td className="p-4">
                                                 <input
                                                     type="checkbox"
-                                                    checked={selectedProducts.includes(product.id)}
-                                                    onChange={() => toggleSelectProduct(product.id)}
+                                                    checked={selectedRates.includes(rate.id)}
+                                                    onChange={() => toggleSelectRate(rate.id)}
                                                     className="rounded border-gray-300 dark:border-gray-600"
                                                 />
                                             </td>
-                                            <td className="p-4 text-[13px] dark:text-gray-300">{product.product_code || '-'}</td>
-                                            <td className="p-4 text-[13px] dark:text-white">{product.product_name}</td>
-                                            <td className="p-4 text-[13px] dark:text-gray-300">{product.category || '-'}</td>
-                                            <td className="p-4 text-[13px] dark:text-gray-300">{product.unit || '-'}</td>
-                                            <td className="p-4 text-[13px] dark:text-gray-300">{product.purchase_price || '-'}</td>
-                                            <td className="p-4 text-[13px] dark:text-gray-300">{product.sales_price || '-'}</td>
+                                            <td className="p-4 text-[13px] dark:text-white">{rate.product}</td>
+                                            <td className="p-4 text-[13px] dark:text-gray-300">{rate.purchase_price || '-'}</td>
+                                            <td className="p-4 text-[13px] dark:text-gray-300">{rate.sales_price || '-'}</td>
+                                            <td className="p-4 text-[13px] dark:text-gray-300">{rate.effective_date}</td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded text-xs ${
-                                                    product.status === 1 
+                                                    rate.status === 1 
                                                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                                                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                                 }`}>
-                                                    {product.status === 1 ? 'Active' : 'Inactive'}
+                                                    {rate.status === 1 ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
                                             <td className="p-4">
@@ -469,7 +413,7 @@ export default function Products({ products, categories, units, filters }: Produ
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
-                                                        onClick={() => handleEdit(product)}
+                                                        onClick={() => handleEdit(rate)}
                                                         className="text-indigo-600 hover:text-indigo-800"
                                                     >
                                                         <Edit className="h-4 w-4" />
@@ -477,7 +421,7 @@ export default function Products({ products, categories, units, filters }: Produ
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
-                                                        onClick={() => handleDelete(product)}
+                                                        onClick={() => handleDelete(rate)}
                                                         className="text-red-600 hover:text-red-800"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -488,11 +432,11 @@ export default function Products({ products, categories, units, filters }: Produ
                                     )) : (
                                         <tr>
                                             <td
-                                                colSpan={9}
+                                                colSpan={7}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
-                                                <Package className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                                                No products found
+                                                <DollarSign className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                                                No product rates found
                                             </td>
                                         </tr>
                                     )}
@@ -501,20 +445,19 @@ export default function Products({ products, categories, units, filters }: Produ
                         </div>
                         
                         <Pagination
-                            currentPage={products.current_page}
-                            lastPage={products.last_page}
-                            from={products.from}
-                            to={products.to}
-                            total={products.total}
+                            currentPage={rates.current_page}
+                            lastPage={rates.last_page}
+                            from={rates.from}
+                            to={rates.to}
+                            total={rates.total}
                             perPage={perPage}
                             onPageChange={handlePageChange}
                             onPerPageChange={(newPerPage) => {
                                 setPerPage(newPerPage);
-                                router.get('/products', {
+                                router.get('/product-rates', {
                                     search: search || undefined,
                                     status: status === 'all' ? undefined : status,
-                                    category_id: categoryId || undefined,
-                                    unit_id: unitId || undefined,
+                                    product_id: productId || undefined,
                                     start_date: startDate || undefined,
                                     end_date: endDate || undefined,
                                     sort_by: sortBy,
@@ -529,77 +472,64 @@ export default function Products({ products, categories, units, filters }: Produ
                 <FormModal
                     isOpen={isCreateOpen}
                     onClose={() => setIsCreateOpen(false)}
-                    title="Create Product"
+                    title="Create Product Rate"
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText="Create"
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label htmlFor="category_id" className="dark:text-gray-200">Category *</Label>
-                            <Select value={data.category_id} onValueChange={(value) => setData('category_id', value)}>
+                            <Label htmlFor="product_id" className="dark:text-gray-200">Product *</Label>
+                            <Select value={data.product_id} onValueChange={(value) => setData('product_id', value)}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select category" />
+                                    <SelectValue placeholder="Select product" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {categories.map((category) => (
-                                        <SelectItem key={category.id} value={category.id.toString()}>
-                                            {category.name}
+                                    {products.map((product) => (
+                                        <SelectItem key={product.id} value={product.id.toString()}>
+                                            {product.product_name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.category_id && <span className="text-red-500 text-sm">{errors.category_id}</span>}
+                            {errors.product_id && <span className="text-red-500 text-sm">{errors.product_id}</span>}
                         </div>
                         <div>
-                            <Label htmlFor="unit_id" className="dark:text-gray-200">Unit *</Label>
-                            <Select value={data.unit_id} onValueChange={(value) => setData('unit_id', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select unit" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {units.map((unit) => (
-                                        <SelectItem key={unit.id} value={unit.id.toString()}>
-                                            {unit.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.unit_id && <span className="text-red-500 text-sm">{errors.unit_id}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="product_code" className="dark:text-gray-200">Product Code</Label>
+                            <Label htmlFor="effective_date" className="dark:text-gray-200">Effective Date *</Label>
                             <Input
-                                id="product_code"
-                                value={data.product_code}
-                                onChange={(e) => setData('product_code', e.target.value)}
+                                id="effective_date"
+                                type="date"
+                                value={data.effective_date}
+                                onChange={(e) => setData('effective_date', e.target.value)}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                placeholder="e.g., PRD001"
                             />
-                            {errors.product_code && <span className="text-red-500 text-sm">{errors.product_code}</span>}
+                            {errors.effective_date && <span className="text-red-500 text-sm">{errors.effective_date}</span>}
                         </div>
                         <div>
-                            <Label htmlFor="product_name" className="dark:text-gray-200">Product Name *</Label>
+                            <Label htmlFor="purchase_price" className="dark:text-gray-200">Purchase Price</Label>
                             <Input
-                                id="product_name"
-                                value={data.product_name}
-                                onChange={(e) => setData('product_name', e.target.value)}
+                                id="purchase_price"
+                                type="number"
+                                step="0.01"
+                                value={data.purchase_price}
+                                onChange={(e) => setData('purchase_price', e.target.value)}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                placeholder="e.g., Laptop"
+                                placeholder="0.00"
                             />
-                            {errors.product_name && <span className="text-red-500 text-sm">{errors.product_name}</span>}
+                            {errors.purchase_price && <span className="text-red-500 text-sm">{errors.purchase_price}</span>}
                         </div>
-
                         <div>
-                            <Label htmlFor="country_Of_origin" className="dark:text-gray-200">Country of Origin</Label>
+                            <Label htmlFor="sales_price" className="dark:text-gray-200">Sales Price</Label>
                             <Input
-                                id="country_Of_origin"
-                                value={data.country_Of_origin}
-                                onChange={(e) => setData('country_Of_origin', e.target.value)}
+                                id="sales_price"
+                                type="number"
+                                step="0.01"
+                                value={data.sales_price}
+                                onChange={(e) => setData('sales_price', e.target.value)}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                placeholder="e.g., Bangladesh"
+                                placeholder="0.00"
                             />
-                            {errors.country_Of_origin && <span className="text-red-500 text-sm">{errors.country_Of_origin}</span>}
+                            {errors.sales_price && <span className="text-red-500 text-sm">{errors.sales_price}</span>}
                         </div>
                         <div>
                             <Label htmlFor="status" className="dark:text-gray-200">Status</Label>
@@ -613,92 +543,69 @@ export default function Products({ products, categories, units, filters }: Produ
                                 </SelectContent>
                             </Select>
                         </div>
-                    </div>
-                    <div className="col-span-2">
-                        <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
-                        <Textarea
-                            id="remarks"
-                            value={data.remarks}
-                            onChange={(e) => setData('remarks', e.target.value)}
-                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            placeholder="Additional notes..."
-                            rows={3}
-                        />
-                        {errors.remarks && <span className="text-red-500 text-sm">{errors.remarks}</span>}
+                        <div></div>
                     </div>
                 </FormModal>
 
                 <FormModal
-                    isOpen={!!editingProduct}
-                    onClose={() => setEditingProduct(null)}
-                    title="Edit Product"
+                    isOpen={!!editingRate}
+                    onClose={() => setEditingRate(null)}
+                    title="Edit Product Rate"
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText="Update"
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label htmlFor="edit-category_id" className="dark:text-gray-200">Category *</Label>
-                            <Select value={data.category_id} onValueChange={(value) => setData('category_id', value)}>
+                            <Label htmlFor="edit-product_id" className="dark:text-gray-200">Product *</Label>
+                            <Select value={data.product_id} onValueChange={(value) => setData('product_id', value)}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select category" />
+                                    <SelectValue placeholder="Select product" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {categories.map((category) => (
-                                        <SelectItem key={category.id} value={category.id.toString()}>
-                                            {category.name}
+                                    {products.map((product) => (
+                                        <SelectItem key={product.id} value={product.id.toString()}>
+                                            {product.product_name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.category_id && <span className="text-red-500 text-sm">{errors.category_id}</span>}
+                            {errors.product_id && <span className="text-red-500 text-sm">{errors.product_id}</span>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-unit_id" className="dark:text-gray-200">Unit *</Label>
-                            <Select value={data.unit_id} onValueChange={(value) => setData('unit_id', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select unit" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {units.map((unit) => (
-                                        <SelectItem key={unit.id} value={unit.id.toString()}>
-                                            {unit.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.unit_id && <span className="text-red-500 text-sm">{errors.unit_id}</span>}
-                        </div>
-                        <div>
-                            <Label htmlFor="edit-product_code" className="dark:text-gray-200">Product Code</Label>
+                            <Label htmlFor="edit-effective_date" className="dark:text-gray-200">Effective Date *</Label>
                             <Input
-                                id="edit-product_code"
-                                value={data.product_code}
-                                onChange={(e) => setData('product_code', e.target.value)}
+                                id="edit-effective_date"
+                                type="date"
+                                value={data.effective_date}
+                                onChange={(e) => setData('effective_date', e.target.value)}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
-                            {errors.product_code && <span className="text-red-500 text-sm">{errors.product_code}</span>}
+                            {errors.effective_date && <span className="text-red-500 text-sm">{errors.effective_date}</span>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-product_name" className="dark:text-gray-200">Product Name *</Label>
+                            <Label htmlFor="edit-purchase_price" className="dark:text-gray-200">Purchase Price</Label>
                             <Input
-                                id="edit-product_name"
-                                value={data.product_name}
-                                onChange={(e) => setData('product_name', e.target.value)}
+                                id="edit-purchase_price"
+                                type="number"
+                                step="0.01"
+                                value={data.purchase_price}
+                                onChange={(e) => setData('purchase_price', e.target.value)}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
-                            {errors.product_name && <span className="text-red-500 text-sm">{errors.product_name}</span>}
+                            {errors.purchase_price && <span className="text-red-500 text-sm">{errors.purchase_price}</span>}
                         </div>
-
                         <div>
-                            <Label htmlFor="edit-country_Of_origin" className="dark:text-gray-200">Country of Origin</Label>
+                            <Label htmlFor="edit-sales_price" className="dark:text-gray-200">Sales Price</Label>
                             <Input
-                                id="edit-country_Of_origin"
-                                value={data.country_Of_origin}
-                                onChange={(e) => setData('country_Of_origin', e.target.value)}
+                                id="edit-sales_price"
+                                type="number"
+                                step="0.01"
+                                value={data.sales_price}
+                                onChange={(e) => setData('sales_price', e.target.value)}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
-                            {errors.country_Of_origin && <span className="text-red-500 text-sm">{errors.country_Of_origin}</span>}
+                            {errors.sales_price && <span className="text-red-500 text-sm">{errors.sales_price}</span>}
                         </div>
                         <div>
                             <Label htmlFor="edit-status" className="dark:text-gray-200">Status</Label>
@@ -712,34 +619,24 @@ export default function Products({ products, categories, units, filters }: Produ
                                 </SelectContent>
                             </Select>
                         </div>
-                    </div>
-                    <div className="col-span-2">
-                        <Label htmlFor="edit-remarks" className="dark:text-gray-200">Remarks</Label>
-                        <Textarea
-                            id="edit-remarks"
-                            value={data.remarks}
-                            onChange={(e) => setData('remarks', e.target.value)}
-                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            rows={3}
-                        />
-                        {errors.remarks && <span className="text-red-500 text-sm">{errors.remarks}</span>}
+                        <div></div>
                     </div>
                 </FormModal>
 
                 <DeleteModal
-                    isOpen={!!deletingProduct}
-                    onClose={() => setDeletingProduct(null)}
+                    isOpen={!!deletingRate}
+                    onClose={() => setDeletingRate(null)}
                     onConfirm={confirmDelete}
-                    title="Delete Product"
-                    message={`Are you sure you want to delete the product "${deletingProduct?.product_name}"? This action cannot be undone.`}
+                    title="Delete Product Rate"
+                    message={`Are you sure you want to delete this product rate? This action cannot be undone.`}
                 />
 
                 <DeleteModal
                     isOpen={isBulkDeleting}
                     onClose={() => setIsBulkDeleting(false)}
                     onConfirm={confirmBulkDelete}
-                    title="Delete Selected Products"
-                    message={`Are you sure you want to delete ${selectedProducts.length} selected products? This action cannot be undone.`}
+                    title="Delete Selected Product Rates"
+                    message={`Are you sure you want to delete ${selectedRates.length} selected product rates? This action cannot be undone.`}
                 />
             </div>
         </AppLayout>

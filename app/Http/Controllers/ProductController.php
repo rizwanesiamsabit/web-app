@@ -47,6 +47,7 @@ class ProductController extends Controller
 
         $perPage = $request->get('per_page', 10);
         $products = $query->paginate($perPage)->withQueryString()->through(function ($product) {
+            $activeRate = $product->activeRate;
             return [
                 'id' => $product->id,
                 'category_id' => $product->category_id,
@@ -57,8 +58,8 @@ class ProductController extends Controller
                 'country_Of_origin' => $product->country_Of_origin,
                 'category' => $product->category ? $product->category->name : null,
                 'unit' => $product->unit ? $product->unit->name : null,
-                'purchase_price' => $product->purchase_price,
-                'sales_price' => $product->sales_price,
+                'purchase_price' => $activeRate ? (float) $activeRate->purchase_price : null,
+                'sales_price' => $activeRate ? (float) $activeRate->sales_price : null,
                 'remarks' => $product->remarks,
                 'status' => $product->status,
                 'created_at' => $product->created_at->format('Y-m-d'),
@@ -85,8 +86,6 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'product_slug' => 'nullable|string|max:255',
             'country_Of_origin' => 'nullable|string|max:255',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'sales_price' => 'nullable|numeric|min:0',
             'remarks' => 'nullable|string',
             'status' => 'integer|in:0,1'
         ]);
@@ -105,8 +104,6 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'product_slug' => 'nullable|string|max:255',
             'country_Of_origin' => 'nullable|string|max:255',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'sales_price' => 'nullable|numeric|min:0',
             'remarks' => 'nullable|string',
             'status' => 'integer|in:0,1'
         ]);

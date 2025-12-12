@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
@@ -820,7 +821,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText={editingSale ? "Update Sale" : "Create Sale"}
-                    className="max-w-[80vw]"
+                    className="max-w-[80vw] max-h-[90vh]"
                 >
                     <div className="space-y-4">
                             <div className="grid grid-cols-5 gap-4">
@@ -871,35 +872,32 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Customer <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select value={data.products[0]?.customer_id || ''} onValueChange={(value) => updateProduct(0, 'customer_id', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select customer" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {customers.map((customer) => (
-                                                <SelectItem key={customer.id} value={customer.id.toString()}>
-                                                    {customer.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <SearchableSelect
+                                        options={customers.map(customer => ({
+                                            value: customer.id.toString(),
+                                            label: customer.name
+                                        }))}
+                                        value={data.products[0]?.customer_id || ''}
+                                        onValueChange={(value) => updateProduct(0, 'customer_id', value)}
+                                        placeholder="Select customer"
+                                        searchPlaceholder="Search customers..."
+                                    />
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Vehicle <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select value={data.products[0]?.vehicle_id || ''} onValueChange={(value) => updateProduct(0, 'vehicle_id', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select vehicle" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {getFilteredVehicles(data.products[0]?.customer_id).map((vehicle) => (
-                                                <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
-                                                    {vehicle.vehicle_number}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <SearchableSelect
+                                        options={getFilteredVehicles(data.products[0]?.customer_id).map(vehicle => ({
+                                            value: vehicle.id.toString(),
+                                            label: vehicle.vehicle_number,
+                                            subtitle: vehicle.customer?.name
+                                        }))}
+                                        value={data.products[0]?.vehicle_id || ''}
+                                        onValueChange={(value) => updateProduct(0, 'vehicle_id', value)}
+                                        placeholder="Select vehicle"
+                                        searchPlaceholder="Search vehicles..."
+                                    />
                                 </div>
                             </div>
 

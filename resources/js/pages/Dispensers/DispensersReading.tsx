@@ -590,10 +590,10 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                     }}
                     processing={creditProcessing}
                     submitText="Create Sale"
-                    className="max-w-[80vw]"
+                    className="max-w-[80vw] max-h-[90vh]"
                 >
                     <div className="space-y-4">
-                        <div className="grid grid-cols-8 gap-4">
+                        <div className="grid grid-cols-5 gap-4">
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Sale Date <span className="text-red-500">*</span></Label>
                                 <Input type="date" value={creditSalesData.sale_date} onChange={(e) => setCreditSalesData(prev => ({ ...prev, sale_date: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
@@ -611,27 +611,43 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Customer <span className="text-red-500">*</span></Label>
-                                <Select value={creditSalesData.products[0]?.customer_id || ''} onValueChange={(value) => {
-                                    const newProducts = [...creditSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], customer_id: value };
-                                    setCreditSalesData(prev => ({ ...prev, products: newProducts }));
-                                }}>
-                                    <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
-                                    <SelectContent>{customers.map((customer) => (<SelectItem key={customer.id} value={customer.id.toString()}>{customer.name}</SelectItem>))}</SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    options={customers.map(customer => ({
+                                        value: customer.id.toString(),
+                                        label: customer.name
+                                    }))}
+                                    value={creditSalesData.products[0]?.customer_id || ''}
+                                    onValueChange={(value) => {
+                                        const newProducts = [...creditSalesData.products];
+                                        newProducts[0] = { ...newProducts[0], customer_id: value };
+                                        setCreditSalesData(prev => ({ ...prev, products: newProducts }));
+                                    }}
+                                    placeholder="Select customer"
+                                    searchPlaceholder="Search customers..."
+                                />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Vehicle <span className="text-red-500">*</span></Label>
-                                <Select value={creditSalesData.products[0]?.vehicle_id || ''} onValueChange={(value) => {
-                                    const selectedVehicle = vehicles.find(v => v.id.toString() === value);
-                                    const newProducts = [...creditSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], vehicle_id: value, customer_id: selectedVehicle?.customer_id.toString() || '', product_id: selectedVehicle?.product_id.toString() || '' };
-                                    setCreditSalesData(prev => ({ ...prev, products: newProducts }));
-                                }}>
-                                    <SelectTrigger><SelectValue placeholder="Select vehicle" /></SelectTrigger>
-                                    <SelectContent>{vehicles.filter(v => !creditSalesData.products[0]?.customer_id || v.customer_id.toString() === creditSalesData.products[0]?.customer_id).map((vehicle) => (<SelectItem key={vehicle.id} value={vehicle.id.toString()}>{vehicle.vehicle_number}</SelectItem>))}</SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    options={vehicles.filter(v => !creditSalesData.products[0]?.customer_id || v.customer_id.toString() === creditSalesData.products[0]?.customer_id).map(vehicle => ({
+                                        value: vehicle.id.toString(),
+                                        label: vehicle.vehicle_number,
+                                        subtitle: customers.find(c => c.id === vehicle.customer_id)?.name
+                                    }))}
+                                    value={creditSalesData.products[0]?.vehicle_id || ''}
+                                    onValueChange={(value) => {
+                                        const selectedVehicle = vehicles.find(v => v.id.toString() === value);
+                                        const newProducts = [...creditSalesData.products];
+                                        newProducts[0] = { ...newProducts[0], vehicle_id: value, customer_id: selectedVehicle?.customer_id.toString() || '', product_id: selectedVehicle?.product_id.toString() || '' };
+                                        setCreditSalesData(prev => ({ ...prev, products: newProducts }));
+                                    }}
+                                    placeholder="Select vehicle"
+                                    searchPlaceholder="Search vehicles..."
+                                />
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-5 gap-4">
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Product</Label>
                                 <Select value={creditSalesData.products[0]?.product_id || ''} onValueChange={(value) => {
@@ -644,22 +660,8 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     setCreditSalesData(prev => ({ ...prev, products: newProducts }));
                                 }}>
                                     <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
-                                    <SelectContent>{products.map((product) => (<SelectItem key={product.id} value={product.id.toString()}>{product.product_name} ({product.product_code})</SelectItem>))}</SelectContent>
+                                    <SelectContent>{products.map((product) => (<SelectItem key={product.id} value={product.id.toString()}>{product.product_name}</SelectItem>))}</SelectContent>
                                 </Select>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Present Stock</Label>
-                                <Input type="number" value={products.find(p => p.id.toString() === creditSalesData.products[0]?.product_id)?.stock?.current_stock || '0'} readOnly className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Code</Label>
-                                <Input value={products.find(p => p.id.toString() === creditSalesData.products[0]?.product_id)?.product_code || ''} readOnly className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-8 gap-4">
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Unit Name</Label>
-                                <Input value={products.find(p => p.id.toString() === creditSalesData.products[0]?.product_id)?.unit?.name || ''} readOnly className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Sales Price</Label>
@@ -686,24 +688,6 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     const discount = parseFloat(creditSalesData.products[0]?.discount) || 0;
                                     const newProducts = [...creditSalesData.products];
                                     newProducts[0] = { ...newProducts[0], amount: e.target.value, quantity: quantity.toFixed(2), due_amount: (amount - discount).toFixed(2) };
-                                    setCreditSalesData(prev => ({ ...prev, products: newProducts }));
-                                }} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Discount Type</Label>
-                                <Select value="Fixed"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Fixed">Fixed</SelectItem></SelectContent></Select>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Percentage</Label>
-                                <Input type="number" value="0" readOnly className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Discount</Label>
-                                <Input type="number" step="0.01" value={creditSalesData.products[0]?.discount || ''} onChange={(e) => {
-                                    const amount = parseFloat(creditSalesData.products[0]?.amount) || 0;
-                                    const discount = parseFloat(e.target.value) || 0;
-                                    const newProducts = [...creditSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], discount: e.target.value, due_amount: (amount - discount).toFixed(2) };
                                     setCreditSalesData(prev => ({ ...prev, products: newProducts }));
                                 }} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                             </div>
@@ -739,7 +723,6 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Vehicle</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product Name</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Discount</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Total</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
                                     </tr>
@@ -756,7 +739,6 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                                 <td className="p-2 text-sm dark:text-white">{selectedVehicle?.vehicle_number || '-'}</td>
                                                 <td className="p-2 text-sm dark:text-white">{selectedProduct?.product_name}</td>
                                                 <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
-                                                <td className="p-2 text-sm dark:text-white">{product.discount || '0'}</td>
                                                 <td className="p-2 text-sm dark:text-white">{product.due_amount || '0'}</td>
                                                 <td className="p-2">
                                                     <div className="flex gap-2">

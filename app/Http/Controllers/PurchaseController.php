@@ -76,7 +76,17 @@ class PurchaseController extends Controller
             'suppliers' => Supplier::select('id', 'name')->get(),
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
-            'products' => Product::with('stock')->select('id', 'product_name', 'purchase_price')->get(),
+            'products' => Product::with(['stock', 'activeRate'])->select('id', 'product_name')->get()->map(function($product) {
+                return [
+                    'id' => $product->id,
+                    'product_name' => $product->product_name,
+                    'purchase_price' => $product->activeRate ? (float) $product->activeRate->purchase_price : 0,
+                    'stock' => $product->stock ? [
+                        'current_stock' => $product->stock->current_stock,
+                        'available_stock' => $product->stock->available_stock
+                    ] : null
+                ];
+            }),
             'filters' => $request->only(['search', 'supplier', 'payment_status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }
