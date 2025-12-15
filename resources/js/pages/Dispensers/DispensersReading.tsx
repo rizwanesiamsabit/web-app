@@ -115,34 +115,32 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
     const [isOfficePaymentOpen, setIsOfficePaymentOpen] = useState(false);
     const [creditSalesData, setCreditSalesData] = useState({
         sale_date: '',
-        invoice_no: '',
         shift_id: '',
-        remarks: '',
         products: [{
             product_id: '',
             customer_id: '',
             vehicle_id: '',
+            memo_no: '',
             quantity: '',
             amount: '',
-            discount: '',
             due_amount: '',
+            remarks: '',
         }]
     });
     const [creditProcessing, setCreditProcessing] = useState(false);
     const [bankSalesData, setBankSalesData] = useState({
         sale_date: '',
-        invoice_no: '',
         shift_id: '',
-        remarks: '',
         products: [{
             product_id: '',
             customer: '',
             vehicle_no: '',
+            memo_no: '',
             quantity: '',
             amount: '',
             discount_type: 'Fixed',
             discount: '',
-            payment_type: 'Bank',
+            payment_type: 'Cash',
             to_account_id: '',
             paid_amount: '',
             due_amount: '',
@@ -154,6 +152,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
             account_no: '',
             mobile_bank: '',
             mobile_number: '',
+            remarks: '',
         }]
     });
     const [bankProcessing, setBankProcessing] = useState(false);
@@ -563,10 +562,8 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                         setIsCreditSalesOpen(false);
                         setCreditSalesData({
                             sale_date: '',
-                            invoice_no: '',
                             shift_id: '',
-                            remarks: '',
-                            products: [{ product_id: '', customer_id: '', vehicle_id: '', quantity: '', amount: '', discount: '', due_amount: '' }]
+                            products: [{ product_id: '', customer_id: '', vehicle_id: '', memo_no: '', quantity: '', amount: '', due_amount: '', remarks: '' }]
                         });
                     }}
                     title="Credit Sales"
@@ -581,7 +578,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                         router.post('/credit-sales', { ...creditSalesData, products: validProducts }, {
                             onSuccess: () => {
                                 setIsCreditSalesOpen(false);
-                                setCreditSalesData({ sale_date: '', invoice_no: '', shift_id: '', remarks: '', products: [{ product_id: '', customer_id: '', vehicle_id: '', quantity: '', amount: '', discount: '', due_amount: '' }] });
+                                setCreditSalesData({ sale_date: '', shift_id: '', products: [{ product_id: '', customer_id: '', vehicle_id: '', memo_no: '', quantity: '', amount: '', due_amount: '', remarks: '' }] });
                                 setCreditProcessing(false);
                                 if (data.transaction_date && data.shift_id) {
                                     fetchShiftData(data.transaction_date, data.shift_id);
@@ -609,15 +606,19 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                 />
                             </div>
                             <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Invoice No <span className="text-red-500">*</span></Label>
-                                <Input value={creditSalesData.invoice_no} onChange={(e) => setCreditSalesData(prev => ({ ...prev, invoice_no: e.target.value }))} placeholder="Enter invoice number" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                            </div>
-                            <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Shift <span className="text-red-500">*</span></Label>
                                 <Select value={creditSalesData.shift_id} onValueChange={(value) => setCreditSalesData(prev => ({ ...prev, shift_id: value }))} disabled={!creditSalesData.sale_date}>
                                     <SelectTrigger><SelectValue placeholder={creditSalesData.sale_date ? "Select shift" : "Select date first"} /></SelectTrigger>
                                     <SelectContent>{availableShifts.map((shift) => (<SelectItem key={shift.id} value={shift.id.toString()}>{shift.name}</SelectItem>))}</SelectContent>
                                 </Select>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">Memo No</Label>
+                                <Input value={creditSalesData.products[0]?.memo_no || ''} onChange={(e) => {
+                                    const newProducts = [...creditSalesData.products];
+                                    newProducts[0] = { ...newProducts[0], memo_no: e.target.value };
+                                    setCreditSalesData(prev => ({ ...prev, products: newProducts }));
+                                }} placeholder="Enter memo number" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Customer <span className="text-red-500">*</span></Label>
@@ -664,9 +665,8 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     const selectedProduct = products.find(p => p.id.toString() === value);
                                     const quantity = parseFloat(creditSalesData.products[0]?.quantity) || 0;
                                     const amount = (selectedProduct?.sales_price || 0) * quantity;
-                                    const discount = parseFloat(creditSalesData.products[0]?.discount) || 0;
                                     const newProducts = [...creditSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], product_id: value, amount: amount.toString(), due_amount: (amount - discount).toFixed(2) };
+                                    newProducts[0] = { ...newProducts[0], product_id: value, amount: amount.toString(), due_amount: amount.toFixed(2) };
                                     setCreditSalesData(prev => ({ ...prev, products: newProducts }));
                                 }}>
                                     <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
@@ -683,9 +683,8 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     const selectedProduct = products.find(p => p.id.toString() === creditSalesData.products[0]?.product_id);
                                     const quantity = parseFloat(e.target.value) || 0;
                                     const amount = (selectedProduct?.sales_price || 0) * quantity;
-                                    const discount = parseFloat(creditSalesData.products[0]?.discount) || 0;
                                     const newProducts = [...creditSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], quantity: e.target.value, amount: amount.toString(), due_amount: (amount - discount).toFixed(2) };
+                                    newProducts[0] = { ...newProducts[0], quantity: e.target.value, amount: amount.toString(), due_amount: amount.toFixed(2) };
                                     setCreditSalesData(prev => ({ ...prev, products: newProducts }));
                                 }} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                             </div>
@@ -695,9 +694,8 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     const selectedProduct = products.find(p => p.id.toString() === creditSalesData.products[0]?.product_id);
                                     const amount = parseFloat(e.target.value) || 0;
                                     const quantity = (selectedProduct?.sales_price || 0) > 0 ? amount / (selectedProduct?.sales_price || 1) : 0;
-                                    const discount = parseFloat(creditSalesData.products[0]?.discount) || 0;
                                     const newProducts = [...creditSalesData.products];
-                                    newProducts[0] = { ...newProducts[0], amount: e.target.value, quantity: quantity.toFixed(2), due_amount: (amount - discount).toFixed(2) };
+                                    newProducts[0] = { ...newProducts[0], amount: e.target.value, quantity: quantity.toFixed(2), due_amount: amount.toFixed(2) };
                                     setCreditSalesData(prev => ({ ...prev, products: newProducts }));
                                 }} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                             </div>
@@ -709,7 +707,11 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                         <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-10">
                                 <Label className="text-sm font-medium dark:text-gray-200">Remarks</Label>
-                                <Input value={creditSalesData.remarks} onChange={(e) => setCreditSalesData(prev => ({ ...prev, remarks: e.target.value }))} placeholder="Enter any remarks" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                <Input value={creditSalesData.products[0]?.remarks || ''} onChange={(e) => {
+                                    const newProducts = [...creditSalesData.products];
+                                    newProducts[0] = { ...newProducts[0], remarks: e.target.value };
+                                    setCreditSalesData(prev => ({ ...prev, products: newProducts }));
+                                }} placeholder="Enter any remarks" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                             </div>
                             <div className="col-span-2 flex flex-col justify-end">
                                 <Button type="button" onClick={() => {
@@ -718,7 +720,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                         alert('Please fill product, customer, vehicle and quantity');
                                         return;
                                     }
-                                    setCreditSalesData(prev => ({ ...prev, products: [{ product_id: '', customer_id: '', vehicle_id: '', quantity: '', amount: '', discount: '', due_amount: '' }, ...prev.products] }));
+                                    setCreditSalesData(prev => ({ ...prev, products: [{ product_id: '', customer_id: '', vehicle_id: '', memo_no: '', quantity: '', amount: '', due_amount: '', remarks: '' }, ...prev.products] }));
                                 }} className="bg-blue-600 hover:bg-blue-700">
                                     <Plus className="h-4 w-4 mr-1" />Add to Cart
                                 </Button>
@@ -783,10 +785,8 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                         setIsBankSalesOpen(false);
                         setBankSalesData({
                             sale_date: '',
-                            invoice_no: '',
                             shift_id: '',
-                            remarks: '',
-                            products: [{ product_id: '', customer: '', vehicle_no: '', quantity: '', amount: '', discount_type: 'Fixed', discount: '', payment_type: 'Bank', to_account_id: '', paid_amount: '', due_amount: '', bank_type: '', bank_name: '', cheque_no: '', cheque_date: '', branch_name: '', account_no: '', mobile_bank: '', mobile_number: '' }]
+                            products: [{ product_id: '', customer: '', vehicle_no: '', memo_no: '', quantity: '', amount: '', discount_type: 'Fixed', discount: '', payment_type: 'Cash', to_account_id: '', paid_amount: '', due_amount: '', bank_type: '', bank_name: '', cheque_no: '', cheque_date: '', branch_name: '', account_no: '', mobile_bank: '', mobile_number: '', remarks: '' }]
                         });
                     }}
                     title="Bank Sales"
@@ -801,7 +801,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                         router.post('/sales', { ...bankSalesData, products: validProducts }, {
                             onSuccess: () => {
                                 setIsBankSalesOpen(false);
-                                setBankSalesData({ sale_date: '', invoice_no: '', shift_id: '', remarks: '', products: [{ product_id: '', customer: '', vehicle_no: '', quantity: '', amount: '', discount_type: 'Fixed', discount: '', payment_type: 'Bank', to_account_id: '', paid_amount: '', due_amount: '', bank_type: '', bank_name: '', cheque_no: '', cheque_date: '', branch_name: '', account_no: '', mobile_bank: '', mobile_number: '' }] });
+                                setBankSalesData({ sale_date: '', shift_id: '', products: [{ product_id: '', customer: '', vehicle_no: '', memo_no: '', quantity: '', amount: '', discount_type: 'Fixed', discount: '', payment_type: 'Cash', to_account_id: '', paid_amount: '', due_amount: '', bank_type: '', bank_name: '', cheque_no: '', cheque_date: '', branch_name: '', account_no: '', mobile_bank: '', mobile_number: '', remarks: '' }] });
                                 setBankProcessing(false);
                                 if (data.transaction_date && data.shift_id) {
                                     fetchShiftData(data.transaction_date, data.shift_id);
@@ -829,15 +829,19 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                 />
                             </div>
                             <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Invoice No <span className="text-red-500">*</span></Label>
-                                <Input value={bankSalesData.invoice_no} onChange={(e) => setBankSalesData(prev => ({ ...prev, invoice_no: e.target.value }))} placeholder="Enter invoice number" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                            </div>
-                            <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Shift <span className="text-red-500">*</span></Label>
                                 <Select value={bankSalesData.shift_id} onValueChange={(value) => setBankSalesData(prev => ({ ...prev, shift_id: value }))} disabled={!bankSalesData.sale_date}>
                                     <SelectTrigger><SelectValue placeholder={bankSalesData.sale_date ? "Select shift" : "Select date first"} /></SelectTrigger>
                                     <SelectContent>{availableShifts.map((shift) => (<SelectItem key={shift.id} value={shift.id.toString()}>{shift.name}</SelectItem>))}</SelectContent>
                                 </Select>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">Memo No <span className="text-red-500">*</span></Label>
+                                <Input value={bankSalesData.products[0]?.memo_no || ''} onChange={(e) => {
+                                    const newProducts = [...bankSalesData.products];
+                                    newProducts[0] = { ...newProducts[0], memo_no: e.target.value };
+                                    setBankSalesData(prev => ({ ...prev, products: newProducts }));
+                                }} placeholder="Enter memo number" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Customer <span className="text-red-500">*</span></Label>
@@ -1045,7 +1049,11 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                         <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-10">
                                 <Label className="text-sm font-medium dark:text-gray-200">Remarks</Label>
-                                <Input value={bankSalesData.remarks} onChange={(e) => setBankSalesData(prev => ({ ...prev, remarks: e.target.value }))} placeholder="Enter any remarks" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                <Input value={bankSalesData.products[0]?.remarks || ''} onChange={(e) => {
+                                    const newProducts = [...bankSalesData.products];
+                                    newProducts[0] = { ...newProducts[0], remarks: e.target.value };
+                                    setBankSalesData(prev => ({ ...prev, products: newProducts }));
+                                }} placeholder="Enter any remarks" className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                             </div>
                             <div className="col-span-2 flex flex-col justify-end">
                                 <Button type="button" onClick={() => {
@@ -1054,7 +1062,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                         alert('Please fill product, customer, vehicle and quantity');
                                         return;
                                     }
-                                    setBankSalesData(prev => ({ ...prev, products: [{ product_id: '', customer: '', vehicle_no: '', quantity: '', amount: '', discount_type: 'Fixed', discount: '', payment_type: 'Bank', to_account_id: '', paid_amount: '', due_amount: '', bank_type: '', bank_name: '', cheque_no: '', cheque_date: '', branch_name: '', account_no: '', mobile_bank: '', mobile_number: '' }, ...prev.products] }));
+                                    setBankSalesData(prev => ({ ...prev, products: [{ product_id: '', customer: '', vehicle_no: '', memo_no: '', quantity: '', amount: '', discount_type: 'Fixed', discount: '', payment_type: 'Cash', to_account_id: '', paid_amount: '', due_amount: '', bank_type: '', bank_name: '', cheque_no: '', cheque_date: '', branch_name: '', account_no: '', mobile_bank: '', mobile_number: '', remarks: '' }, ...prev.products] }));
                                 }} className="bg-blue-600 hover:bg-blue-700">
                                     <Plus className="h-4 w-4 mr-1" />Add to Cart
                                 </Button>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Dispenser;
 use App\Models\DispenserReading;
 use App\Models\Product;
+use App\Models\ProductRate;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -81,7 +82,7 @@ class DispenserController extends Controller
         $dispenser = Dispenser::create($input);
 
         $product_id = $input['product_id'];
-        $product_rate = Product::where('id', $product_id)->where('status', 1)->value('sales_price');
+        $product_rate = ProductRate::where('product_id', $product_id)->where('status', 1)->latest('effective_date')->value('sales_price');
 
         DispenserReading::create([
             'shift_id' => null,
