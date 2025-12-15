@@ -89,8 +89,6 @@ class CustomerController extends Controller
         $request->validate([
             'code' => 'nullable|string|max:150',
             'name' => 'required|string|max:150',
-            'group_id' => 'required|exists:groups,id',
-            'group_code' => 'nullable|exists:groups,code',
             'mobile' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:50',
             'nid_number' => 'nullable|string|max:100',
@@ -110,19 +108,12 @@ class CustomerController extends Controller
             'reg_date' => 'nullable|date'
         ]);
 
-        // Get group_code if not provided
-        $groupCode = $request->group_code;
-        if (!$groupCode && $request->group_id) {
-            $group = Group::find($request->group_id);
-            $groupCode = $group ? $group->code : null;
-        }
-
         // Create account first
         $account = Account::create([
             'name' => $request->name,
             'ac_number' => AccountHelper::generateAccountNumber(),
-            'group_id' => $request->group_id,
-            'group_code' => $groupCode,
+            'group_id' => 7,
+            'group_code' => '100020001',
             'due_amount' => 0,
             'paid_amount' => 0,
             'status' => $request->status ?? true,

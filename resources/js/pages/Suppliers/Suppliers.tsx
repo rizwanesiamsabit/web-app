@@ -98,8 +98,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
-        group_id: '',
-        group_code: '',
+
         mobile: '',
         email: '',
         address: '',
@@ -130,8 +129,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
         setEditingSupplier(supplier);
         setData({
             name: supplier.name,
-            group_id: supplier.group_id?.toString() || '',
-            group_code: supplier.group_code || '',
+
             mobile: supplier.mobile || '',
             email: supplier.email || '',
             address: supplier.address || '',
@@ -292,13 +290,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                         </Button>
                         <Button onClick={() => {
                             setIsCreateOpen(true);
-                            // Auto select last supplier's group from backend data
-                            if (lastSupplierGroup) {
-                                setTimeout(() => {
-                                    setData('group_id', lastSupplierGroup.id.toString());
-                                    setData('group_code', lastSupplierGroup.code);
-                                }, 100);
-                            }
+
                         }}>
                             <Plus className="mr-2 h-4 w-4" />
                             Add Supplier
@@ -584,7 +576,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                 <span className="text-sm text-red-500">{errors.proprietor_name}</span>
                             )}
                         </div>
-                        <div className="col-span-2">
+                        <div>
                             <Label htmlFor="address" className="dark:text-gray-200">
                                 Address
                             </Label>
@@ -596,36 +588,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                             />
                             {errors.address && <span className="text-sm text-red-500">{errors.address}</span>}
                         </div>
-                        <div>
-                            <Label htmlFor="group_id" className="dark:text-gray-200">
-                                Group *
-                            </Label>
-                            <Select
-                                value={data.group_id}
-                                onValueChange={(value) => {
-                                    const selectedGroup = groups.find(g => g.id.toString() === value);
-                                    setData({
-                                        ...data,
-                                        group_id: value,
-                                        group_code: selectedGroup?.code || ''
-                                    });
-                                }}
-                            >
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select group" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {groups.map((group) => (
-                                        <SelectItem key={group.id} value={group.id.toString()}>
-                                            {group.name} ({group.code})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.group_id && (
-                                <span className="text-sm text-red-500">{errors.group_id}</span>
-                            )}
-                        </div>
+
                         <div>
                             <Label htmlFor="status" className="dark:text-gray-200">
                                 Status
@@ -706,7 +669,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                 <span className="text-sm text-red-500">{errors.proprietor_name}</span>
                             )}
                         </div>
-                        <div className="col-span-2">
+                        <div>
                             <Label htmlFor="edit-address" className="dark:text-gray-200">
                                 Address
                             </Label>
@@ -718,36 +681,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                             />
                             {errors.address && <span className="text-sm text-red-500">{errors.address}</span>}
                         </div>
-                        <div>
-                            <Label htmlFor="edit-group_id" className="dark:text-gray-200">
-                                Group *
-                            </Label>
-                            <Select
-                                value={data.group_id}
-                                onValueChange={(value) => {
-                                    const selectedGroup = groups.find(g => g.id.toString() === value);
-                                    setData({
-                                        ...data,
-                                        group_id: value,
-                                        group_code: selectedGroup?.code || ''
-                                    });
-                                }}
-                            >
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select group" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {groups.map((group) => (
-                                        <SelectItem key={group.id} value={group.id.toString()}>
-                                            {group.name} ({group.code})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.group_id && (
-                                <span className="text-sm text-red-500">{errors.group_id}</span>
-                            )}
-                        </div>
+
                         <div>
                             <Label htmlFor="edit-status" className="dark:text-gray-200">
                                 Status

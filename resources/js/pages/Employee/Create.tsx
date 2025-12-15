@@ -78,7 +78,7 @@ export default function CreateEmployee({
         department_id: '',
         designation_id: '',
         emp_type_id: '',
-        group_id: lastEmployeeGroup?.id?.toString() || '',
+
         dob: '',
         gender: '',
         blood_group: '',
@@ -273,29 +273,7 @@ export default function CreateEmployee({
                                     )}
                                 </div>
 
-                                <div>
-                                    <Label htmlFor="group_id" className="dark:text-gray-200">
-                                        Group *
-                                    </Label>
-                                    <Select
-                                        value={data.group_id}
-                                        onValueChange={(value) => setData('group_id', value)}
-                                    >
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="Select group" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {groups.map((group) => (
-                                                <SelectItem key={group.id} value={group.id.toString()}>
-                                                    {group.name} ({group.code})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.group_id && (
-                                        <span className="text-sm text-red-500">{errors.group_id}</span>
-                                    )}
-                                </div>
+
 
                                 <div>
                                     <Label htmlFor="joining_date" className="dark:text-gray-200">

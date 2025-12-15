@@ -104,7 +104,7 @@ class EmployeeController extends Controller
             'emp_type_id' => 'nullable|exists:emp_types,id',
             'department_id' => 'nullable|exists:emp_departments,id',
             'designation_id' => 'nullable|exists:emp_designations,id',
-            'group_id' => 'required|exists:groups,id',
+
             'mobile' => 'nullable|string|max:100',
             'mobile_two' => 'nullable|string|max:20',
             'dob' => 'nullable|date',
@@ -126,13 +126,11 @@ class EmployeeController extends Controller
         ]);
 
         // Create account first
-        $group = Group::find($request->group_id);
-
         $account = Account::create([
             'name' => $request->employee_name,
             'ac_number' => AccountHelper::generateAccountNumber(),
-            'group_id' => $group->id,
-            'group_code' => $group->code,
+            'group_id' => 16,
+            'group_code' => '40002',
             'status' => $request->status ?? true,
         ]);
 
@@ -203,7 +201,7 @@ class EmployeeController extends Controller
             'emp_type_id' => 'nullable|exists:emp_types,id',
             'department_id' => 'nullable|exists:emp_departments,id',
             'designation_id' => 'nullable|exists:emp_designations,id',
-            'group_id' => 'nullable|exists:groups,id',
+
             'mobile' => 'nullable|string|max:100',
             'mobile_two' => 'nullable|string|max:20',
             'dob' => 'nullable|date',
@@ -226,18 +224,10 @@ class EmployeeController extends Controller
 
         // Update account
         if ($employee->account) {
-            $updateData = [
+            $employee->account->update([
                 'name' => $request->employee_name,
                 'status' => $request->status ?? true,
-            ];
-
-            if ($request->group_id) {
-                $group = Group::find($request->group_id);
-                $updateData['group_id'] = $group->id;
-                $updateData['group_code'] = $group->code;
-            }
-
-            $employee->account->update($updateData);
+            ]);
         }
 
         $updateData = [

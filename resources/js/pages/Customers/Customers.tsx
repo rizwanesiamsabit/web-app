@@ -104,8 +104,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
     const { data, setData, post, put, processing, errors, reset } = useForm({
         code: '',
         name: '',
-        group_id: '',
-        group_code: '',
+
         mobile: '',
         email: '',
         nid_number: '',
@@ -149,8 +148,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
         setData({
             code: customer.code || '',
             name: customer.name,
-            group_id: customer.account?.group_id?.toString() || '',
-            group_code: customer.account?.group?.code || '',
+
             mobile: customer.mobile || '',
             email: customer.email || '',
             nid_number: customer.nid_number || '',
@@ -314,13 +312,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
                         </Button>
                         <Button onClick={() => {
                             setIsCreateOpen(true);
-                            // Auto select last customer's group from backend data
-                            if (lastCustomerGroup) {
-                                setTimeout(() => {
-                                    setData('group_id', lastCustomerGroup.id.toString());
-                                    setData('group_code', lastCustomerGroup.code);
-                                }, 100);
-                            }
+
                         }}>
                             <Plus className="mr-2 h-4 w-4" />
                             Add Customer
@@ -594,32 +586,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                 </div>
                             </div>
                             
-                            <div>
-                                <Label className="dark:text-gray-200">Group *</Label>
-                                <Select
-                                    value={data.group_id}
-                                    onValueChange={(value) => {
-                                        const selectedGroup = groups.find(g => g.id.toString() === value);
-                                        setData({
-                                            ...data,
-                                            group_id: value,
-                                            group_code: selectedGroup?.code || ''
-                                        });
-                                    }}
-                                >
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="Select Group" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {groups.map((group) => (
-                                            <SelectItem key={group.id} value={group.id.toString()}>
-                                                {group.name} ({group.code})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.group_id && <span className="text-sm text-red-500">{errors.group_id}</span>}
-                            </div>
+
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -774,32 +741,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
                             />
                         </div>
                     </div>
-                    <div>
-                        <Label className="dark:text-gray-200">Group *</Label>
-                        <Select
-                            value={data.group_id}
-                            onValueChange={(value) => {
-                                const selectedGroup = groups.find(g => g.id.toString() === value);
-                                setData({
-                                    ...data,
-                                    group_id: value,
-                                    group_code: selectedGroup?.code || ''
-                                });
-                            }}
-                        >
-                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select Group" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {groups.map((group) => (
-                                    <SelectItem key={group.id} value={group.id.toString()}>
-                                        {group.name} ({group.code})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {errors.group_id && <span className="text-sm text-red-500">{errors.group_id}</span>}
-                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="edit-mobile" className="dark:text-gray-200">Mobile</Label>
@@ -821,29 +763,31 @@ export default function Customers({ customers, groups = [], products = [], lastC
                             />
                         </div>
                     </div>
-                    <div>
-                        <Label htmlFor="edit-address" className="dark:text-gray-200">Address</Label>
-                        <Input
-                            id="edit-address"
-                            value={data.address}
-                            onChange={(e) => setData('address', e.target.value)}
-                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
-                    </div>
-                    <div>
-                        <Label className="dark:text-gray-200">Status</Label>
-                        <Select
-                            value={data.status ? 'true' : 'false'}
-                            onValueChange={(value) => setData('status', value === 'true')}
-                        >
-                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="true">Active</SelectItem>
-                                <SelectItem value="false">Inactive</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="edit-address" className="dark:text-gray-200">Address</Label>
+                            <Input
+                                id="edit-address"
+                                value={data.address}
+                                onChange={(e) => setData('address', e.target.value)}
+                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                        </div>
+                        <div>
+                            <Label className="dark:text-gray-200">Status</Label>
+                            <Select
+                                value={data.status ? 'true' : 'false'}
+                                onValueChange={(value) => setData('status', value === 'true')}
+                            >
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="true">Active</SelectItem>
+                                    <SelectItem value="false">Inactive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </FormModal>
 

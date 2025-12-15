@@ -6,6 +6,8 @@ use App\Models\Supplier;
 use App\Models\Account;
 use App\Models\Group;
 use App\Helpers\AccountHelper;
+use App\Models\CompanySetting;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -71,8 +73,6 @@ class SupplierController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'group_id' => 'required|exists:groups,id',
-            'group_code' => 'nullable|exists:groups,code',
             'mobile' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string|max:255',
@@ -80,19 +80,12 @@ class SupplierController extends Controller
             'status' => 'boolean'
         ]);
 
-        // Get group_code from request or find it
-        $groupCode = $request->group_code;
-        if (!$groupCode && $request->group_id) {
-            $group = Group::find($request->group_id);
-            $groupCode = $group ? $group->code : null;
-        }
-
         // Create account first
         $account = Account::create([
             'name' => $request->name,
             'ac_number' => AccountHelper::generateAccountNumber(),
-            'group_id' => $request->group_id,
-            'group_code' => $groupCode,
+            'group_id' => 11,
+            'group_code' => '400010001',
             'due_amount' => 0,
             'paid_amount' => 0,
             'total_amount' => 0,
@@ -180,9 +173,9 @@ class SupplierController extends Controller
         $query->orderBy($sortBy, $sortOrder);
 
         $suppliers = $query->get();
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.suppliers', compact('suppliers', 'companySetting'));
+        $pdf = Pdf::loadView('pdf.suppliers', compact('suppliers', 'companySetting'));
         $filename = 'suppliers_' . date('Y-m-d_H-i-s') . '.pdf';
         return $pdf->download($filename);
     }
