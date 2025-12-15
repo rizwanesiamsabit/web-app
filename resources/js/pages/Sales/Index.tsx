@@ -148,14 +148,13 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
 
     const [data, setDataState] = useState({
         sale_date: '',
-        invoice_no: '',
         shift_id: '',
-        remarks: '',
         products: [
             {
                 product_id: '',
                 customer: '',
                 vehicle_no: '',
+                memo_no: '',
                 quantity: '',
                 amount: '',
                 discount_type: 'Fixed',
@@ -172,6 +171,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 account_no: '',
                 mobile_bank: '',
                 mobile_number: '',
+                remarks: '',
             }
         ],
     });
@@ -187,14 +187,13 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
     const reset = () => {
         setDataState({
             sale_date: '',
-            invoice_no: '',
             shift_id: '',
-            remarks: '',
             products: [
                 {
                     product_id: '',
                     customer: '',
                     vehicle_no: '',
+                    memo_no: '',
                     quantity: '',
                     amount: '',
                     discount_type: 'Fixed',
@@ -211,6 +210,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                     account_no: '',
                     mobile_bank: '',
                     mobile_number: '',
+                    remarks: '',
                 }
             ],
         });
@@ -222,7 +222,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const validProducts = data.products.filter(p => p.product_id && p.customer && p.vehicle_no && p.quantity);
+        const validProducts = data.products.filter(p => p.product_id && p.customer && p.vehicle_no && p.quantity && p.amount);
         if (validProducts.length === 0) {
             alert('Please add at least one product to cart');
             return;
@@ -230,22 +230,25 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
         
         const submitData = {
             sale_date: data.sale_date,
-            invoice_no: data.invoice_no,
             shift_id: data.shift_id,
-            remarks: data.remarks,
             products: validProducts
         };
+        
+        console.log('=== FORM SUBMISSION DATA ===');
+        console.log('Raw Form Data:', data);
+        console.log('Valid Products:', validProducts);
+        console.log('Submit Data:', submitData);
         
         if (editingSale) {
             const updateData = {
                 sale_date: data.sale_date,
-                invoice_no: data.invoice_no,
                 shift_id: data.shift_id,
-                remarks: data.remarks,
                 product_id: validProducts[0].product_id,
                 customer: validProducts[0].customer,
                 vehicle_no: validProducts[0].vehicle_no,
+                memo_no: validProducts[0].memo_no,
                 quantity: validProducts[0].quantity,
+                amount: validProducts[0].amount,
                 discount: validProducts[0].discount || 0,
                 payment_type: validProducts[0].payment_type,
                 to_account_id: validProducts[0].to_account_id,
@@ -258,7 +261,12 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 account_no: validProducts[0].account_no,
                 mobile_bank: validProducts[0].mobile_bank,
                 mobile_number: validProducts[0].mobile_number,
+                remarks: validProducts[0].remarks,
+                invoice_no: editingSale.invoice_no,
             };
+            
+            console.log('=== EDIT MODE ===');
+            console.log('Update Data:', updateData);
             
             router.put(`/sales/${editingSale.id}`, updateData, {
                 onSuccess: () => {
@@ -268,6 +276,9 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 },
             });
         } else {
+            console.log('=== CREATE MODE ===');
+            console.log('Creating new sale with data:', submitData);
+            
             setProcessing(true);
             router.post('/sales', submitData, {
                 onSuccess: () => {
@@ -298,14 +309,13 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
             
             setData({
                 sale_date: saleData.sale_date.split('T')[0],
-                invoice_no: saleData.invoice_no,
                 shift_id: saleData.shift_id?.toString() || '',
-                remarks: saleData.remarks || '',
                 products: [
                     {
                         product_id: saleData.product_id?.toString() || '',
                         customer: saleData.customer || '',
                         vehicle_no: saleData.vehicle_no || '',
+                        memo_no: saleData.memo_no || '',
                         quantity: saleData.quantity?.toString() || '',
                         amount: saleData.amount?.toString() || '',
                         discount_type: 'Fixed',
@@ -322,6 +332,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                         account_no: saleData.transaction?.account_number || '',
                         mobile_bank: saleData.transaction?.mobile_bank_name || '',
                         mobile_number: saleData.transaction?.mobile_number || '',
+                        remarks: saleData.remarks || '',
                     }
                 ],
             });
@@ -447,8 +458,8 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
 
     const addProduct = () => {
         const firstProduct = data.products[0];
-        if (!firstProduct.product_id || !firstProduct.customer || !firstProduct.vehicle_no || !firstProduct.quantity) {
-            alert('Please fill product, customer, vehicle and quantity');
+        if (!firstProduct.product_id || !firstProduct.customer || !firstProduct.vehicle_no || !firstProduct.quantity || !firstProduct.amount) {
+            alert('Please fill product, customer, vehicle, quantity and amount');
             return;
         }
 
@@ -457,6 +468,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 product_id: '',
                 customer: '',
                 vehicle_no: '',
+                memo_no: '',
                 quantity: '',
                 amount: '',
                 discount_type: 'Fixed',
@@ -473,6 +485,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 account_no: '',
                 mobile_bank: '',
                 mobile_number: '',
+                remarks: '',
             },
             ...data.products
         ];
@@ -544,6 +557,13 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 const discount = parseFloat(value) || 0;
                 newProducts[index].paid_amount = (amount - discount).toFixed(2);
                 newProducts[index].due_amount = '0.00';
+            }
+            
+            if (field === 'to_account_id' && value) {
+                const selectedAccount = accounts.find(a => a.id.toString() === value);
+                if (selectedAccount) {
+                    newProducts[index].account_no = selectedAccount.ac_number;
+                }
             }
             
             return {
@@ -897,17 +917,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
-                                        Invoice No <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        value={data.invoice_no}
-                                        onChange={(e) => setData('invoice_no', e.target.value)}
-                                        placeholder="Enter invoice number"
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">
                                         Shift <span className="text-red-500">*</span>
                                     </Label>
                                     <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)} disabled={!data.sale_date}>
@@ -922,6 +931,17 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Memo No <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        value={data.products[0]?.memo_no || ''}
+                                        onChange={(e) => updateProduct(0, 'memo_no', e.target.value)}
+                                        placeholder="Enter memo number"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
@@ -1121,8 +1141,8 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         type="number"
                                         step="0.01"
                                         value={data.products[0]?.paid_amount || ''}
-                                        readOnly
-                                        className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                        onChange={(e) => updateProduct(0, 'paid_amount', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
                             </div>
@@ -1131,8 +1151,8 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                 <div className={editingSale ? "col-span-12" : "col-span-10"}>
                                     <Label className="text-sm font-medium dark:text-gray-200">Remarks</Label>
                                     <Input
-                                        value={data.remarks}
-                                        onChange={(e) => setData('remarks', e.target.value)}
+                                        value={data.products[0]?.remarks || ''}
+                                        onChange={(e) => updateProduct(0, 'remarks', e.target.value)}
                                         placeholder="Enter any remarks"
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -1161,7 +1181,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Vehicle</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product Name</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
-                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Discount</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Total</th>
                                             <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
                                         </tr>
@@ -1177,7 +1196,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                     <td className="p-2 text-sm dark:text-white">{product.vehicle_no || '-'}</td>
                                                     <td className="p-2 text-sm dark:text-white">{selectedProduct?.product_name}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
-                                                    <td className="p-2 text-sm dark:text-white">{product.discount || '0'}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.paid_amount || '0'}</td>
                                                     <td className="p-2">
                                                         <div className="flex gap-2">

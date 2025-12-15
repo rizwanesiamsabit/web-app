@@ -11,6 +11,7 @@ use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\IsShiftClose;
 use App\Helpers\TransactionHelper;
+use App\Helpers\InvoiceHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -98,18 +99,18 @@ class SaleController extends Controller
     {
         $request->validate([
             'sale_date' => 'required|date',
-            'invoice_no' => 'required|string|max:255',
             'shift_id' => 'required|exists:shifts,id',
-            'remarks' => 'nullable|string',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.customer' => 'required|string',
             'products.*.vehicle_no' => 'required|string',
+            'products.*.memo_no' => 'nullable|string|max:255',
             'products.*.quantity' => 'required|numeric|min:0',
             'products.*.amount' => 'required|numeric|min:0',
             'products.*.payment_type' => 'required|in:Cash,Bank,Mobile Bank',
             'products.*.to_account_id' => 'required|exists:accounts,id',
             'products.*.paid_amount' => 'required|numeric|min:0',
+            'products.*.remarks' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -122,35 +123,39 @@ class SaleController extends Controller
                 $product = Product::find($productData['product_id']);
                 $totalAmount = $productData['amount'] - ($productData['discount'] ?? 0);
 
-                $transactionId = TransactionHelper::generateTransactionId();
+                $transaction = null;
+                if ($productData['payment_type'] !== 'Cash') {
+                    $transactionId = TransactionHelper::generateTransactionId();
 
-                $transaction = Transaction::create([
-                    'transaction_id' => $transactionId,
-                    'ac_number' => $toAccount->ac_number,
-                    'transaction_type' => 'Cr',
-                    'amount' => $productData['paid_amount'],
-                    'description' => 'Sale ' . $product->product_name . ' to ' . $productData['customer'] . ' - Invoice: ' . $request->invoice_no,
-                    'payment_type' => strtolower($productData['payment_type']),
-                    'bank_name' => $productData['bank_name'] ?? null,
-                    'branch_name' => $productData['branch_name'] ?? null,
-                    'account_number' => $productData['account_no'] ?? null,
-                    'cheque_type' => $productData['bank_type'] ?? null,
-                    'cheque_no' => $productData['cheque_no'] ?? null,
-                    'cheque_date' => $productData['cheque_date'] ?? null,
-                    'mobile_bank_name' => $productData['mobile_bank'] ?? null,
-                    'mobile_number' => $productData['mobile_number'] ?? null,
-                    'transaction_date' => $request->sale_date,
-                    'transaction_time' => now()->format('H:i:s'),
-                ]);
+                    $transaction = Transaction::create([
+                        'transaction_id' => $transactionId,
+                        'ac_number' => $toAccount->ac_number,
+                        'transaction_type' => 'Cr',
+                        'amount' => $productData['paid_amount'],
+                        'description' => 'Sale ' . $product->product_name . ' to ' . $productData['customer'] . ' - Invoice: ' . InvoiceHelper::generateInvoiceId(),
+                        'payment_type' => strtolower($productData['payment_type']),
+                        'bank_name' => $productData['bank_name'] ?? null,
+                        'branch_name' => $productData['branch_name'] ?? null,
+                        'account_number' => $productData['account_no'] ?? null,
+                        'cheque_type' => $productData['bank_type'] ?? null,
+                        'cheque_no' => $productData['cheque_no'] ?? null,
+                        'cheque_date' => $productData['cheque_date'] ?? null,
+                        'mobile_bank_name' => $productData['mobile_bank'] ?? null,
+                        'mobile_number' => $productData['mobile_number'] ?? null,
+                        'transaction_date' => $request->sale_date,
+                        'transaction_time' => now()->format('H:i:s'),
+                    ]);
 
-                $toAccount->increment('total_amount', $productData['paid_amount']);
+                    $toAccount->increment('total_amount', $productData['paid_amount']);
+                }
 
                 Sale::create([
                     'sale_date' => $request->sale_date,
                     'sale_time' => now()->format('H:i:s'),
-                    'invoice_no' => $request->invoice_no,
+                    'invoice_no' => InvoiceHelper::generateInvoiceId(),
+                    'memo_no' => $productData['memo_no'] ?: null,
                     'shift_id' => $request->shift_id,
-                    'transaction_id' => $transaction->id,
+                    'transaction_id' => $transaction ? $transaction->id : null,
                     'customer' => $productData['customer'],
                     'vehicle_no' => $productData['vehicle_no'],
                     'product_id' => $productData['product_id'],
@@ -161,8 +166,8 @@ class SaleController extends Controller
                     'total_amount' => $totalAmount,
                     'paid_amount' => $productData['paid_amount'],
                     'due_amount' => 0,
-                    'is_cash_sale' => 1,
-                    'remarks' => $request->remarks,
+                    'remarks' => $productData['remarks'],
+                    'status' => true,
                 ]);
 
                 $stock = Stock::where('product_id', $productData['product_id'])->first();
@@ -191,7 +196,9 @@ class SaleController extends Controller
             'product_id' => 'required|exists:products,id',
             'shift_id' => 'required|exists:shifts,id',
             'invoice_no' => 'required|string|max:255',
+            'memo_no' => 'nullable|string|max:255',
             'quantity' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
             'to_account_id' => 'required|exists:accounts,id',
@@ -215,29 +222,33 @@ class SaleController extends Controller
 
             $toAccount = Account::find($request->to_account_id);
             $product = Product::find($request->product_id);
-            $salesPrice = $product->activeRate ? $product->activeRate->sales_price : 0;
-            $totalAmount = ($salesPrice * $request->quantity) - ($request->discount ?? 0);
+            $totalAmount = $request->amount - ($request->discount ?? 0);
 
-            $transactionId = TransactionHelper::generateTransactionId();
+            $transaction = null;
+            if ($request->payment_type !== 'Cash') {
+                $transactionId = TransactionHelper::generateTransactionId();
 
-            $transaction = Transaction::create([
-                'transaction_id' => $transactionId,
-                'ac_number' => $toAccount->ac_number,
-                'transaction_type' => 'Cr',
-                'amount' => $request->paid_amount,
-                'description' => 'Sale ' . $product->product_name . ' to ' . $request->customer . ' - Invoice: ' . $request->invoice_no,
-                'payment_type' => strtolower($request->payment_type),
-                'bank_name' => $request->bank_name ?? null,
-                'branch_name' => $request->branch_name ?? null,
-                'account_number' => $request->account_no ?? null,
-                'cheque_type' => $request->bank_type ?? null,
-                'cheque_no' => $request->cheque_no ?? null,
-                'cheque_date' => $request->cheque_date ?? null,
-                'mobile_bank_name' => $request->mobile_bank ?? null,
-                'mobile_number' => $request->mobile_number ?? null,
-                'transaction_date' => $request->sale_date,
-                'transaction_time' => now()->format('H:i:s'),
-            ]);
+                $transaction = Transaction::create([
+                    'transaction_id' => $transactionId,
+                    'ac_number' => $toAccount->ac_number,
+                    'transaction_type' => 'Cr',
+                    'amount' => $request->paid_amount,
+                    'description' => 'Sale ' . $product->product_name . ' to ' . $request->customer . ' - Invoice: ' . $request->invoice_no,
+                    'payment_type' => strtolower($request->payment_type),
+                    'bank_name' => $request->bank_name ?? null,
+                    'branch_name' => $request->branch_name ?? null,
+                    'account_number' => $request->account_no ?? null,
+                    'cheque_type' => $request->bank_type ?? null,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
+                    'mobile_bank_name' => $request->mobile_bank ?? null,
+                    'mobile_number' => $request->mobile_number ?? null,
+                    'transaction_date' => $request->sale_date,
+                    'transaction_time' => now()->format('H:i:s'),
+                ]);
+
+                $toAccount->increment('total_amount', $request->paid_amount);
+            }
 
             $sale->update([
                 'sale_date' => $request->sale_date,
@@ -245,15 +256,15 @@ class SaleController extends Controller
                 'vehicle_no' => $request->vehicle_no,
                 'product_id' => $request->product_id,
                 'shift_id' => $request->shift_id,
-                'transaction_id' => $transaction->id,
+                'transaction_id' => $transaction ? $transaction->id : null,
                 'invoice_no' => $request->invoice_no,
+                'memo_no' => $request->memo_no ?: null,
                 'quantity' => $request->quantity,
-                'amount' => $salesPrice * $request->quantity,
+                'amount' => $request->amount,
                 'discount' => $request->discount ?? 0,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $request->paid_amount,
                 'due_amount' => 0,
-                'is_cash_sale' => 1,
                 'remarks' => $request->remarks,
             ]);
 
@@ -261,8 +272,6 @@ class SaleController extends Controller
                 $oldTransactionId = $sale->transaction->transaction_id;
                 Transaction::where('transaction_id', $oldTransactionId)->delete();
             }
-
-            $toAccount->increment('total_amount', $request->paid_amount);
 
             $newStock = Stock::where('product_id', $request->product_id)->first();
             if ($newStock) {

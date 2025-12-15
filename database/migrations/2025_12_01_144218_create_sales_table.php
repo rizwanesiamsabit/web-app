@@ -13,7 +13,7 @@ return new class extends Migration
             $table->date('sale_date')->nullable();
             $table->time('sale_time')->nullable();
             $table->string('invoice_no');
-            $table->string('memo_no');
+            $table->string('memo_no')->nullable();
             $table->foreignId('shift_id')->constrained('shifts');
             $table->foreignId('transaction_id')->nullable()->constrained('transactions');
             $table->string('customer')->nullable();
