@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AccountHelper;
 use App\Models\Account;
 use App\Models\Group;
 use Illuminate\Http\Request;
@@ -71,12 +72,7 @@ class AccountController extends Controller
             'status' => 'boolean'
         ]);
 
-        $lastAccount = Account::orderBy('ac_number', 'desc')->first();
-        if ($lastAccount && str_starts_with($lastAccount->ac_number, '1')) {
-            $ac_number = str_pad((int)$lastAccount->ac_number + 1, 13, '0', STR_PAD_LEFT);
-        } else {
-            $ac_number = '1000000000001';
-        }
+        $ac_number = AccountHelper::generateAccountNumber();
 
         Account::create([
             'name' => $request->name,
