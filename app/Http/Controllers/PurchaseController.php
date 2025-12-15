@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\Stock;
 use App\Helpers\TransactionHelper;
+use App\Helpers\InvoiceHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ class PurchaseController extends Controller
 
         if ($request->search) {
             $query->where(function($q) use ($request) {
-                $q->where('supplier_invoice_no', 'like', '%' . $request->search . '%')
+                $q->where('invoice_no', 'like', '%' . $request->search . '%')
                   ->orWhereHas('supplier', function($q) use ($request) {
                       $q->where('name', 'like', '%' . $request->search . '%');
                   });
@@ -95,7 +96,7 @@ class PurchaseController extends Controller
     {
         $request->validate([
             'purchase_date' => 'required|date',
-            'supplier_invoice_no' => 'required|string|max:255',
+            'memo_no' => 'nullable|string|max:255',
             'remarks' => 'nullable|string',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
@@ -183,7 +184,8 @@ class PurchaseController extends Controller
                     'supplier_id' => $productData['supplier_id'],
                     'product_id' => $productData['product_id'],
                     'transaction_id' => $transaction->id,
-                    'supplier_invoice_no' => $request->supplier_invoice_no,
+                    'invoice_no' => InvoiceHelper::generateInvoiceId(),
+                    'memo_no' => $request->memo_no,
                     'from_account_id' => $productData['from_account_id'],
                     'quantity' => $productData['quantity'],
                     'unit_price' => $productData['unit_price'],
@@ -226,7 +228,7 @@ class PurchaseController extends Controller
             'purchase_date' => 'required|date',
             'supplier_id' => 'required|exists:suppliers,id',
             'product_id' => 'required|exists:products,id',
-            'supplier_invoice_no' => 'required|string|max:255',
+            'memo_no' => 'nullable|string|max:255',
             'from_account_id' => 'required|exists:accounts,id',
             'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
             'unit_price' => 'required|numeric|min:0',
@@ -266,7 +268,7 @@ class PurchaseController extends Controller
                 'purchase_date' => $request->purchase_date,
                 'supplier_id' => $request->supplier_id,
                 'product_id' => $request->product_id,
-                'supplier_invoice_no' => $request->supplier_invoice_no,
+                'memo_no' => $request->memo_no,
                 'from_account_id' => $request->from_account_id,
                 'unit_price' => $request->unit_price,
                 'quantity' => $request->quantity,
