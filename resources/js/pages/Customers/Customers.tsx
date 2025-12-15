@@ -11,7 +11,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Edit, FileText, Filter, Plus, Trash2, X, Users } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, Eye, FileText, Filter, Plus, Trash2, X, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Account {
@@ -489,6 +489,14 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
+                                                            onClick={() => router.get(`/customers/${customer.id}`)}
+                                                            className="text-blue-600 hover:text-blue-800"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
                                                             onClick={() => handleEdit(customer)}
                                                             className="text-indigo-600 hover:text-indigo-800"
                                                         >
@@ -620,20 +628,33 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                 />
                             </div>
                             
-                            <div>
-                                <Label className="dark:text-gray-200">Status</Label>
-                                <Select
-                                    value={data.status ? 'true' : 'false'}
-                                    onValueChange={(value) => setData('status', value === 'true')}
-                                >
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="Select Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="true">Active</SelectItem>
-                                        <SelectItem value="false">Inactive</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="security_deposit" className="dark:text-gray-200">Security Deposit</Label>
+                                    <Input
+                                        id="security_deposit"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.security_deposit}
+                                        onChange={(e) => setData('security_deposit', parseFloat(e.target.value) || 0)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">Status</Label>
+                                    <Select
+                                        value={data.status ? 'true' : 'false'}
+                                        onValueChange={(value) => setData('status', value === 'true')}
+                                    >
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="true">Active</SelectItem>
+                                            <SelectItem value="false">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
 
@@ -774,20 +795,31 @@ export default function Customers({ customers, groups = [], products = [], lastC
                             />
                         </div>
                         <div>
-                            <Label className="dark:text-gray-200">Status</Label>
-                            <Select
-                                value={data.status ? 'true' : 'false'}
-                                onValueChange={(value) => setData('status', value === 'true')}
-                            >
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Select Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="true">Active</SelectItem>
-                                    <SelectItem value="false">Inactive</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Label htmlFor="edit-security_deposit" className="dark:text-gray-200">Security Deposit</Label>
+                            <Input
+                                id="edit-security_deposit"
+                                type="number"
+                                step="0.01"
+                                value={data.security_deposit}
+                                onChange={(e) => setData('security_deposit', parseFloat(e.target.value) || 0)}
+                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
                         </div>
+                    </div>
+                    <div>
+                        <Label className="dark:text-gray-200">Status</Label>
+                        <Select
+                            value={data.status ? 'true' : 'false'}
+                            onValueChange={(value) => setData('status', value === 'true')}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="true">Active</SelectItem>
+                                <SelectItem value="false">Inactive</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </FormModal>
 

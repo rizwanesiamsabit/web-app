@@ -153,6 +153,37 @@ class CustomerController extends Controller
         return redirect()->back()->with('success', 'Customer created successfully.');
     }
 
+    public function show(Customer $customer)
+    {
+        $customer->load([
+            'account:id,name,ac_number',
+            'vehicles:id,customer_id,product_id,vehicle_number,vehicle_name,vehicle_type,reg_date',
+            'vehicles.product:id,product_name'
+        ]);
+
+        return Inertia::render('Customers/CustomerDetails', [
+            'customer' => [
+                'id' => $customer->id,
+                'code' => $customer->code,
+                'name' => $customer->name,
+                'mobile' => $customer->mobile,
+                'email' => $customer->email,
+                'nid_number' => $customer->nid_number,
+                'vat_reg_no' => $customer->vat_reg_no,
+                'tin_no' => $customer->tin_no,
+                'trade_license' => $customer->trade_license,
+                'discount_rate' => $customer->discount_rate,
+                'security_deposit' => $customer->security_deposit,
+                'credit_limit' => $customer->credit_limit,
+                'address' => $customer->address,
+                'status' => $customer->status,
+                'account' => $customer->account,
+                'vehicles' => $customer->vehicles,
+                'created_at' => $customer->created_at->format('Y-m-d H:i:s'),
+            ]
+        ]);
+    }
+
     public function update(Request $request, Customer $customer)
     {
         $request->validate([
