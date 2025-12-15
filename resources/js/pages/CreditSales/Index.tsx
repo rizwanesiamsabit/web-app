@@ -38,6 +38,7 @@ interface CreditSale {
     vehicle: { id: number; vehicle_number: string };
     product_id: number;
     shift: { name: string };
+    quantity: number;
     total_amount: number;
     paid_amount: number;
     due_amount: number;
@@ -141,28 +142,17 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
 
     const [data, setDataState] = useState({
         sale_date: '',
-        invoice_no: '',
         shift_id: '',
-        remarks: '',
         products: [
             {
                 product_id: '',
                 customer_id: '',
                 vehicle_id: '',
+                memo_no: '',
                 quantity: '',
                 amount: '',
                 due_amount: '',
-                payment_type: 'Cash',
-                to_account_id: '',
-                paid_amount: '',
-                bank_type: '',
-                bank_name: '',
-                cheque_no: '',
-                cheque_date: '',
-                branch_name: '',
-                account_no: '',
-                mobile_bank: '',
-                mobile_number: '',
+                remarks: '',
             }
         ],
     });
@@ -178,28 +168,17 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
     const reset = () => {
         setDataState({
             sale_date: '',
-            invoice_no: '',
             shift_id: '',
-            remarks: '',
             products: [
                 {
                     product_id: '',
                     customer_id: '',
                     vehicle_id: '',
+                    memo_no: '',
                     quantity: '',
                     amount: '',
                     due_amount: '',
-                    payment_type: 'Cash',
-                    to_account_id: '',
-                    paid_amount: '',
-                    bank_type: '',
-                    bank_name: '',
-                    cheque_no: '',
-                    cheque_date: '',
-                    branch_name: '',
-                    account_no: '',
-                    mobile_bank: '',
-                    mobile_number: '',
+                    remarks: '',
                 }
             ],
         });
@@ -218,34 +197,22 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
         
         const submitData = {
             sale_date: data.sale_date,
-            invoice_no: data.invoice_no,
             shift_id: data.shift_id,
-            remarks: data.remarks,
             products: validProducts
         };
         
         if (editingSale) {
             const updateData = {
                 sale_date: data.sale_date,
-                invoice_no: data.invoice_no,
                 shift_id: data.shift_id,
-                remarks: data.remarks,
                 product_id: validProducts[0].product_id,
                 customer_id: validProducts[0].customer_id,
                 vehicle_id: validProducts[0].vehicle_id,
+                memo_no: validProducts[0].memo_no,
                 quantity: validProducts[0].quantity,
-
-                payment_type: validProducts[0].payment_type,
-                to_account_id: validProducts[0].to_account_id,
-                paid_amount: validProducts[0].paid_amount,
-                bank_type: validProducts[0].bank_type,
-                bank_name: validProducts[0].bank_name,
-                cheque_no: validProducts[0].cheque_no,
-                cheque_date: validProducts[0].cheque_date,
-                branch_name: validProducts[0].branch_name,
-                account_no: validProducts[0].account_no,
-                mobile_bank: validProducts[0].mobile_bank,
-                mobile_number: validProducts[0].mobile_number,
+                amount: validProducts[0].amount,
+                due_amount: validProducts[0].due_amount,
+                remarks: validProducts[0].remarks,
             };
             
             router.put(`/credit-sales/${editingSale.id}`, updateData, {
@@ -285,29 +252,17 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
             
             setData({
                 sale_date: saleData.sale_date.split('T')[0],
-                invoice_no: saleData.invoice_no,
                 shift_id: saleData.shift_id?.toString() || '',
-                remarks: saleData.remarks || '',
                 products: [
                     {
                         product_id: saleData.product_id?.toString() || '',
                         customer_id: saleData.customer_id?.toString() || '',
                         vehicle_id: saleData.vehicle_id?.toString() || '',
+                        memo_no: saleData.memo_no || '',
                         quantity: saleData.quantity?.toString() || '',
                         amount: saleData.amount?.toString() || '',
-
-                        payment_type: paymentType,
-                        to_account_id: saleData.transaction?.ac_number ? accounts.find(a => a.ac_number === saleData.transaction.ac_number)?.id.toString() || '' : '',
-                        paid_amount: saleData.paid_amount?.toString() || '',
                         due_amount: saleData.due_amount?.toString() || '',
-                        bank_type: saleData.transaction?.cheque_type || '',
-                        bank_name: saleData.transaction?.bank_name || '',
-                        cheque_no: saleData.transaction?.cheque_no || '',
-                        cheque_date: saleData.transaction?.cheque_date || '',
-                        branch_name: saleData.transaction?.branch_name || '',
-                        account_no: saleData.transaction?.account_number || '',
-                        mobile_bank: saleData.transaction?.mobile_bank_name || '',
-                        mobile_number: saleData.transaction?.mobile_number || '',
+                        remarks: saleData.remarks || '',
                     }
                 ],
             });
@@ -443,20 +398,11 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                 product_id: '',
                 customer_id: '',
                 vehicle_id: '',
+                memo_no: '',
                 quantity: '',
                 amount: '',
                 due_amount: '',
-                payment_type: 'Cash',
-                to_account_id: '',
-                paid_amount: '',
-                bank_type: '',
-                bank_name: '',
-                cheque_no: '',
-                cheque_date: '',
-                branch_name: '',
-                account_no: '',
-                mobile_bank: '',
-                mobile_number: '',
+                remarks: '',
             },
             ...data.products
         ];
@@ -720,11 +666,12 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                                 {sortBy === 'sale_date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Customer</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Vehicle</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Quantity</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Total Amount</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Paid Amount</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Due Amount</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
@@ -743,11 +690,12 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                                     />
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">{new Date(sale.sale_date).toLocaleDateString('en-GB')}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.shift.name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.invoice_no}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.customer.name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.vehicle.vehicle_number}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.quantity}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.paid_amount.toLocaleString()}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.due_amount.toLocaleString()}</td>
                                                 <td className="p-4">
                                                     <span className={`rounded px-2 py-1 text-xs ${
@@ -784,7 +732,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={10} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={11} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No sales found
                                             </td>
@@ -821,7 +769,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText={editingSale ? "Update Sale" : "Create Sale"}
-                    className="max-w-[80vw] max-h-[90vh]"
+                    className="max-w-[65vw] max-h-[90vh]"
                 >
                     <div className="space-y-4">
                             <div className="grid grid-cols-5 gap-4">
@@ -842,17 +790,6 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
-                                        Invoice No <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        value={data.invoice_no}
-                                        onChange={(e) => setData('invoice_no', e.target.value)}
-                                        placeholder="Enter invoice number"
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium dark:text-gray-200">
                                         Shift <span className="text-red-500">*</span>
                                     </Label>
                                     <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)} disabled={!data.sale_date}>
@@ -867,6 +804,17 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Memo No
+                                    </Label>
+                                    <Input
+                                        value={data.products[0]?.memo_no || ''}
+                                        onChange={(e) => updateProduct(0, 'memo_no', e.target.value)}
+                                        placeholder="Enter memo number"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
@@ -965,8 +913,8 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                 <div className={editingSale ? "col-span-12" : "col-span-10"}>
                                     <Label className="text-sm font-medium dark:text-gray-200">Remarks</Label>
                                     <Input
-                                        value={data.remarks}
-                                        onChange={(e) => setData('remarks', e.target.value)}
+                                        value={data.products[0]?.remarks || ''}
+                                        onChange={(e) => updateProduct(0, 'remarks', e.target.value)}
                                         placeholder="Enter any remarks"
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />

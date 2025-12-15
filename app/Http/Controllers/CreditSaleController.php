@@ -12,6 +12,7 @@ use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\IsShiftClose;
 use App\Helpers\TransactionHelper;
+use App\Helpers\InvoiceHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -92,18 +93,22 @@ class CreditSaleController extends Controller
     {
         $request->validate([
             'sale_date' => 'required|date',
-            'invoice_no' => 'required|string|max:255',
             'shift_id' => 'required|exists:shifts,id',
-            'remarks' => 'nullable|string',
+            'memo_no' => 'nullable|string',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.customer_id' => 'required|exists:customers,id',
             'products.*.vehicle_id' => 'required|exists:vehicles,id',
+            'products.*.memo_no' => 'nullable|string',
             'products.*.quantity' => 'required|numeric|min:0',
             'products.*.amount' => 'required|numeric|min:0',
+            'products.*.due_amount' => 'required|numeric|min:0',
+            'products.*.remarks' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request) {
+            $invoiceNo = InvoiceHelper::generateInvoiceId();
+            
             foreach ($request->products as $productData) {
                 if (!isset($productData['product_id']) || !$productData['product_id']) {
                     continue;
@@ -113,13 +118,12 @@ class CreditSaleController extends Controller
                 $amount = $productData['amount'];
                 $discount = $productData['discount'] ?? 0;
                 $totalAmount = $amount - $discount;
-                $paidAmount = 0;
-                $dueAmount = $totalAmount;
+                $dueAmount = $productData['due_amount'];
 
                 CreditSale::create([
                     'sale_date' => $request->sale_date,
                     'sale_time' => now()->format('H:i:s'),
-                    'invoice_no' => $request->invoice_no,
+                    'invoice_no' => $invoiceNo,
                     'shift_id' => $request->shift_id,
                     'transaction_id' => null,
                     'customer_id' => $productData['customer_id'],
@@ -130,9 +134,10 @@ class CreditSaleController extends Controller
                     'amount' => $amount,
                     'discount' => $discount,
                     'total_amount' => $totalAmount,
-                    'paid_amount' => $paidAmount,
+                    'paid_amount' => 0,
                     'due_amount' => $dueAmount,
-                    'remarks' => $request->remarks,
+                    'memo_no' => $productData['memo_no'] ?? $request->memo_no,
+                    'remarks' => $productData['remarks'],
                 ]);
 
                 $stock = Stock::where('product_id', $productData['product_id'])->first();
@@ -160,21 +165,15 @@ class CreditSaleController extends Controller
             'vehicle_id' => 'required|exists:vehicles,id',
             'product_id' => 'required|exists:products,id',
             'shift_id' => 'required|exists:shifts,id',
-            'invoice_no' => 'required|string|max:255',
+            'memo_no' => 'nullable|string',
             'quantity' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0',
+            'due_amount' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
-            'paid_amount' => 'required|numeric|min:0',
             'remarks' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $creditSale) {
-            if ($creditSale->transaction) {
-                $oldAccount = Account::where('ac_number', $creditSale->transaction->ac_number)->first();
-                if ($oldAccount) {
-                    $oldAccount->decrement('total_amount', $creditSale->paid_amount);
-                }
-            }
-
             $oldStock = Stock::where('product_id', $creditSale->product_id)->first();
             if ($oldStock) {
                 $oldStock->increment('current_stock', $creditSale->quantity);
@@ -182,36 +181,10 @@ class CreditSaleController extends Controller
             }
 
             $product = Product::find($request->product_id);
-            $totalAmount = ($product->sales_price * $request->quantity) - ($request->discount ?? 0);
-            $paidAmount = $request->paid_amount;
-            $dueAmount = $totalAmount - $paidAmount;
-
-            $transaction = null;
-            if ($paidAmount > 0 && $request->to_account_id) {
-                $toAccount = Account::find($request->to_account_id);
-                $transactionId = TransactionHelper::generateTransactionId();
-
-                $transaction = Transaction::create([
-                    'transaction_id' => $transactionId,
-                    'ac_number' => $toAccount->ac_number,
-                    'transaction_type' => 'Cr',
-                    'amount' => $paidAmount,
-                    'description' => 'Credit Sale ' . $product->product_name . ' - Invoice: ' . $request->invoice_no,
-                    'payment_type' => strtolower($request->payment_type ?? 'cash'),
-                    'bank_name' => $request->bank_name ?? null,
-                    'branch_name' => $request->branch_name ?? null,
-                    'account_number' => $request->account_no ?? null,
-                    'cheque_type' => $request->bank_type ?? null,
-                    'cheque_no' => $request->cheque_no ?? null,
-                    'cheque_date' => $request->cheque_date ?? null,
-                    'mobile_bank_name' => $request->mobile_bank ?? null,
-                    'mobile_number' => $request->mobile_number ?? null,
-                    'transaction_date' => $request->sale_date,
-                    'transaction_time' => now()->format('H:i:s'),
-                ]);
-
-                $toAccount->increment('total_amount', $paidAmount);
-            }
+            $amount = $request->amount;
+            $discount = $request->discount ?? 0;
+            $totalAmount = $amount - $discount;
+            $dueAmount = $request->due_amount;
 
             $creditSale->update([
                 'sale_date' => $request->sale_date,
@@ -219,21 +192,15 @@ class CreditSaleController extends Controller
                 'vehicle_id' => $request->vehicle_id,
                 'product_id' => $request->product_id,
                 'shift_id' => $request->shift_id,
-                'transaction_id' => $transaction ? $transaction->id : null,
-                'invoice_no' => $request->invoice_no,
                 'quantity' => $request->quantity,
-                'amount' => $product->sales_price * $request->quantity,
-                'discount' => $request->discount ?? 0,
+                'amount' => $amount,
+                'discount' => $discount,
                 'total_amount' => $totalAmount,
-                'paid_amount' => $paidAmount,
+                'paid_amount' => 0,
                 'due_amount' => $dueAmount,
+                'memo_no' => $request->memo_no,
                 'remarks' => $request->remarks,
             ]);
-
-            if ($creditSale->transaction) {
-                $oldTransactionId = $creditSale->transaction->transaction_id;
-                Transaction::where('transaction_id', $oldTransactionId)->delete();
-            }
 
             $newStock = Stock::where('product_id', $request->product_id)->first();
             if ($newStock) {
@@ -248,14 +215,6 @@ class CreditSaleController extends Controller
     public function destroy(CreditSale $creditSale)
     {
         DB::transaction(function () use ($creditSale) {
-            if ($creditSale->transaction) {
-                $account = Account::where('ac_number', $creditSale->transaction->ac_number)->first();
-                if ($account) {
-                    $account->decrement('total_amount', $creditSale->paid_amount);
-                }
-                $transactionId = $creditSale->transaction->transaction_id;
-            }
-
             $stock = Stock::where('product_id', $creditSale->product_id)->first();
             if ($stock) {
                 $stock->increment('current_stock', $creditSale->quantity);
@@ -263,10 +222,6 @@ class CreditSaleController extends Controller
             }
 
             $creditSale->delete();
-
-            if (isset($transactionId)) {
-                Transaction::where('transaction_id', $transactionId)->delete();
-            }
         });
 
         return redirect()->back()->with('success', 'Credit sale deleted successfully.');
@@ -280,17 +235,9 @@ class CreditSaleController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $creditSales = CreditSale::with('transaction')->whereIn('id', $request->ids)->get();
+            $creditSales = CreditSale::whereIn('id', $request->ids)->get();
 
             foreach ($creditSales as $creditSale) {
-                if ($creditSale->transaction) {
-                    $account = Account::where('ac_number', $creditSale->transaction->ac_number)->first();
-                    if ($account) {
-                        $account->decrement('total_amount', $creditSale->paid_amount);
-                    }
-                    $transactionId = $creditSale->transaction->transaction_id;
-                }
-
                 $stock = Stock::where('product_id', $creditSale->product_id)->first();
                 if ($stock) {
                     $stock->increment('current_stock', $creditSale->quantity);
@@ -298,10 +245,6 @@ class CreditSaleController extends Controller
                 }
 
                 $creditSale->delete();
-
-                if (isset($transactionId)) {
-                    Transaction::where('transaction_id', $transactionId)->delete();
-                }
             }
         });
 
