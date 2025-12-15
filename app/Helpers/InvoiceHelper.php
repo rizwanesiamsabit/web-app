@@ -4,16 +4,16 @@ namespace App\Helpers;
 
 use App\Models\Transaction;
 
-class TransactionHelper
+class InvoiceHelper
 {
-    public static function generateTransactionId(): string
+    public static function generateInvoiceId(): string
     {
         do {
-            $transactionId = self::generateRandomString(9);
-            $exists = Transaction::where('transaction_id', $transactionId)->exists();
+            $invoiceId = self::generateRandomString(9);
+            $exists = Transaction::where('invoice_id', $invoiceId)->exists();
         } while ($exists);
 
-        return $transactionId;
+        return $invoiceId;
     }
 
     private static function generateRandomString(int $length): string

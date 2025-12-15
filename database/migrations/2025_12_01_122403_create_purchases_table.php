@@ -14,7 +14,8 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained('suppliers');
             $table->foreignId('product_id')->constrained('products');
             $table->foreignId('transaction_id')->constrained('transactions');
-            $table->string('supplier_invoice_no');
+            $table->string('invoice_no');
+            $table->string('memo_no');
             $table->text('remarks')->nullable();
             $table->foreignId('from_account_id')->constrained('accounts');
             $table->decimal('quantity', 18, 2);

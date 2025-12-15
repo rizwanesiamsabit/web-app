@@ -10,6 +10,7 @@ class CreditSale extends Model
         'sale_date',
         'sale_time',
         'invoice_no',
+        'memo_no',
         'shift_id',
         'transaction_id',
         'customer_id',
@@ -24,6 +25,18 @@ class CreditSale extends Model
         'due_amount',
         'remarks',
         'status',
+    ];
+
+    protected $casts = [
+        'sale_date' => 'date',
+        'purchase_price' => 'decimal:2',
+        'quantity' => 'decimal:2',
+        'amount' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'due_amount' => 'decimal:2',
+        'status' => 'boolean'
     ];
 
     public function product()

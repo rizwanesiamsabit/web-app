@@ -12,9 +12,8 @@ return new class extends Migration
             $table->id();
             $table->date('sale_date')->nullable();
             $table->time('sale_time')->nullable();
-            $table->string('memo_no', 50)->nullable();
-            $table->string('invoice_no')->nullable();
-            $table->string('delivery_challan_no', 200)->nullable();
+            $table->string('invoice_no');
+            $table->string('memo_no');
             $table->foreignId('shift_id')->constrained('shifts');
             $table->foreignId('transaction_id')->nullable()->constrained('transactions');
             $table->string('customer')->nullable();
@@ -27,7 +26,6 @@ return new class extends Migration
             $table->decimal('total_amount', 18, 2)->default(0.00);
             $table->decimal('paid_amount', 20, 2)->default(0.00);
             $table->decimal('due_amount', 20, 2)->default(0.00);
-            $table->integer('is_cash_sale')->default(0);
             $table->string('remarks')->nullable();
             $table->boolean('status')->default(true);
 

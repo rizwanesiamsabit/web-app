@@ -9,9 +9,8 @@ class Sale extends Model
     protected $fillable = [
         'sale_date',
         'sale_time',
-        'memo_no',
         'invoice_no',
-        'delivery_challan_no',
+        'memo_no',
         'shift_id',
         'transaction_id',
         'customer',
@@ -24,7 +23,6 @@ class Sale extends Model
         'total_amount',
         'paid_amount',
         'due_amount',
-        'is_cash_sale',
         'remarks',
         'status'
     ];
@@ -38,7 +36,6 @@ class Sale extends Model
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
-        'is_cash_sale' => 'integer',
         'status' => 'boolean'
     ];
 

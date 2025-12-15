@@ -12,7 +12,8 @@ return new class extends Migration
             $table->id();
             $table->date('sale_date')->nullable();
             $table->time('sale_time')->nullable();
-            $table->string('invoice_no')->nullable();
+            $table->string('invoice_no');
+            $table->string('memo_no');
             $table->foreignId('shift_id')->constrained('shifts');
             $table->foreignId('transaction_id')->nullable()->constrained('transactions');
             $table->foreignId('customer_id')->constrained('customers');
