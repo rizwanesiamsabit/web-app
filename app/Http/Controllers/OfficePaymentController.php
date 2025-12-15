@@ -17,16 +17,13 @@ class OfficePaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = OfficePayment::with(['shift', 'from_account', 'to_account', 'transaction']);
+        $query = OfficePayment::with(['shift', 'to_account', 'transaction']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
-                $q->whereHas('from_account', function ($q) use ($request) {
+                $q->whereHas('to_account', function ($q) use ($request) {
                     $q->where('name', 'like', '%' . $request->search . '%');
-                })
-                    ->orWhereHas('to_account', function ($q) use ($request) {
-                        $q->where('name', 'like', '%' . $request->search . '%');
-                    });
+                });
             });
         }
 
@@ -107,7 +104,6 @@ class OfficePaymentController extends Controller
         $request->validate([
             'date' => 'required|date',
             'shift_id' => 'required|exists:shifts,id',
-            'from_account_id' => 'required|exists:accounts,id',
             'to_account_id' => 'required|exists:accounts,id',
             'amount' => 'required|numeric|min:0',
             'payment_type' => 'required|in:' . implode(',', $validPaymentTypes),
@@ -115,57 +111,28 @@ class OfficePaymentController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $fromAccount = Account::find($request->from_account_id);
             $toAccount = Account::find($request->to_account_id);
             $transactionId = TransactionHelper::generateTransactionId();
 
-            $debitTransaction = Transaction::create([
-                'transaction_id' => $transactionId,
-                'ac_number' => $fromAccount->ac_number,
-                'transaction_type' => 'Dr',
-                'amount' => $request->amount,
-                'description' => 'Office deposit from ' . $fromAccount->name,
-                'payment_type' => strtolower($request->payment_type),
-                'bank_name' => $request->bank_name,
-                'branch_name' => $request->branch_name,
-                'account_number' => $request->account_no,
-                'cheque_type' => $request->bank_type,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'mobile_bank_name' => $request->mobile_bank,
-                'mobile_number' => $request->mobile_number,
-                'transaction_date' => $request->date,
-                'transaction_time' => now()->format('H:i:s'),
-            ]);
-
-            Transaction::create([
+            $transaction = Transaction::create([
                 'transaction_id' => $transactionId,
                 'ac_number' => $toAccount->ac_number,
                 'transaction_type' => 'Cr',
                 'amount' => $request->amount,
-                'description' => 'Office deposit received from ' . $fromAccount->name,
+                'description' => 'Office payment',
                 'payment_type' => strtolower($request->payment_type),
-                'bank_name' => $request->bank_name,
-                'branch_name' => $request->branch_name,
-                'account_number' => $request->account_no,
-                'cheque_type' => $request->bank_type,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'mobile_bank_name' => $request->mobile_bank,
-                'mobile_number' => $request->mobile_number,
                 'transaction_date' => $request->date,
                 'transaction_time' => now()->format('H:i:s'),
             ]);
 
-            $fromAccount->decrement('total_amount', $request->amount);
             $toAccount->increment('total_amount', $request->amount);
 
             OfficePayment::create([
                 'date' => $request->date,
                 'shift_id' => $request->shift_id,
-                'transaction_id' => $debitTransaction->id,
-                'from_account_id' => $request->from_account_id,
+                'transaction_id' => $transaction->id,
                 'to_account_id' => $request->to_account_id,
+                'type' => strtolower($request->payment_type),
                 'remarks' => $request->remarks,
             ]);
         });
@@ -186,7 +153,6 @@ class OfficePaymentController extends Controller
         $request->validate([
             'date' => 'required|date',
             'shift_id' => 'required|exists:shifts,id',
-            'from_account_id' => 'required|exists:accounts,id',
             'to_account_id' => 'required|exists:accounts,id',
             'amount' => 'required|numeric|min:0',
             'payment_type' => 'required|in:' . implode(',', $validPaymentTypes),
@@ -194,69 +160,31 @@ class OfficePaymentController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $officePayment) {
-            $originalFromAccount = $officePayment->from_account;
             $originalToAccount = $officePayment->to_account;
             $originalAmount = $officePayment->transaction->amount;
 
-            $originalFromAccount->increment('total_amount', $originalAmount);
             $originalToAccount->decrement('total_amount', $originalAmount);
 
-            $fromAccount = Account::find($request->from_account_id);
             $toAccount = Account::find($request->to_account_id);
             $newTransactionId = TransactionHelper::generateTransactionId();
 
             $officePayment->transaction->update([
                 'transaction_id' => $newTransactionId,
-                'ac_number' => $fromAccount->ac_number,
+                'ac_number' => $toAccount->ac_number,
                 'amount' => $request->amount,
-                'description' => 'Office deposit from ' . $fromAccount->name,
+                'description' => 'Office payment',
                 'payment_type' => strtolower($request->payment_type),
-                'bank_name' => $request->bank_name,
-                'branch_name' => $request->branch_name,
-                'account_number' => $request->account_no,
-                'cheque_type' => $request->bank_type,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'mobile_bank_name' => $request->mobile_bank,
-                'mobile_number' => $request->mobile_number,
                 'transaction_date' => $request->date,
                 'transaction_time' => now()->format('H:i:s'),
             ]);
 
-            $originalCreditTransaction = Transaction::where('transaction_type', 'Cr')
-                ->where('transaction_date', $officePayment->date)
-                ->where('ac_number', $originalToAccount->ac_number)
-                ->where('amount', $originalAmount)
-                ->first();
-
-            if ($originalCreditTransaction) {
-                $originalCreditTransaction->update([
-                    'transaction_id' => $newTransactionId,
-                    'ac_number' => $toAccount->ac_number,
-                    'amount' => $request->amount,
-                    'description' => 'Office deposit received from ' . $fromAccount->name,
-                    'payment_type' => strtolower($request->payment_type),
-                    'bank_name' => $request->bank_name,
-                    'branch_name' => $request->branch_name,
-                    'account_number' => $request->account_no,
-                    'cheque_type' => $request->bank_type,
-                    'cheque_no' => $request->cheque_no,
-                    'cheque_date' => $request->cheque_date,
-                    'mobile_bank_name' => $request->mobile_bank,
-                    'mobile_number' => $request->mobile_number,
-                    'transaction_date' => $request->date,
-                    'transaction_time' => now()->format('H:i:s'),
-                ]);
-            }
-
-            $fromAccount->decrement('total_amount', $request->amount);
             $toAccount->increment('total_amount', $request->amount);
 
             $officePayment->update([
                 'date' => $request->date,
                 'shift_id' => $request->shift_id,
-                'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
+                'type' => strtolower($request->payment_type),
                 'remarks' => $request->remarks,
             ]);
         });
@@ -268,16 +196,9 @@ class OfficePaymentController extends Controller
     {
         DB::transaction(function () use ($officePayment) {
             $amount = $officePayment->transaction->amount;
-            $officePayment->from_account->increment('total_amount', $amount);
             $officePayment->to_account->decrement('total_amount', $amount);
 
-            $creditTransaction = Transaction::where('transaction_type', 'Cr')
-                ->where('transaction_date', $officePayment->date)
-                ->where('ac_number', $officePayment->to_account->ac_number)
-                ->first();
-
             $officePayment->transaction?->delete();
-            $creditTransaction?->delete();
             $officePayment->delete();
         });
 
@@ -292,16 +213,12 @@ class OfficePaymentController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $officePayments = OfficePayment::with(['to_account'])->whereIn('id', $request->ids)->get();
+            $officePayments = OfficePayment::with(['to_account', 'transaction'])->whereIn('id', $request->ids)->get();
 
             foreach ($officePayments as $payment) {
-                $creditTransaction = Transaction::where('transaction_type', 'Cr')
-                    ->where('transaction_date', $payment->date)
-                    ->where('ac_number', $payment->to_account->ac_number)
-                    ->first();
-
+                $amount = $payment->transaction->amount;
+                $payment->to_account->decrement('total_amount', $amount);
                 $payment->transaction?->delete();
-                $creditTransaction?->delete();
                 $payment->delete();
             }
         });

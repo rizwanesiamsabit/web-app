@@ -195,18 +195,9 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
     const [officePaymentData, setOfficePaymentData] = useState({
         date: '',
         shift_id: '',
-        from_account_id: '',
         to_account_id: '',
         amount: '',
         payment_type: 'Cash',
-        bank_type: '',
-        bank_name: '',
-        cheque_no: '',
-        cheque_date: '',
-        account_no: '',
-        branch_name: '',
-        mobile_bank: '',
-        mobile_number: '',
         remarks: '',
     });
     const [officePaymentProcessing, setOfficePaymentProcessing] = useState(false);
@@ -1374,7 +1365,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                     isOpen={isOfficePaymentOpen}
                     onClose={() => {
                         setIsOfficePaymentOpen(false);
-                        setOfficePaymentData({ date: '', shift_id: '', from_account_id: '', to_account_id: '', amount: '', payment_type: 'Cash', bank_type: '', bank_name: '', cheque_no: '', cheque_date: '', account_no: '', branch_name: '', mobile_bank: '', mobile_number: '', remarks: '' });
+                        setOfficePaymentData({ date: '', shift_id: '', to_account_id: '', amount: '', payment_type: 'Cash', remarks: '' });
                     }}
                     title="Office Payment"
                     onSubmit={(e) => {
@@ -1383,7 +1374,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                         router.post('/office-payments', officePaymentData, {
                             onSuccess: () => {
                                 setIsOfficePaymentOpen(false);
-                                setOfficePaymentData({ date: '', shift_id: '', from_account_id: '', to_account_id: '', amount: '', payment_type: 'Cash', bank_type: '', bank_name: '', cheque_no: '', cheque_date: '', account_no: '', branch_name: '', mobile_bank: '', mobile_number: '', remarks: '' });
+                                setOfficePaymentData({ date: '', shift_id: '', to_account_id: '', amount: '', payment_type: 'Cash', remarks: '' });
                                 setOfficePaymentProcessing(false);
                                 if (data.transaction_date && data.shift_id) {
                                     fetchShiftData(data.transaction_date, data.shift_id);
@@ -1394,89 +1385,49 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                     }}
                     processing={officePaymentProcessing}
                     submitText="Create"
+                    className="max-w-lg"
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="date" className="dark:text-gray-200">Date</Label>
-                            <Input id="date" type="date" value={officePaymentData.date} onChange={(e) => setOfficePaymentData(prev => ({ ...prev, date: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                            <Input id="date" type="date" value={officePaymentData.date} onChange={(e) => {
+                                setOfficePaymentData(prev => ({ ...prev, date: e.target.value }));
+                                setAvailableShifts(getAvailableShifts(e.target.value));
+                                setOfficePaymentData(prev => ({ ...prev, shift_id: '' }));
+                            }} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                         </div>
                         <div>
                             <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
-                            <Select value={officePaymentData.shift_id} onValueChange={(value) => setOfficePaymentData(prev => ({ ...prev, shift_id: value }))}>
+                            <Select value={officePaymentData.shift_id} onValueChange={(value) => setOfficePaymentData(prev => ({ ...prev, shift_id: value }))} disabled={!officePaymentData.date}>
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"><SelectValue placeholder="Select shift" /></SelectTrigger>
                                 <SelectContent>{availableShifts.map((shift) => (<SelectItem key={shift.id} value={shift.id.toString()}>{shift.name}</SelectItem>))}</SelectContent>
                             </Select>
                         </div>
                     </div>
+
                     <div>
                         <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
-                        <Select value={officePaymentData.payment_type} onValueChange={(value) => setOfficePaymentData(prev => ({ ...prev, payment_type: value, to_account_id: '' }))}>
+                        <Select value={officePaymentData.payment_type} onValueChange={(value) => {
+                            setOfficePaymentData(prev => ({ ...prev, payment_type: value, to_account_id: '' }));
+                        }}>
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"><SelectValue placeholder="Select payment type" /></SelectTrigger>
                             <SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="Bank Account">Bank Account</SelectItem><SelectItem value="Mobile Bank">Mobile Bank</SelectItem></SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
-                            <Select value={officePaymentData.from_account_id} onValueChange={(value) => setOfficePaymentData(prev => ({ ...prev, from_account_id: value }))}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"><SelectValue placeholder="Select from account" /></SelectTrigger>
-                                <SelectContent>{accounts.map((account) => (<SelectItem key={account.id} value={account.id.toString()}>{account.name}</SelectItem>))}</SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account (Office)</Label>
-                            <Select value={officePaymentData.to_account_id} onValueChange={(value) => setOfficePaymentData(prev => ({ ...prev, to_account_id: value }))}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"><SelectValue placeholder="Select office account" /></SelectTrigger>
-                                <SelectContent>{(officePaymentData.payment_type === 'Cash' ? (groupedAccounts['Cash in hand'] || groupedAccounts['Cash'] || []) : officePaymentData.payment_type === 'Bank Account' ? (groupedAccounts['Bank Account'] || groupedAccounts['Bank'] || []) : officePaymentData.payment_type === 'Mobile Bank' ? (groupedAccounts['Mobile Bank'] || []) : []).map((account) => (<SelectItem key={account.id} value={account.id.toString()}>{account.name}</SelectItem>))}</SelectContent>
-                            </Select>
-                        </div>
+
+                    <div>
+                        <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account (Office)</Label>
+                        <Select value={officePaymentData.to_account_id} onValueChange={(value) => setOfficePaymentData(prev => ({ ...prev, to_account_id: value }))}>
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"><SelectValue placeholder="Select office account" /></SelectTrigger>
+                            <SelectContent>{(officePaymentData.payment_type === 'Cash' ? (groupedAccounts['Cash in hand'] || groupedAccounts['Cash'] || []) : officePaymentData.payment_type === 'Bank Account' ? (groupedAccounts['Bank Account'] || groupedAccounts['Bank'] || []) : officePaymentData.payment_type === 'Mobile Bank' ? (groupedAccounts['Mobile Bank'] || []) : []).map((account) => (<SelectItem key={account.id} value={account.id.toString()}>{account.name}</SelectItem>))}</SelectContent>
+                        </Select>
                     </div>
-                    {officePaymentData.payment_type === 'Bank Account' && (
-                        <div className="space-y-4 border-t pt-4">
-                            <h4 className="font-medium dark:text-white">Bank Payment Details</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="bank_type" className="dark:text-gray-200">Bank Type</Label>
-                                    <Select value={officePaymentData.bank_type} onValueChange={(value) => setOfficePaymentData(prev => ({ ...prev, bank_type: value }))}>
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"><SelectValue placeholder="Select type" /></SelectTrigger>
-                                        <SelectContent><SelectItem value="Cheque">Cheque</SelectItem><SelectItem value="Cash Deposit">Cash Deposit</SelectItem><SelectItem value="Online">Online</SelectItem><SelectItem value="CHT">CHT</SelectItem><SelectItem value="RTGS">RTGS</SelectItem></SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label htmlFor="bank_name" className="dark:text-gray-200">Bank Name</Label>
-                                    <Input id="bank_name" value={officePaymentData.bank_name} onChange={(e) => setOfficePaymentData(prev => ({ ...prev, bank_name: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                                </div>
-                            </div>
-                            {officePaymentData.bank_type === 'Cheque' && (
-                                <div>
-                                    <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque Number</Label>
-                                    <Input id="cheque_no" value={officePaymentData.cheque_no} onChange={(e) => setOfficePaymentData(prev => ({ ...prev, cheque_no: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    {officePaymentData.payment_type === 'Mobile Bank' && (
-                        <div className="space-y-4 border-t pt-4">
-                            <h4 className="font-medium dark:text-white">Mobile Bank Details</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="mobile_bank" className="dark:text-gray-200">Mobile Bank</Label>
-                                    <Select value={officePaymentData.mobile_bank} onValueChange={(value) => setOfficePaymentData(prev => ({ ...prev, mobile_bank: value }))}>
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"><SelectValue placeholder="Select mobile bank" /></SelectTrigger>
-                                        <SelectContent><SelectItem value="bKash">bKash</SelectItem><SelectItem value="Nagad">Nagad</SelectItem><SelectItem value="Rocket">Rocket</SelectItem></SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label htmlFor="mobile_number" className="dark:text-gray-200">Mobile Number</Label>
-                                    <Input id="mobile_number" value={officePaymentData.mobile_number} onChange={(e) => setOfficePaymentData(prev => ({ ...prev, mobile_number: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
+
                     <div>
                         <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
                         <Input id="amount" type="number" step="0.01" value={officePaymentData.amount} onChange={(e) => setOfficePaymentData(prev => ({ ...prev, amount: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                     </div>
+
                     <div>
                         <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
                         <Input id="remarks" value={officePaymentData.remarks} onChange={(e) => setOfficePaymentData(prev => ({ ...prev, remarks: e.target.value }))} className="dark:border-gray-600 dark:bg-gray-700 dark:text-white" />

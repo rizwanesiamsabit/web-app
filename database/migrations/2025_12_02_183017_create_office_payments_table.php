@@ -13,7 +13,6 @@ return new class extends Migration
             $table->date('date');
             $table->foreignId('shift_id')->constrained('shifts');
             $table->foreignId('transaction_id')->constrained('transactions');
-            $table->foreignId('from_account_id')->constrained('accounts');
             $table->foreignId('to_account_id')->constrained('accounts');
             $table->enum('type', ['cash', 'bank'])->default('cash');
             $table->text('remarks')->nullable();
