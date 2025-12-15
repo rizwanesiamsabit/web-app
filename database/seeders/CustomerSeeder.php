@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Customer;
 use App\Models\Account;
-use App\Models\Group;
+use App\Helpers\AccountHelper;
 use Illuminate\Database\Seeder;
 
 class CustomerSeeder extends Seeder
@@ -13,16 +13,9 @@ class CustomerSeeder extends Seeder
     {
         for ($i = 1; $i <= 10; $i++) {
             // Create account first
-            $lastAccount = Account::orderBy('ac_number', 'desc')->first();
-            if ($lastAccount) {
-                $ac_number = str_pad((int)$lastAccount->ac_number + 1, 13, '0', STR_PAD_LEFT);
-            } else {
-                $ac_number = '1000000000001';
-            }
-
             $account = Account::create([
                 'name' => "Customer $i",
-                'ac_number' => $ac_number,
+                'ac_number' => AccountHelper::generateAccountNumber(),
                 'group_id' => 7,
                 'group_code' => '100020001',
                 'due_amount' => 0,

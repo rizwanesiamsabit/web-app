@@ -2,29 +2,48 @@
 
 namespace App\Helpers;
 
-use App\Models\Transaction;
+use App\Models\Purchase;
+use App\Models\Sale;
+use App\Models\CreditSale;
 
 class InvoiceHelper
 {
     public static function generateInvoiceId(): string
     {
-        do {
-            $invoiceId = self::generateRandomString(9);
-            $exists = Transaction::where('invoice_id', $invoiceId)->exists();
-        } while ($exists);
-
-        return $invoiceId;
+        $lastInvoiceNumber = self::getLastInvoiceNumber();
+        $nextNumber = $lastInvoiceNumber + 1;
+        
+        return 'IN' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
-    private static function generateRandomString(int $length): string
+    private static function getLastInvoiceNumber(): int
     {
-        $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $randomString = '';
+        $lastPurchase = Purchase::where('invoice_no', 'LIKE', 'IN%')
+            ->orderBy('invoice_no', 'desc')
+            ->value('invoice_no');
+            
+        $lastSale = Sale::where('invoice_no', 'LIKE', 'IN%')
+            ->orderBy('invoice_no', 'desc')
+            ->value('invoice_no');
+            
+        $lastCreditSale = CreditSale::where('invoice_no', 'LIKE', 'IN%')
+            ->orderBy('invoice_no', 'desc')
+            ->value('invoice_no');
+
+        $numbers = [];
         
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, strlen($characters) - 1)];
+        if ($lastPurchase) {
+            $numbers[] = (int) substr($lastPurchase, 2);
         }
         
-        return $randomString;
+        if ($lastSale) {
+            $numbers[] = (int) substr($lastSale, 2);
+        }
+        
+        if ($lastCreditSale) {
+            $numbers[] = (int) substr($lastCreditSale, 2);
+        }
+        
+        return empty($numbers) ? 0 : max($numbers);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Supplier;
 use App\Models\Account;
 use App\Models\Group;
+use App\Helpers\AccountHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -87,16 +88,9 @@ class SupplierController extends Controller
         }
 
         // Create account first
-        $lastAccount = Account::orderBy('ac_number', 'desc')->first();
-        if ($lastAccount && str_starts_with($lastAccount->ac_number, '1')) {
-            $ac_number = str_pad((int)$lastAccount->ac_number + 1, 13, '0', STR_PAD_LEFT);
-        } else {
-            $ac_number = '1000000000001';
-        }
-
         $account = Account::create([
             'name' => $request->name,
-            'ac_number' => $ac_number,
+            'ac_number' => AccountHelper::generateAccountNumber(),
             'group_id' => $request->group_id,
             'group_code' => $groupCode,
             'due_amount' => 0,

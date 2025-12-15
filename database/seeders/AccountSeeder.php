@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Account;
+use App\Helpers\AccountHelper;
 
 class AccountSeeder extends Seeder
 {
@@ -12,11 +13,6 @@ class AccountSeeder extends Seeder
         $accounts = [
             [
                 'name' => 'Office Cash',
-                'group_code' => '100020002',
-                'group_id' => 13,
-            ],
-            [
-                'name' => 'Cash',
                 'group_code' => '100020002',
                 'group_id' => 13,
             ],
@@ -38,16 +34,9 @@ class AccountSeeder extends Seeder
         ];
 
         foreach ($accounts as $accountData) {
-            $lastAccount = Account::orderBy('ac_number', 'desc')->first();
-            if ($lastAccount) {
-                $ac_number = str_pad((int)$lastAccount->ac_number + 1, 13, '0', STR_PAD_LEFT);
-            } else {
-                $ac_number = '1000000000001';
-            }
-
             Account::create([
                 'name' => $accountData['name'],
-                'ac_number' => $ac_number,
+                'ac_number' => AccountHelper::generateAccountNumber(),
                 'group_id' => $accountData['group_id'],
                 'group_code' => $accountData['group_code'],
                 'due_amount' => 0,

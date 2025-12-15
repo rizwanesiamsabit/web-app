@@ -8,9 +8,9 @@ use App\Models\Group;
 use App\Models\EmpType;
 use App\Models\EmpDepartment;
 use App\Models\EmpDesignation;
+use App\Helpers\AccountHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Hash;
 
 class EmployeeController extends Controller
 {
@@ -126,18 +126,11 @@ class EmployeeController extends Controller
         ]);
 
         // Create account first
-        $lastAccount = Account::orderBy('ac_number', 'desc')->first();
-        if ($lastAccount) {
-            $ac_number = str_pad((int)$lastAccount->ac_number + 1, 13, '0', STR_PAD_LEFT);
-        } else {
-            $ac_number = '1000000000001';
-        }
-
         $group = Group::find($request->group_id);
 
         $account = Account::create([
             'name' => $request->employee_name,
-            'ac_number' => $ac_number,
+            'ac_number' => AccountHelper::generateAccountNumber(),
             'group_id' => $group->id,
             'group_code' => $group->code,
             'status' => $request->status ?? true,
