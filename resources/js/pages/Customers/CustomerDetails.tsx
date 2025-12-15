@@ -39,11 +39,35 @@ interface Customer {
     created_at: string;
 }
 
-interface CustomerDetailsProps {
-    customer: Customer;
+interface RecentPayment {
+    id: number;
+    date: string;
+    amount: number;
+    remarks?: string;
 }
 
-export default function CustomerDetails({ customer }: CustomerDetailsProps) {
+interface RecentSale {
+    id: number;
+    date: string;
+    amount: number;
+    quantity: number;
+    vehicle_number: string;
+    invoice_no: string;
+    status: boolean;
+}
+
+interface CustomerDetailsProps {
+    customer: Customer;
+    recentPayments: RecentPayment[];
+    recentSales: RecentSale[];
+    totalSales: number;
+    salesCount: number;
+    totalPaid: number;
+    paymentCount: number;
+    currentDue: number;
+}
+
+export default function CustomerDetails({ customer, recentPayments, recentSales, totalSales, salesCount, totalPaid, paymentCount, currentDue }: CustomerDetailsProps) {
     const [isVehicleOpen, setIsVehicleOpen] = useState(false);
     
     return (
@@ -82,7 +106,7 @@ export default function CustomerDetails({ customer }: CustomerDetailsProps) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Security Deposit</p>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{customer.security_deposit?.toLocaleString() || '0'}</p>
+                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{customer.security_deposit?.toLocaleString() || '0'}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -93,7 +117,8 @@ export default function CustomerDetails({ customer }: CustomerDetailsProps) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Sales</p>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{totalSales.toLocaleString()}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{salesCount} sales</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -104,7 +129,8 @@ export default function CustomerDetails({ customer }: CustomerDetailsProps) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Paid</p>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{totalPaid.toLocaleString()}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{paymentCount} payments</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -114,8 +140,24 @@ export default function CustomerDetails({ customer }: CustomerDetailsProps) {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Due/Advanced</p>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        {currentDue > 0 ? 'Current Due' : currentDue < 0 ? 'Current Advanced' : 'Balanced'}
+                                    </p>
+                                    <p className={`text-2xl font-bold ${
+                                        currentDue > 0 
+                                            ? 'text-red-600 dark:text-red-400' 
+                                            : currentDue < 0 
+                                                ? 'text-green-600 dark:text-green-400' 
+                                                : 'text-gray-900 dark:text-white'
+                                    }`}>
+                                        {currentDue < 0 ? '-' : ''}{Math.abs(currentDue).toLocaleString()}
+                                    </p>
+                                    {currentDue > 0 && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Outstanding</p>
+                                    )}
+                                    {currentDue < 0 && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Advance Paid</p>
+                                    )}
                                 </div>
                             </div>
                         </CardContent>
@@ -227,7 +269,54 @@ export default function CustomerDetails({ customer }: CustomerDetailsProps) {
                             <CardTitle className="dark:text-white">Recent Sales</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-gray-500 dark:text-gray-400 text-center py-8">No recent sales found</p>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b dark:border-gray-700">
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Date</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Vehicle Number</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Quantity</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Amount</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {recentSales && recentSales.length > 0 ? (
+                                            recentSales.map((sale) => (
+                                                <tr key={sale.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                    <td className="p-4 text-[13px] dark:text-white">
+                                                        {new Date(sale.date).toLocaleDateString('en-GB')}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        {sale.vehicle_number}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        {sale.quantity}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-white font-semibold">
+                                                        {sale.amount.toLocaleString()}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className={`px-2 py-1 rounded text-xs ${
+                                                            sale.status 
+                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                                        }`}>
+                                                            {sale.status ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={5} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                                    No recent sales found
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </CardContent>
                     </Card>
                     
@@ -236,7 +325,46 @@ export default function CustomerDetails({ customer }: CustomerDetailsProps) {
                             <CardTitle className="dark:text-white">Recent Payments</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-gray-500 dark:text-gray-400 text-center py-8">No recent payments found</p>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b dark:border-gray-700">
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Date</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Amount</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Type</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {recentPayments && recentPayments.length > 0 ? (
+                                            recentPayments.map((payment) => (
+                                                <tr key={payment.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                    <td className="p-4 text-[13px] dark:text-white">
+                                                        {new Date(payment.date).toLocaleDateString('en-GB')}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-white font-semibold">
+                                                        {payment.amount.toLocaleString()}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        Received
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                            Completed
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={4} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                                    No recent payments found
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

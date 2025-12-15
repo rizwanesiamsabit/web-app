@@ -8,6 +8,8 @@ use App\Models\Group;
 use App\Models\Vehicle;
 use App\Models\Product;
 use App\Helpers\AccountHelper;
+use App\Models\CreditSale;
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -161,6 +163,68 @@ class CustomerController extends Controller
             'vehicles.product:id,product_name'
         ]);
 
+        $recentPayments = [];
+        if ($customer->account) {
+            $recentPayments = Voucher::where('voucher_type', 'Received')
+                ->where('to_account_id', $customer->account->id)
+                ->with(['fromTransaction:id,amount', 'toTransaction:id,amount'])
+                ->orderBy('date', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function ($voucher) {
+                    return [
+                        'id' => $voucher->id,
+                        'date' => $voucher->date,
+                        'amount' => $voucher->toTransaction->amount ?? 0,
+                        'remarks' => $voucher->remarks,
+                    ];
+                });
+        }
+
+        // Get recent credit sales for this customer
+        $recentSales = CreditSale::where('customer_id', $customer->id)
+            ->with('vehicle:id,vehicle_number')
+            ->orderBy('sale_date', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'id' => $sale->id,
+                    'date' => $sale->sale_date,
+                    'amount' => $sale->total_amount,
+                    'quantity' => $sale->quantity,
+                    'vehicle_number' => $sale->vehicle->vehicle_number ?? 'N/A',
+                    'invoice_no' => $sale->invoice_no,
+                    'status' => $sale->status,
+                ];
+            });
+
+        // Calculate total sales for this customer
+        $totalSales = CreditSale::where('customer_id', $customer->id)
+            ->sum('total_amount');
+        
+        $salesCount = CreditSale::where('customer_id', $customer->id)
+            ->count();
+
+        // Calculate total paid for this customer
+        $totalPaid = 0;
+        $paymentCount = 0;
+        if ($customer->account) {
+            $payments = Voucher::where('voucher_type', 'Received')
+                ->where('to_account_id', $customer->account->id)
+                ->with('toTransaction:id,amount')
+                ->get();
+            
+            $totalPaid = $payments->sum(function ($voucher) {
+                return $voucher->toTransaction->amount ?? 0;
+            });
+            
+            $paymentCount = $payments->count();
+        }
+        
+        // Calculate current due/advanced (Total Sales - Total Paid)
+        $currentDue = $totalSales - $totalPaid;
+
         return Inertia::render('Customers/CustomerDetails', [
             'customer' => [
                 'id' => $customer->id,
@@ -180,7 +244,14 @@ class CustomerController extends Controller
                 'account' => $customer->account,
                 'vehicles' => $customer->vehicles,
                 'created_at' => $customer->created_at->format('Y-m-d H:i:s'),
-            ]
+            ],
+            'recentPayments' => $recentPayments,
+            'recentSales' => $recentSales,
+            'totalSales' => $totalSales,
+            'salesCount' => $salesCount,
+            'totalPaid' => $totalPaid,
+            'paymentCount' => $paymentCount,
+            'currentDue' => $currentDue
         ]);
     }
 

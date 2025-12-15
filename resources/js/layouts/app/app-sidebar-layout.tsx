@@ -19,7 +19,7 @@ export function AppSidebarLayout({
             <AppSidebar />
             <AppContent variant="sidebar" className="overflow-x-hidden">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
-                <div className="pt-16">
+                <div className="pt-16 bg-gradient-to-tl from-teal-50 via-rose-50 to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
                     {children}
                 </div>
             <FlashToast />
