@@ -39,6 +39,9 @@ interface Customer {
     address?: string;
     status: boolean;
     account?: Account;
+    total_sales?: number;
+    total_paid?: number;
+    current_due?: number;
     created_at: string;
 }
 
@@ -416,20 +419,25 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                                     ))}
                                             </div>
                                         </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Code
-                                        </th>
+
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Account Number
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Mobile
                                         </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Email
-                                        </th>
+
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Total Sale
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Total Payment
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Total Due/Advanced
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
@@ -463,18 +471,14 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                                 <td className="p-4 text-[13px] dark:text-white">
                                                     {customer.name}
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {customer.code || 'N/A'}
-                                                </td>
+
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {customer.account?.ac_number || 'N/A'}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {customer.mobile || 'N/A'}
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {customer.email || 'N/A'}
-                                                </td>
+
                                                 <td className="p-4">
                                                     <span className={`px-2 py-1 rounded text-xs ${
                                                         customer.status 
@@ -483,6 +487,21 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                                     }`}>
                                                         {customer.status ? 'Active' : 'Inactive'}
                                                     </span>
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-gray-300">
+                                                    {customer.total_sales?.toLocaleString() || '0.00'}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-gray-300">
+                                                    {customer.total_paid?.toLocaleString() || '0.00'}
+                                                </td>
+                                                <td className={`p-4 text-right text-[13px] ${
+                                                    customer.current_due > 0 
+                                                        ? 'text-red-600 dark:text-red-400' 
+                                                        : customer.current_due < 0 
+                                                            ? 'text-green-600 dark:text-green-400' 
+                                                            : 'dark:text-gray-300'
+                                                }`}>
+                                                    {customer.current_due < 0 ? '-' : ''}{Math.abs(customer.current_due || 0).toLocaleString()}
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
@@ -517,7 +536,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={9}
+                                                colSpan={10}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Users className="mx-auto mb-4 h-12 w-12 text-gray-400" />

@@ -42,6 +42,25 @@ class CustomerController extends Controller
         // Paginate
         $perPage = $request->get('per_page', 10);
         $customers = $query->paginate($perPage)->withQueryString()->through(function ($customer) {
+            // Calculate total sales for this customer
+            $totalSales = CreditSale::where('customer_id', $customer->id)->sum('total_amount');
+            
+            // Calculate total paid for this customer
+            $totalPaid = 0;
+            if ($customer->account) {
+                $payments = Voucher::where('voucher_type', 'Received')
+                    ->where('to_account_id', $customer->account->id)
+                    ->with('toTransaction:id,amount')
+                    ->get();
+                
+                $totalPaid = $payments->sum(function ($voucher) {
+                    return $voucher->toTransaction->amount ?? 0;
+                });
+            }
+            
+            // Calculate current due/advanced (Total Sales - Total Paid)
+            $currentDue = $totalSales - $totalPaid;
+            
             return [
                 'id' => $customer->id,
                 'account_id' => $customer->account_id,
@@ -59,6 +78,9 @@ class CustomerController extends Controller
                 'address' => $customer->address,
                 'status' => $customer->status,
                 'account' => $customer->account,
+                'total_sales' => $totalSales,
+                'total_paid' => $totalPaid,
+                'current_due' => $currentDue,
                 'created_at' => $customer->created_at->format('Y-m-d'),
             ];
         });
@@ -442,7 +464,8 @@ class CustomerController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $query = Customer::select('id', 'code', 'name', 'mobile', 'email', 'status', 'created_at');
+        $query = Customer::select('id', 'account_id', 'code', 'name', 'mobile', 'email', 'status', 'created_at')
+            ->with('account:id,name,ac_number');
 
         // Apply same filters as index method
         if ($request->search) {
@@ -462,7 +485,33 @@ class CustomerController extends Controller
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        $customers = $query->get();
+        $customers = $query->get()->map(function ($customer) {
+            // Calculate total sales for this customer
+            $totalSales = CreditSale::where('customer_id', $customer->id)->sum('total_amount');
+            
+            // Calculate total paid for this customer
+            $totalPaid = 0;
+            if ($customer->account) {
+                $payments = Voucher::where('voucher_type', 'Received')
+                    ->where('to_account_id', $customer->account->id)
+                    ->with('toTransaction:id,amount')
+                    ->get();
+                
+                $totalPaid = $payments->sum(function ($voucher) {
+                    return $voucher->toTransaction->amount ?? 0;
+                });
+            }
+            
+            // Calculate current due/advanced (Total Sales - Total Paid)
+            $currentDue = $totalSales - $totalPaid;
+            
+            $customer->total_sales = $totalSales;
+            $customer->total_paid = $totalPaid;
+            $customer->current_due = $currentDue;
+            
+            return $customer;
+        });
+        
         $companySetting = \App\Models\CompanySetting::first();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.customers', compact('customers', 'companySetting'));
