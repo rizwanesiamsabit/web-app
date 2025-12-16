@@ -156,23 +156,25 @@
     <table>
         <thead>
             <tr>
+                <th>SL</th>
                 <th>Date</th>
-                <th>Shift</th>
                 <th>Invoice/Transaction ID</th>
                 <th class="text-right">Debit</th>
                 <th class="text-right">Credit</th>
-                <th class="text-right">Due</th>
+                <th class="text-right">Due Amount</th>
+                <th>Remarks</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($ledger['transactions'] as $transaction)
+            @foreach($ledger['transactions'] as $index => $transaction)
             <tr>
+                <td>{{ $index + 1 }}</td>
                 <td>{{ $transaction->date }}</td>
-                <td>{{ $transaction->shift }}</td>
                 <td>{{ $transaction->transaction_id }}</td>
                 <td class="text-right">{{ number_format($transaction->debit, 2) }}</td>
                 <td class="text-right">{{ number_format($transaction->credit, 2) }}</td>
                 <td class="text-right">{{ number_format($transaction->due, 2) }}</td>
+                <td>{{ $transaction->remarks ?? 'N/A' }}</td>
             </tr>
             @endforeach
             <tr style="font-weight: bold; background-color: #e0e0e0;">
@@ -180,6 +182,7 @@
                 <td class="text-right">{{ number_format($ledger['total_debit'], 2) }}</td>
                 <td class="text-right">{{ number_format($ledger['total_credit'], 2) }}</td>
                 <td class="text-right">{{ number_format($ledger['total_due'], 2) }}</td>
+                <td>-</td>
             </tr>
         </tbody>
     </table>

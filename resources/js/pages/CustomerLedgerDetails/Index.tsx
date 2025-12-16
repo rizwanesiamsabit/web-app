@@ -17,6 +17,7 @@ interface Transaction {
     debit: number;
     credit: number;
     due: number;
+    remarks?: string;
 }
 
 interface Ledger {
@@ -161,23 +162,27 @@ export default function CustomerLedgerDetails({ ledgers = [], customers = [], fi
                                         <table className="w-full">
                                             <thead>
                                                 <tr className="border-b dark:border-gray-700">
+                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">SL</th>
                                                     <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Date</th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
                                                     <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Invoice/Transaction ID</th>
                                                     <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Debit</th>
                                                     <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Credit</th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Due</th>
+                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
+                                                        {ledger.total_due >= 0 ? 'Due Amount' : 'Advanced Amount'}
+                                                    </th>
+                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Remarks</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {ledger.transactions.map((transaction, transactionIndex) => (
                                                     <tr key={transactionIndex} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                        <td className="p-2 text-[13px] dark:text-white">{transactionIndex + 1}</td>
                                                         <td className="p-2 text-[13px] dark:text-white">{transaction.date}</td>
-                                                        <td className="p-2 text-[13px] dark:text-gray-300">{transaction.shift}</td>
                                                         <td className="p-2 text-[13px] dark:text-gray-300">{transaction.transaction_id}</td>
                                                         <td className="p-2 text-right text-[13px] dark:text-gray-300">{Number(transaction.debit).toFixed(2)}</td>
                                                         <td className="p-2 text-right text-[13px] dark:text-gray-300">{Number(transaction.credit).toFixed(2)}</td>
                                                         <td className="p-2 text-right text-[13px] dark:text-gray-300">{Number(transaction.due).toFixed(2)}</td>
+                                                        <td className="p-2 text-[13px] dark:text-gray-300">{transaction.remarks || 'N/A'}</td>
                                                     </tr>
                                                 ))}
                                                 <tr className="border-b font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-700">
@@ -185,6 +190,7 @@ export default function CustomerLedgerDetails({ ledgers = [], customers = [], fi
                                                     <td className="p-2 text-right text-[13px] dark:text-white">{Number(ledger.total_debit).toFixed(2)}</td>
                                                     <td className="p-2 text-right text-[13px] dark:text-white">{Number(ledger.total_credit).toFixed(2)}</td>
                                                     <td className="p-2 text-right text-[13px] dark:text-white">{Number(ledger.total_due).toFixed(2)}</td>
+                                                    <td className="p-2 text-[13px] dark:text-white">-</td>
                                                 </tr>
                                             </tbody>
                                         </table>

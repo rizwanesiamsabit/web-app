@@ -40,7 +40,8 @@ class CustomerLedgerDetailsController extends Controller
                 DB::raw('COALESCE(transactions.transaction_id, credit_sales.invoice_no) as transaction_id'),
                 DB::raw('0 as debit'),
                 'credit_sales.total_amount as credit',
-                'credit_sales.total_amount as balance'
+                'credit_sales.total_amount as balance',
+                DB::raw('NULL as remarks')
             );
 
         $debitTransactions = DB::table('vouchers')
@@ -60,7 +61,8 @@ class CustomerLedgerDetailsController extends Controller
                 'transactions.transaction_id',
                 'transactions.amount as debit',
                 DB::raw('0 as credit'),
-                DB::raw('transactions.amount as balance')
+                DB::raw('transactions.amount as balance'),
+                'vouchers.remarks'
             );
 
         $allTransactions = $creditTransactions->union($debitTransactions)
@@ -119,7 +121,8 @@ class CustomerLedgerDetailsController extends Controller
                 DB::raw('COALESCE(transactions.transaction_id, credit_sales.invoice_no) as transaction_id'),
                 DB::raw('0 as debit'),
                 'credit_sales.total_amount as credit',
-                'credit_sales.total_amount as balance'
+                'credit_sales.total_amount as balance',
+                DB::raw('NULL as remarks')
             );
 
         $debitTransactions = DB::table('vouchers')
@@ -139,7 +142,8 @@ class CustomerLedgerDetailsController extends Controller
                 'transactions.transaction_id',
                 'transactions.amount as debit',
                 DB::raw('0 as credit'),
-                DB::raw('transactions.amount as balance')
+                DB::raw('transactions.amount as balance'),
+                'vouchers.remarks'
             );
 
         $allTransactions = $creditTransactions->union($debitTransactions)
