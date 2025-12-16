@@ -90,6 +90,13 @@ export default function CustomerDetails({ customer, recentPayments, recentSales,
                             Download
                         </Button>
                         <Button
+                            variant="outline"
+                            onClick={() => router.get(`/customers/${customer.id}/statement`)}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Statement
+                        </Button>
+                        <Button
                             variant="secondary"
                             onClick={() => router.get('/customers')}
                         >

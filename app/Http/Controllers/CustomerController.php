@@ -255,6 +255,128 @@ class CustomerController extends Controller
         ]);
     }
 
+    public function statement(Request $request, Customer $customer)
+    {
+        $customer->load('account:id,name,ac_number');
+        
+        $year = $request->get('year', date('Y'));
+
+        // Get all sales for this customer
+        $sales = CreditSale::where('customer_id', $customer->id)
+            ->with('vehicle:id,vehicle_number')
+            ->orderBy('sale_date', 'desc')
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'id' => $sale->id,
+                    'date' => $sale->sale_date,
+                    'type' => 'Sale',
+                    'description' => 'Credit Sale - ' . ($sale->vehicle->vehicle_number ?? 'N/A'),
+                    'debit' => $sale->total_amount,
+                    'credit' => 0,
+                    'invoice_no' => $sale->invoice_no,
+                ];
+            });
+
+        // Get all payments for this customer
+        $payments = [];
+        if ($customer->account) {
+            $payments = Voucher::where('voucher_type', 'Received')
+                ->where('to_account_id', $customer->account->id)
+                ->with('toTransaction:id,amount')
+                ->orderBy('date', 'desc')
+                ->get()
+                ->map(function ($voucher) {
+                    return [
+                        'id' => $voucher->id,
+                        'date' => $voucher->date,
+                        'type' => 'Payment',
+                        'description' => 'Payment Received - ' . ($voucher->remarks ?? 'N/A'),
+                        'debit' => 0,
+                        'credit' => $voucher->toTransaction->amount ?? 0,
+                        'voucher_no' => $voucher->voucher_no,
+                    ];
+                });
+        }
+
+        // Merge and sort transactions by date
+        $transactions = collect($sales)->merge($payments)->sortByDesc('date')->values();
+
+        // Calculate running balance
+        $balance = 0;
+        $transactions = $transactions->map(function ($transaction) use (&$balance) {
+            $balance += $transaction['debit'] - $transaction['credit'];
+            $transaction['balance'] = $balance;
+            return $transaction;
+        });
+
+        // Calculate monthly sales for selected year
+        $monthlySales = CreditSale::where('customer_id', $customer->id)
+            ->whereYear('sale_date', $year)
+            ->selectRaw('YEAR(sale_date) as year, MONTH(sale_date) as month, SUM(total_amount) as total')
+            ->groupBy('year', 'month')
+            ->orderBy('month', 'asc')
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'month' => date('F Y', mktime(0, 0, 0, $sale->month, 1, $sale->year)),
+                    'total' => $sale->total
+                ];
+            });
+
+        // Get available years
+        $availableYears = CreditSale::where('customer_id', $customer->id)
+            ->selectRaw('DISTINCT YEAR(sale_date) as year')
+            ->orderBy('year', 'desc')
+            ->pluck('year')
+            ->toArray();
+
+        // Get recent payments from Voucher model with pagination and date filter
+        $recentPayments = collect([]);
+        if ($customer->account) {
+            $query = Voucher::where('voucher_type', 'Received')
+                ->where('to_account_id', $customer->account->id)
+                ->with('toTransaction:id,amount');
+            
+            // Apply date range filter if provided
+            if ($request->start_date) {
+                $query->whereDate('date', '>=', $request->start_date);
+            }
+            if ($request->end_date) {
+                $query->whereDate('date', '<=', $request->end_date);
+            }
+            
+            $recentPayments = $query->orderBy('date', 'desc')
+                ->paginate(10)
+                ->withQueryString()
+                ->through(function ($voucher) {
+                    return [
+                        'id' => $voucher->id,
+                        'date' => $voucher->date,
+                        'amount' => $voucher->toTransaction->amount ?? 0,
+                        'remarks' => $voucher->remarks,
+                    ];
+                });
+        }
+
+        return Inertia::render('Customers/CustomerStatement', [
+            'customer' => [
+                'id' => $customer->id,
+                'code' => $customer->code,
+                'name' => $customer->name,
+                'mobile' => $customer->mobile,
+                'address' => $customer->address,
+                'security_deposit' => $customer->security_deposit,
+                'account' => $customer->account,
+            ],
+            'transactions' => $transactions,
+            'currentBalance' => $balance,
+            'monthlySales' => $monthlySales,
+            'availableYears' => $availableYears,
+            'recentPayments' => $recentPayments
+        ]);
+    }
+
     public function update(Request $request, Customer $customer)
     {
         $request->validate([
