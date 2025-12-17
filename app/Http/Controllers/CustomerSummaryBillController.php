@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -113,9 +114,9 @@ class CustomerSummaryBillController extends Controller
             ];
         })->values()->toArray();
 
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.customer-summary-bill', compact('bills', 'companySetting', 'startDate', 'endDate'));
-        return $pdf->download('customer-summary-bill-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('customer-summary-bill.pdf');
     }
 }

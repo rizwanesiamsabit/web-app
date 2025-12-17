@@ -125,7 +125,6 @@ class EmpTypeController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.emp-types', compact('empTypes', 'companySetting'));
-        $filename = 'emp_types_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('emp-types.pdf');
     }
 }

@@ -152,6 +152,6 @@ class GroupController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.groups', compact('groups', 'companySetting'));
-        return $pdf->download('finance-groups-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('groups.pdf');
     }
 }

@@ -66,6 +66,6 @@ class StockReportController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.stock-report', compact('stocks', 'companySetting'));
-        return $pdf->download('stock-report-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('stock-report.pdf');
     }
 }

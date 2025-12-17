@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Helpers\AccountHelper;
 use App\Models\Account;
 use App\Models\Group;
+use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AccountController extends Controller
 {
@@ -112,5 +114,38 @@ class AccountController extends Controller
     {
         $account->delete();
         return redirect()->back()->with('success', 'Account deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = Account::with('group');
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                    ->orWhere('ac_number', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('group', function ($subQ) use ($request) {
+                        $subQ->where('name', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        if ($request->group && $request->group !== 'all') {
+            $query->where('group_code', $request->group);
+        }
+
+        if ($request->status && $request->status !== 'all') {
+            $query->where('status', $request->status === 'active');
+        }
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $accounts = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.accounts', compact('accounts', 'companySetting'));
+        return $pdf->stream();
     }
 }

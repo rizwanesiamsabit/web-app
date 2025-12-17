@@ -6,10 +6,12 @@ use App\Models\Voucher;
 use App\Models\Account;
 use App\Models\Shift;
 use App\Models\Transaction;
+use App\Models\CompanySetting;
 use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PaymentVoucherController extends Controller
 {
@@ -224,5 +226,46 @@ class PaymentVoucherController extends Controller
         });
 
         return redirect()->back()->with('success', 'Payment vouchers deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = Voucher::with(['fromAccount', 'toAccount', 'fromTransaction', 'toTransaction', 'shift'])
+            ->where('voucher_type', 'Payment');
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('fromAccount', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%');
+                })
+                    ->orWhereHas('toAccount', function ($q) use ($request) {
+                        $q->where('name', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        if ($request->payment_type && $request->payment_type !== 'all') {
+            $query->whereHas('fromTransaction', function ($q) use ($request) {
+                $q->where('payment_type', $request->payment_type);
+            });
+        }
+
+        if ($request->start_date) {
+            $query->where('date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->where('date', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->sort_by ?? 'created_at';
+        $sortOrder = $request->sort_order ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        $vouchers = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.payment-vouchers', compact('vouchers', 'companySetting'));
+        return $pdf->stream();
     }
 }

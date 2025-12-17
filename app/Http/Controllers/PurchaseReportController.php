@@ -102,7 +102,6 @@ class PurchaseReportController extends Controller
             'endDate' => $request->end_date,
         ]);
 
-        $fileName = 'purchase-report-details-' . now()->format('Y-m-d-H-i-s') . '.pdf';
-        return $pdf->download($fileName);
+        return $pdf->stream('purchase-report-details.pdf');
     }
 }

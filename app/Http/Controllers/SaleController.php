@@ -206,8 +206,6 @@ class SaleController extends Controller
         return response()->json(['sale' => $sale]);
     }
 
-
-
     public function update(Request $request, Sale $sale)
     {
         $request->validate([

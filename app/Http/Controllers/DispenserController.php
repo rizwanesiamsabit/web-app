@@ -174,7 +174,6 @@ class DispenserController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.dispensers', compact('dispensers', 'companySetting'));
-        $filename = 'dispensers_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('dispensers.pdf');
     }
 }

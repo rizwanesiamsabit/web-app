@@ -125,7 +125,6 @@ class EmpDesignationController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.emp-designations', compact('designations', 'companySetting'));
-        $filename = 'emp_designations_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('emp-designations.pdf');
     }
 }

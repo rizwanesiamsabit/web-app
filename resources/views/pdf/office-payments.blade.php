@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Vehicles List</title>
+    <title>Office Payments Report</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,24 +79,28 @@
         th,
         td {
             border: 1px solid #ccc;
-            padding: 10px 8px;
+            padding: 8px 6px;
             text-align: left;
         }
 
         th {
             background-color: #f2f2f2;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             color: #000;
         }
 
         td {
-            font-size: 11px;
+            font-size: 10px;
             color: #333;
         }
 
         .text-center {
             text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
         }
 
         tr:nth-child(even) {
@@ -134,7 +138,6 @@
         }
     </style>
 </head>
-
 <body>
     <div class="header">
         <div class="logo">
@@ -168,34 +171,45 @@
     </div>
 
     <div class="title-section">
-        <div class="title-box">Vehicles List</div>
+        <div class="title-box">Office Payments Report</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th class="text-center" style="width: 50px;">SL</th>
-                <th>Customer</th>
-                <th>Vehicle Name</th>
-                <th>Vehicle Number</th>
-                <th>Type</th>
+                <th class="text-center" style="width: 30px;">SL</th>
+                <th style="width: 70px;">Date</th>
+                <th style="width: 60px;">Shift</th>
+                <th>To Account</th>
+                <th class="text-right" style="width: 80px;">Amount</th>
+                <th>Remarks</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($vehicles as $index => $vehicle)
+            @forelse($officePayments as $index => $payment)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ $vehicle->customer->name ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_name ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_number ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_type ?? 'N/A' }}</td>
+                <td>{{ \Carbon\Carbon::parse($payment->date)->format('d/m/Y') }}</td>
+                <td>{{ $payment->shift->name ?? 'N/A' }}</td>
+                <td>{{ $payment->to_account->name ?? 'N/A' }}</td>
+                <td class="text-right">{{ number_format($payment->transaction->amount ?? 0, 2) }}</td>
+                <td>{{ $payment->remarks ?? 'N/A' }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="5" class="text-center" style="padding: 20px; color: #999;">No vehicles found</td>
+                <td colspan="6" class="text-center" style="padding: 20px; color: #999;">No office payments found</td>
             </tr>
             @endforelse
         </tbody>
+        @if(count($officePayments) > 0)
+        <tfoot>
+            <tr style="background-color: #e9ecef; font-weight: bold;">
+                <td colspan="4" class="text-right">Total:</td>
+                <td class="text-right">{{ number_format($officePayments->sum(function($payment) { return $payment->transaction->amount ?? 0; }), 2) }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <div class="footer">
@@ -203,9 +217,8 @@
             Generated on: {{ date('Y-m-d H:i:s') }}
         </div>
         <div class="footer-right">
-            Total Records: {{ count($vehicles) }}
+            Total Records: {{ count($officePayments) }}
         </div>
     </div>
 </body>
-
 </html>

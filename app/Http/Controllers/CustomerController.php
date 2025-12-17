@@ -7,11 +7,13 @@ use App\Models\Account;
 use App\Models\Group;
 use App\Models\Vehicle;
 use App\Models\Product;
+use App\Models\CompanySetting;
 use App\Helpers\AccountHelper;
 use App\Models\CreditSale;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CustomerController extends Controller
 {
@@ -109,7 +111,6 @@ class CustomerController extends Controller
 
     public function store(Request $request)
     {
-
         $request->validate([
             'code' => 'nullable|string|max:150',
             'name' => 'required|string|max:150',
@@ -516,11 +517,10 @@ class CustomerController extends Controller
             return $customer;
         });
         
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.customers', compact('customers', 'companySetting'));
-        $filename = 'customers_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        $pdf = Pdf::loadView('pdf.customers', compact('customers', 'companySetting'));
+        return $pdf->stream('customers.pdf');
     }
 
     public function downloadSalesPdf(Request $request, Customer $customer)
@@ -542,11 +542,10 @@ class CustomerController extends Controller
                 ];
             });
 
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.customer-sales', compact('customer', 'monthlySales', 'year', 'companySetting'));
-        $filename = 'customer_sales_' . $customer->name . '_' . $year . '_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        $pdf = Pdf::loadView('pdf.customer-sales', compact('customer', 'monthlySales', 'year', 'companySetting'));
+        return $pdf->stream('customer-sales.pdf');
     }
 
     public function downloadPaymentsPdf(Request $request, Customer $customer)
@@ -576,10 +575,9 @@ class CustomerController extends Controller
                 ];
             });
 
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.customer-payments', compact('customer', 'payments', 'companySetting'));
-        $filename = 'customer_payments_' . $customer->name . '_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        $pdf = Pdf::loadView('pdf.customer-payments', compact('customer', 'payments', 'companySetting'));
+        return $pdf->stream('customer-payments.pdf');
     }
 }

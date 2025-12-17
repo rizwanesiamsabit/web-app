@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
-use App\Models\Customer;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

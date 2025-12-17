@@ -125,7 +125,6 @@ class CategoryController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.categories', compact('categories', 'companySetting'));
-        $filename = 'categories_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream();
     }
 }

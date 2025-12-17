@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class UserController extends Controller
 {
@@ -158,8 +160,6 @@ class UserController extends Controller
         return redirect()->back()->with('success', count($request->ids) . ' users deleted successfully.');
     }
 
-
-
     public function downloadPdf(Request $request)
     {
         $query = User::select('id', 'name', 'email', 'email_verified_at', 'banned', 'created_at')
@@ -204,10 +204,9 @@ class UserController extends Controller
         $query->orderBy($sortBy, $sortOrder);
 
         $users = $query->get();
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.users', compact('users', 'companySetting'));
-        $filename = 'users_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        $pdf = Pdf::loadView('pdf.users', compact('users', 'companySetting'));
+        return $pdf->stream('users.pdf');
     }
 }

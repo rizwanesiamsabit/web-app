@@ -60,7 +60,6 @@
                 <th style="width: 120px;">Group Code</th>
                 <th>Group Name</th>
                 <th style="width: 150px;">Parent Group</th>
-                <th style="width: 100px;">Status</th>
                 <th style="width: 100px;">Created</th>
             </tr>
         </thead>
@@ -71,11 +70,10 @@
                 <td>{{ $group->code }}</td>
                 <td>{{ $group->name }}</td>
                 <td>{{ $group->parent_name ?? $group->parents }}</td>
-                <td>{{ $group->status == 1 ? 'Active' : 'Inactive' }}</td>
                 <td>{{ $group->created_at->format('Y-m-d') }}</td>
             </tr>
             @empty
-            <tr><td colspan="6" class="text-center" style="padding: 20px; color: #999;">No groups found</td></tr>
+            <tr><td colspan="5" class="text-center" style="padding: 20px; color: #999;">No groups found</td></tr>
             @endforelse
         </tbody>
     </table>

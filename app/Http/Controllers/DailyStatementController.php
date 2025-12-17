@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CreditSale;
 use App\Models\Customer;
 use App\Models\Shift;
+use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -343,7 +343,7 @@ class DailyStatementController extends Controller
             )
             ->get();
 
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.daily-statement', compact(
             'allProductSales',
@@ -356,6 +356,6 @@ class DailyStatementController extends Controller
             'startDate',
             'endDate'
         ));
-        return $pdf->download('daily-statement-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('daily-statement.pdf');
     }
 }

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Vehicles List</title>
+    <title>Credit Sales List</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,24 +79,28 @@
         th,
         td {
             border: 1px solid #ccc;
-            padding: 10px 8px;
+            padding: 8px 6px;
             text-align: left;
         }
 
         th {
             background-color: #f2f2f2;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             color: #000;
         }
 
         td {
-            font-size: 11px;
+            font-size: 10px;
             color: #333;
         }
 
         .text-center {
             text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
         }
 
         tr:nth-child(even) {
@@ -134,7 +138,6 @@
         }
     </style>
 </head>
-
 <body>
     <div class="header">
         <div class="logo">
@@ -168,34 +171,51 @@
     </div>
 
     <div class="title-section">
-        <div class="title-box">Vehicles List</div>
+        <div class="title-box">Credit Sales Report</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th class="text-center" style="width: 50px;">SL</th>
+                <th class="text-center" style="width: 30px;">SL</th>
+                <th style="width: 70px;">Date</th>
+                <th style="width: 50px;">Shift</th>
+                <th style="width: 80px;">Invoice No</th>
                 <th>Customer</th>
-                <th>Vehicle Name</th>
-                <th>Vehicle Number</th>
-                <th>Type</th>
+                <th>Vehicle</th>
+                <th class="text-right" style="width: 60px;">Quantity</th>
+                <th class="text-right" style="width: 80px;">Total Amount</th>
+                <th class="text-right" style="width: 80px;">Due Amount</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($vehicles as $index => $vehicle)
+            @forelse($creditSales as $index => $sale)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ $vehicle->customer->name ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_name ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_number ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_type ?? 'N/A' }}</td>
+                <td>{{ \Carbon\Carbon::parse($sale->sale_date)->format('d/m/Y') }}</td>
+                <td>{{ $sale->shift->name ?? 'N/A' }}</td>
+                <td>{{ $sale->invoice_no }}</td>
+                <td>{{ $sale->customer->name ?? 'N/A' }}</td>
+                <td>{{ $sale->vehicle->vehicle_number ?? 'N/A' }}</td>
+                <td class="text-right">{{ number_format($sale->quantity, 2) }}</td>
+                <td class="text-right">{{ number_format($sale->total_amount, 2) }}</td>
+                <td class="text-right">{{ number_format($sale->due_amount, 2) }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="5" class="text-center" style="padding: 20px; color: #999;">No vehicles found</td>
+                <td colspan="9" class="text-center" style="padding: 20px; color: #999;">No credit sales found</td>
             </tr>
             @endforelse
         </tbody>
+        @if(count($creditSales) > 0)
+        <tfoot>
+            <tr style="background-color: #e9ecef; font-weight: bold;">
+                <td colspan="7" class="text-right">Total:</td>
+                <td class="text-right">{{ number_format($creditSales->sum('total_amount'), 2) }}</td>
+                <td class="text-right">{{ number_format($creditSales->sum('due_amount'), 2) }}</td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <div class="footer">
@@ -203,9 +223,8 @@
             Generated on: {{ date('Y-m-d H:i:s') }}
         </div>
         <div class="footer-right">
-            Total Records: {{ count($vehicles) }}
+            Total Records: {{ count($creditSales) }}
         </div>
     </div>
 </body>
-
 </html>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -157,9 +158,9 @@ class CustomerLedgerDetailsController extends Controller
             ];
         })->values()->toArray();
 
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.customer-ledger-details', compact('ledgers', 'companySetting', 'startDate', 'endDate'));
-        return $pdf->download('customer-ledger-details-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('customer-ledger-details.pdf');
     }
 }

@@ -167,7 +167,6 @@ class ProductController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.products', compact('products', 'companySetting'));
-        $filename = 'products_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('products.pdf');
     }
 }

@@ -394,8 +394,7 @@ class SupplierController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.suppliers', compact('suppliers', 'companySetting'));
-        $filename = 'suppliers_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('suppliers.pdf');
     }
 
     public function downloadPurchasesPdf(Request $request, Supplier $supplier)
@@ -426,8 +425,7 @@ class SupplierController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.supplier-purchases', compact('supplier', 'purchases', 'companySetting'));
-        $filename = 'supplier_purchases_' . $supplier->name . '_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('supplier-purchases.pdf');
     }
 
     public function downloadPaymentsPdf(Request $request, Supplier $supplier)
@@ -460,7 +458,6 @@ class SupplierController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.supplier-payments', compact('supplier', 'payments', 'companySetting'));
-        $filename = 'supplier_payments_' . $supplier->name . '_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('supplier-payments.pdf');
     }
 }

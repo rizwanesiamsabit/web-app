@@ -155,7 +155,6 @@ class RoleController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.roles', compact('roles', 'companySetting'));
-        $filename = 'roles_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('roles.pdf');
     }
 }

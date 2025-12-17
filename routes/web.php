@@ -145,6 +145,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Product Rate routes
     Route::get('product-rates', [ProductRateController::class, 'index'])->name('product-rates.index');
+    Route::get('product-rates/download-pdf', [ProductRateController::class, 'downloadPdf'])->name('product-rates.download.pdf');
     Route::post('product-rates', [ProductRateController::class, 'store'])->name('product-rates.store');
     Route::put('product-rates/{productRate}', [ProductRateController::class, 'update'])->name('product-rates.update');
     Route::delete('product-rates/{productRate}', [ProductRateController::class, 'destroy'])->name('product-rates.destroy');
@@ -175,6 +176,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Account routes
     Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+    Route::get('accounts/download-pdf', [AccountController::class, 'downloadPdf'])->name('accounts.download.pdf');
     Route::get('accounts/create', [AccountController::class, 'create'])->name('accounts.create');
     Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::get('accounts/{account}', [AccountController::class, 'show'])->name('accounts.show');
@@ -227,11 +229,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Payment Voucher routes
     Route::get('vouchers/payment', [PaymentVoucherController::class, 'index'])->name('vouchers.payment.index');
+    Route::get('vouchers/payment/download-pdf', [PaymentVoucherController::class, 'downloadPdf'])->name('vouchers.payment.download.pdf');
     Route::post('vouchers/payment', [PaymentVoucherController::class, 'store'])->name('vouchers.payment.store');
     Route::put('vouchers/payment/{voucher}', [PaymentVoucherController::class, 'update'])->name('vouchers.payment.update');
     Route::delete('vouchers/payment/{voucher}', [PaymentVoucherController::class, 'destroy'])->name('vouchers.payment.destroy');
     Route::delete('vouchers/payment/bulk/delete', [PaymentVoucherController::class, 'bulkDelete'])->name('vouchers.payment.bulk.delete');
-    Route::get('vouchers/payment/download-pdf', [PaymentVoucherController::class, 'downloadPdf'])->name('vouchers.payment.download.pdf');
     
     // Received Voucher routes
     Route::get('vouchers/received', [ReceivedVoucherController::class, 'index'])->name('vouchers.received.index');
@@ -243,12 +245,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Purchase routes
     Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
+    Route::get('purchases/download-pdf', [PurchaseController::class, 'downloadPdf'])->name('purchases.download.pdf');
     Route::post('purchases', [PurchaseController::class, 'store'])->name('purchases.store');
     Route::get('purchases/{purchase}/edit', [PurchaseController::class, 'edit'])->name('purchases.edit');
     Route::put('purchases/{purchase}', [PurchaseController::class, 'update'])->name('purchases.update');
     Route::delete('purchases/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
     Route::delete('purchases/bulk/delete', [PurchaseController::class, 'bulkDelete'])->name('purchases.bulk.delete');
-    Route::get('purchases/download-pdf', [PurchaseController::class, 'downloadPdf'])->name('purchases.download.pdf');
 
     // Sale routes
     Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
@@ -263,20 +265,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Credit Sale routes
     Route::get('credit-sales', [CreditSaleController::class, 'index'])->name('credit-sales.index');
+    Route::get('credit-sales/download-pdf', [CreditSaleController::class, 'downloadPdf'])->name('credit-sales.download.pdf');
     Route::post('credit-sales', [CreditSaleController::class, 'store'])->name('credit-sales.store');
     Route::get('credit-sales/{creditSale}/edit', [CreditSaleController::class, 'edit'])->name('credit-sales.edit');
     Route::put('credit-sales/{creditSale}', [CreditSaleController::class, 'update'])->name('credit-sales.update');
     Route::delete('credit-sales/{creditSale}', [CreditSaleController::class, 'destroy'])->name('credit-sales.destroy');
     Route::delete('credit-sales/bulk/delete', [CreditSaleController::class, 'bulkDelete'])->name('credit-sales.bulk.delete');
-    Route::get('credit-sales/download-pdf', [CreditSaleController::class, 'downloadPdf'])->name('credit-sales.download.pdf');
     
     // Office Payment routes
     Route::get('office-payments', [OfficePaymentController::class, 'index'])->name('office-payments.index');
+    Route::get('office-payments/download-pdf', [OfficePaymentController::class, 'downloadPdf'])->name('office-payments.download.pdf');
     Route::post('office-payments', [OfficePaymentController::class, 'store'])->name('office-payments.store');
     Route::put('office-payments/{officePayment}', [OfficePaymentController::class, 'update'])->name('office-payments.update');
     Route::delete('office-payments/{officePayment}', [OfficePaymentController::class, 'destroy'])->name('office-payments.destroy');
     Route::delete('office-payments/bulk/delete', [OfficePaymentController::class, 'bulkDelete'])->name('office-payments.bulk.delete');
-    Route::get('office-payments/download-pdf', [OfficePaymentController::class, 'downloadPdf'])->name('office-payments.download.pdf');
     
     // Stock routes
     Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');

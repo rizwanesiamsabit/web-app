@@ -6,10 +6,12 @@ use App\Models\Voucher;
 use App\Models\Account;
 use App\Models\Shift;
 use App\Models\Transaction;
+use App\Models\CompanySetting;
 use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReceivedVoucherController extends Controller
 {
@@ -301,5 +303,50 @@ class ReceivedVoucherController extends Controller
         });
 
         return redirect()->back()->with('success', 'Received vouchers deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'fromTransaction', 'toTransaction'])
+            ->where('voucher_type', 'Received');
+
+        if ($request->search && is_string($request->search)) {
+            $searchTerm = trim($request->search);
+            if (strlen($searchTerm) > 0 && strlen($searchTerm) <= 100) {
+                $query->where(function($q) use ($searchTerm) {
+                    $q->orWhereHas('fromAccount', function($q) use ($searchTerm) {
+                          $q->where('name', 'like', '%' . $searchTerm . '%');
+                      })
+                      ->orWhereHas('toAccount', function($q) use ($searchTerm) {
+                          $q->where('name', 'like', '%' . $searchTerm . '%');
+                      });
+                });
+            }
+        }
+
+        if ($request->payment_type && $request->payment_type !== 'all' && in_array($request->payment_type, ['Cash', 'Bank', 'Mobile Bank', 'cash', 'bank', 'mobile bank'])) {
+            $query->whereHas('fromTransaction', function($q) use ($request) {
+                $q->where('payment_type', strtolower($request->payment_type));
+            });
+        }
+
+        if ($request->start_date && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->start_date)) {
+            $query->where('date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->end_date)) {
+            $query->where('date', '<=', $request->end_date);
+        }
+
+        $allowedSorts = ['created_at', 'date', 'id'];
+        $sortBy = in_array($request->sort_by, $allowedSorts) ? $request->sort_by : 'created_at';
+        $sortOrder = $request->sort_order === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        $vouchers = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.received-vouchers', compact('vouchers', 'companySetting'));
+        return $pdf->download('received-vouchers.pdf');
     }
 }

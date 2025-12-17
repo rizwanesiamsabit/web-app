@@ -8,9 +8,11 @@ use App\Models\Group;
 use App\Models\EmpType;
 use App\Models\EmpDepartment;
 use App\Models\EmpDesignation;
+use App\Models\CompanySetting;
 use App\Helpers\AccountHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class EmployeeController extends Controller
 {
@@ -283,10 +285,9 @@ class EmployeeController extends Controller
     public function downloadPdf()
     {
         $employees = Employee::with('empType', 'department', 'designation')->get();
+        $companySetting = CompanySetting::first();
 
-        $pdf = app('dompdf.wrapper');
-        $pdf->loadView('pdf.employees', compact('employees'));
-
-        return $pdf->download('employees-' . date('Y-m-d') . '.pdf');
+        $pdf = Pdf::loadView('pdf.employees', compact('employees', 'companySetting'));
+        return $pdf->stream('employees.pdf');
     }
 }

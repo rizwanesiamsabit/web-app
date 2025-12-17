@@ -8,11 +8,13 @@ use App\Models\Account;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\Stock;
+use App\Models\CompanySetting;
 use App\Helpers\TransactionHelper;
 use App\Helpers\InvoiceHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PurchaseController extends Controller
 {
@@ -459,5 +461,53 @@ class PurchaseController extends Controller
         });
 
         return redirect()->back()->with('success', 'Purchases deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = Purchase::with(['supplier', 'product', 'fromAccount', 'transaction']);
+
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('invoice_no', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('supplier', function($q) use ($request) {
+                      $q->where('name', 'like', '%' . $request->search . '%');
+                  });
+            });
+        }
+
+        if ($request->supplier && $request->supplier !== 'all') {
+            $query->whereHas('supplier', function($q) use ($request) {
+                $q->where('name', $request->supplier);
+            });
+        }
+
+        if ($request->payment_status && $request->payment_status !== 'all') {
+            if ($request->payment_status === 'paid') {
+                $query->where('due_amount', 0);
+            } elseif ($request->payment_status === 'partial') {
+                $query->where('paid_amount', '>', 0)->where('due_amount', '>', 0);
+            } elseif ($request->payment_status === 'due') {
+                $query->where('paid_amount', 0);
+            }
+        }
+
+        if ($request->start_date) {
+            $query->where('purchase_date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->where('purchase_date', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->sort_by ?? 'created_at';
+        $sortOrder = $request->sort_order ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        $purchases = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.purchases', compact('purchases', 'companySetting'));
+        return $pdf->stream();
     }
 }

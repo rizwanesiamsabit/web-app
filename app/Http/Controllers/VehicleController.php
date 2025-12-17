@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CompanySetting;
 use App\Models\Vehicle;
 use App\Models\Customer;
 use App\Models\Product;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,13 +19,13 @@ class VehicleController extends Controller
 
         // Apply filters
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('vehicle_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('vehicle_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('vehicle_type', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('customer', function($subQ) use ($request) {
-                      $subQ->where('name', 'like', '%' . $request->search . '%');
-                  });
+                    ->orWhere('vehicle_number', 'like', '%' . $request->search . '%')
+                    ->orWhere('vehicle_type', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('customer', function ($subQ) use ($request) {
+                        $subQ->where('name', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
@@ -149,13 +151,13 @@ class VehicleController extends Controller
 
         // Apply same filters as index method
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('vehicle_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('vehicle_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('vehicle_type', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('customer', function($subQ) use ($request) {
-                      $subQ->where('name', 'like', '%' . $request->search . '%');
-                  });
+                    ->orWhere('vehicle_number', 'like', '%' . $request->search . '%')
+                    ->orWhere('vehicle_type', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('customer', function ($subQ) use ($request) {
+                        $subQ->where('name', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
@@ -172,10 +174,9 @@ class VehicleController extends Controller
         $query->orderBy($sortBy, $sortOrder);
 
         $vehicles = $query->get();
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.vehicles', compact('vehicles', 'companySetting'));
-        $filename = 'vehicles_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        $pdf = Pdf::loadView('pdf.vehicles', compact('vehicles', 'companySetting'));
+        return $pdf->stream('vehicles.pdf');
     }
 }

@@ -8,14 +8,13 @@ use App\Models\Shift;
 use App\Models\Stock;
 use App\Models\Vehicle;
 use App\Models\Customer;
-use App\Models\Account;
-use App\Models\Transaction;
+use App\Models\CompanySetting;
 use App\Models\IsShiftClose;
-use App\Helpers\TransactionHelper;
 use App\Helpers\InvoiceHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CreditSaleController extends Controller
 {
@@ -60,20 +59,10 @@ class CreditSaleController extends Controller
 
         $creditSales = $query->paginate($request->per_page ?? 10);
 
-        $accounts = Account::with('group')
-            ->select('id', 'name', 'ac_number', 'group_id', 'group_code')
-            ->get();
-
-        $groupedAccounts = $accounts->groupBy(function ($account) {
-            return $account->group ? $account->group->name : 'Other';
-        });
-
         $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
 
         return Inertia::render('CreditSales/Index', [
             'creditSales' => $creditSales,
-            'accounts' => $accounts,
-            'groupedAccounts' => $groupedAccounts,
             'vehicles' => Vehicle::with(['customer:id,name', 'products:id,product_name'])->select('id', 'vehicle_number', 'customer_id')->get(),
             'customers' => Customer::where('status', true)->select('id', 'name')->get(),
             'products' => Product::with('activeRate')->select('id', 'product_name')->get()->map(function($product) {
@@ -249,5 +238,51 @@ class CreditSaleController extends Controller
         });
 
         return redirect()->back()->with('success', 'Credit sales deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = CreditSale::with(['product', 'shift', 'customer', 'vehicle']);
+
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('invoice_no', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('customer', function($q) use ($request) {
+                      $q->where('name', 'like', '%' . $request->search . '%');
+                  });
+            });
+        }
+
+        if ($request->customer && $request->customer !== 'all') {
+            $query->where('customer_id', $request->customer);
+        }
+
+        if ($request->payment_status && $request->payment_status !== 'all') {
+            if ($request->payment_status === 'paid') {
+                $query->where('due_amount', 0);
+            } elseif ($request->payment_status === 'partial') {
+                $query->where('paid_amount', '>', 0)->where('due_amount', '>', 0);
+            } elseif ($request->payment_status === 'due') {
+                $query->where('paid_amount', 0);
+            }
+        }
+
+        if ($request->start_date) {
+            $query->where('sale_date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->where('sale_date', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->sort_by ?? 'created_at';
+        $sortOrder = $request->sort_order ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        $creditSales = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.credit-sales', compact('creditSales', 'companySetting'));
+        return $pdf->stream();
     }
 }

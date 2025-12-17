@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Stock;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StockController extends Controller
 {
@@ -63,8 +65,6 @@ class StockController extends Controller
         ]);
     }
 
-
-
     public function store(Request $request)
     {
         $request->validate([
@@ -77,8 +77,6 @@ class StockController extends Controller
 
         return redirect()->back()->with('success', 'Stock created successfully.');
     }
-
-
 
     public function update(Request $request, Stock $stock)
     {
@@ -151,10 +149,9 @@ class StockController extends Controller
         $query->orderBy($sortBy, $sortOrder);
 
         $stocks = $query->get();
-        $companySetting = \App\Models\CompanySetting::first();
+        $companySetting = CompanySetting::first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.stocks', compact('stocks', 'companySetting'));
-        $filename = 'stocks_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        $pdf = Pdf::loadView('pdf.stocks', compact('stocks', 'companySetting'));
+        return $pdf->stream('stocks.pdf');
     }
 }

@@ -161,7 +161,6 @@ class CompanySettingController extends Controller
         $companySetting = CompanySetting::first(); // For header consistency
 
         $pdf = Pdf::loadView('pdf.company-settings', compact('companySettings', 'companySetting'));
-        $filename = 'company-settings_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream();
     }
 }

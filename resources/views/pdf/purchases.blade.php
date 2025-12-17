@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Vehicles List</title>
+    <title>Purchases Report</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,24 +79,28 @@
         th,
         td {
             border: 1px solid #ccc;
-            padding: 10px 8px;
+            padding: 8px 6px;
             text-align: left;
         }
 
         th {
             background-color: #f2f2f2;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             color: #000;
         }
 
         td {
-            font-size: 11px;
+            font-size: 10px;
             color: #333;
         }
 
         .text-center {
             text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
         }
 
         tr:nth-child(even) {
@@ -134,7 +138,6 @@
         }
     </style>
 </head>
-
 <body>
     <div class="header">
         <div class="logo">
@@ -168,34 +171,53 @@
     </div>
 
     <div class="title-section">
-        <div class="title-box">Vehicles List</div>
+        <div class="title-box">Purchases Report</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th class="text-center" style="width: 50px;">SL</th>
-                <th>Customer</th>
-                <th>Vehicle Name</th>
-                <th>Vehicle Number</th>
-                <th>Type</th>
+                <th class="text-center" style="width: 30px;">SL</th>
+                <th style="width: 70px;">Date</th>
+                <th>Supplier</th>
+                <th style="width: 80px;">Invoice No</th>
+                <th style="width: 70px;">Memo No</th>
+                <th class="text-right" style="width: 80px;">Total Amount</th>
+                <th class="text-right" style="width: 80px;">Paid Amount</th>
+                <th class="text-right" style="width: 80px;">Due Amount</th>
+                <th>Remarks</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($vehicles as $index => $vehicle)
+            @forelse($purchases as $index => $purchase)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ $vehicle->customer->name ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_name ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_number ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_type ?? 'N/A' }}</td>
+                <td>{{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d/m/Y') }}</td>
+                <td>{{ $purchase->supplier->name ?? 'N/A' }}</td>
+                <td>{{ $purchase->invoice_no ?? 'N/A' }}</td>
+                <td>{{ $purchase->memo_no ?? 'N/A' }}</td>
+                <td class="text-right">{{ number_format($purchase->net_total_amount ?? 0, 2) }}</td>
+                <td class="text-right">{{ number_format($purchase->paid_amount ?? 0, 2) }}</td>
+                <td class="text-right">{{ number_format($purchase->due_amount ?? 0, 2) }}</td>
+                <td>{{ $purchase->remarks ?? 'N/A' }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="5" class="text-center" style="padding: 20px; color: #999;">No vehicles found</td>
+                <td colspan="9" class="text-center" style="padding: 20px; color: #999;">No purchases found</td>
             </tr>
             @endforelse
         </tbody>
+        @if(count($purchases) > 0)
+        <tfoot>
+            <tr style="background-color: #e9ecef; font-weight: bold;">
+                <td colspan="5" class="text-right">Total:</td>
+                <td class="text-right">{{ number_format($purchases->sum('net_total_amount'), 2) }}</td>
+                <td class="text-right">{{ number_format($purchases->sum('paid_amount'), 2) }}</td>
+                <td class="text-right">{{ number_format($purchases->sum('due_amount'), 2) }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <div class="footer">
@@ -203,9 +225,8 @@
             Generated on: {{ date('Y-m-d H:i:s') }}
         </div>
         <div class="footer-right">
-            Total Records: {{ count($vehicles) }}
+            Total Records: {{ count($purchases) }}
         </div>
     </div>
 </body>
-
 </html>

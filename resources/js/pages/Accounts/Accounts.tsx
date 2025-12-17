@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Edit, Filter, Plus, Trash2, X, Database } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, Filter, Plus, Trash2, X, Database, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Group {
@@ -213,10 +213,27 @@ export default function Accounts({ accounts, groups = [], filters }: AccountsPro
                             Manage chart of accounts
                         </p>
                     </div>
-                    <Button onClick={() => setIsCreateOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Account
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                if (search) params.append('search', search);
+                                if (group !== 'all') params.append('group', group);
+                                if (filters?.status !== 'all') params.append('status', filters?.status || '');
+                                if (sortBy) params.append('sort_by', sortBy);
+                                if (sortOrder) params.append('sort_order', sortOrder);
+                                window.location.href = `/accounts/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Download
+                        </Button>
+                        <Button onClick={() => setIsCreateOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Account
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filter Card */}

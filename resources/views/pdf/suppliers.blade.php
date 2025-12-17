@@ -32,7 +32,6 @@
                 <th>Email</th>
                 <th>Address</th>
                 <th>Proprietor</th>
-                <th>Status</th>
                 <th>Created</th>
             </tr>
         </thead>
@@ -45,9 +44,6 @@
                 <td>{{ $supplier->email ?? 'N/A' }}</td>
                 <td>{{ $supplier->address ?? 'N/A' }}</td>
                 <td>{{ $supplier->proprietor_name ?? 'N/A' }}</td>
-                <td class="{{ $supplier->status ? 'status-active' : 'status-inactive' }}">
-                    {{ $supplier->status ? 'Active' : 'Inactive' }}
-                </td>
                 <td>{{ $supplier->created_at->format('Y-m-d') }}</td>
             </tr>
             @endforeach

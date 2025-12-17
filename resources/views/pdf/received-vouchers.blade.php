@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Vehicles List</title>
+    <title>Received Vouchers List</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -168,31 +168,33 @@
     </div>
 
     <div class="title-section">
-        <div class="title-box">Vehicles List</div>
+        <div class="title-box">Received Vouchers List</div>
     </div>
 
     <table>
         <thead>
             <tr>
                 <th class="text-center" style="width: 50px;">SL</th>
-                <th>Customer</th>
-                <th>Vehicle Name</th>
-                <th>Vehicle Number</th>
-                <th>Type</th>
+                <th>Date</th>
+                <th>From Account</th>
+                <th>To Account</th>
+                <th style="width: 100px;">Amount</th>
+                <th style="width: 100px;">Payment Type</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($vehicles as $index => $vehicle)
+            @forelse($vouchers as $index => $voucher)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ $vehicle->customer->name ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_name ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_number ?? 'N/A' }}</td>
-                <td>{{ $vehicle->vehicle_type ?? 'N/A' }}</td>
+                <td>{{ \Carbon\Carbon::parse($voucher->date)->format('Y-m-d') }}</td>
+                <td>{{ $voucher->fromAccount->name ?? 'N/A' }}</td>
+                <td>{{ $voucher->toAccount->name ?? 'N/A' }}</td>
+                <td class="text-center">{{ number_format($voucher->toTransaction->amount ?? 0, 2) }}</td>
+                <td class="text-center">{{ ucfirst($voucher->fromTransaction->payment_type ?? 'Cash') }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="5" class="text-center" style="padding: 20px; color: #999;">No vehicles found</td>
+                <td colspan="6" class="text-center" style="padding: 20px; color: #999;">No received vouchers found</td>
             </tr>
             @endforelse
         </tbody>
@@ -203,7 +205,7 @@
             Generated on: {{ date('Y-m-d H:i:s') }}
         </div>
         <div class="footer-right">
-            Total Records: {{ count($vehicles) }}
+            Total Records: {{ count($vouchers) }}
         </div>
     </div>
 </body>

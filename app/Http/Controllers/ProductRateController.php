@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\ProductRate;
 use App\Models\Product;
+use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductRateController extends Controller
 {
@@ -119,5 +121,42 @@ class ProductRateController extends Controller
 
         ProductRate::whereIn('id', $request->ids)->delete();
         return redirect()->back()->with('success', count($request->ids) . ' product rates deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = ProductRate::with('product');
+
+        if ($request->search) {
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('product_name', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->product_id) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->start_date) {
+            $query->whereDate('effective_date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->whereDate('effective_date', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->get('sort_by', 'effective_date');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $rates = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.product-rates', compact('rates', 'companySetting'));
+        return $pdf->stream('product-rates.pdf');
     }
 }

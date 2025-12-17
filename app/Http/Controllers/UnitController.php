@@ -132,7 +132,6 @@ class UnitController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.units', compact('units', 'companySetting'));
-        $filename = 'units_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('units.pdf');
     }
 }

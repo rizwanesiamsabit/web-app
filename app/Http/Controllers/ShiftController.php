@@ -135,7 +135,6 @@ class ShiftController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.shifts', compact('shifts', 'companySetting'));
-        $filename = 'shifts_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('shifts.pdf');
     }
 }

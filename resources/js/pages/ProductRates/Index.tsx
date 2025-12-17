@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, DollarSign, ChevronUp, ChevronDown, Filter, X } from 'lucide-react';
+import { Plus, Edit, Trash2, DollarSign, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface Product {
@@ -248,6 +248,23 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                                 Delete Selected ({selectedRates.length})
                             </Button>
                         )}
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                if (search) params.append('search', search);
+                                if (status !== 'all') params.append('status', status);
+                                if (productId) params.append('product_id', productId);
+                                if (startDate) params.append('start_date', startDate);
+                                if (endDate) params.append('end_date', endDate);
+                                if (sortBy) params.append('sort_by', sortBy);
+                                if (sortOrder) params.append('sort_order', sortOrder);
+                                window.location.href = `/product-rates/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Download
+                        </Button>
                         <Button
                             onClick={() => setIsCreateOpen(true)}
                         >

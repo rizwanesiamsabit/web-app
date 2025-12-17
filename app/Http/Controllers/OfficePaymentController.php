@@ -8,10 +8,12 @@ use App\Models\Shift;
 use App\Models\Group;
 use App\Models\Transaction;
 use App\Models\IsShiftClose;
+use App\Models\CompanySetting;
 use App\Helpers\TransactionHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OfficePaymentController extends Controller
 {
@@ -224,5 +226,44 @@ class OfficePaymentController extends Controller
         });
 
         return redirect()->back()->with('success', 'Office payments deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = OfficePayment::with(['shift', 'to_account', 'transaction']);
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('to_account', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%');
+                });
+            });
+        }
+
+        if ($request->start_date) {
+            $query->where('date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->where('date', '<=', $request->end_date);
+        }
+
+        if ($request->type) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->shift_id) {
+            $query->where('shift_id', $request->shift_id);
+        }
+
+        $sortBy = $request->sort_by ?? 'created_at';
+        $sortOrder = $request->sort_order ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        $officePayments = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.office-payments', compact('officePayments', 'companySetting'));
+        return $pdf->stream();
     }
 }

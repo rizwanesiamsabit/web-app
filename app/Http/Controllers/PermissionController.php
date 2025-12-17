@@ -135,7 +135,6 @@ class PermissionController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.permissions', compact('permissions', 'companySetting'));
-        $filename = 'permissions_' . date('Y-m-d_H-i-s') . '.pdf';
-        return $pdf->download($filename);
+        return $pdf->stream('permissions.pdf');
     }
 }
