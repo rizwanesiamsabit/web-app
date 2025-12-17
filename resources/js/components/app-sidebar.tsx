@@ -111,7 +111,7 @@ const mainNavItems = [
             { title: 'Purchase', href: '/purchases', icon: ShoppingCart },
             {
                 title: 'Purchase Report Details',
-                href: '#',
+                href: '/purchase-report-details',
                 icon: FileText,
             },
         ],

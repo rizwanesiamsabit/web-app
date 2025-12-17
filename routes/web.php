@@ -36,6 +36,7 @@ use App\Http\Controllers\DispenserController;
 use App\Http\Controllers\DispenserReadingController;
 use App\Http\Controllers\ProductRateController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\PurchaseReportController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -305,6 +306,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Customer Ledger Details routes
     Route::get('customer-ledger-details/{customer}', [CustomerLedgerDetailsController::class, 'index'])->name('customer-ledger-details.index');
     Route::get('customer-ledger-details/{customer}/download-pdf', [CustomerLedgerDetailsController::class, 'downloadPdf'])->name('customer-ledger-details.download.pdf');
+    
+    // Purchase Report Details routes
+    Route::get('purchase-report-details', [PurchaseReportController::class, 'index'])->name('purchase-report-details.index');
+    Route::get('purchase-report-details/download-pdf', [PurchaseReportController::class, 'downloadPdf'])->name('purchase-report-details.download.pdf');
 });
 
 require __DIR__.'/settings.php';
