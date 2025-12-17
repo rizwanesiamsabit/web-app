@@ -35,6 +35,7 @@ use App\Http\Controllers\CustomerLedgerDetailsController;
 use App\Http\Controllers\DispenserController;
 use App\Http\Controllers\DispenserReadingController;
 use App\Http\Controllers\ProductRateController;
+use App\Http\Controllers\StockController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -266,6 +267,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('office-payments/{officePayment}', [OfficePaymentController::class, 'destroy'])->name('office-payments.destroy');
     Route::delete('office-payments/bulk/delete', [OfficePaymentController::class, 'bulkDelete'])->name('office-payments.bulk.delete');
     Route::get('office-payments/download-pdf', [OfficePaymentController::class, 'downloadPdf'])->name('office-payments.download.pdf');
+    
+    // Stock routes
+    Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');
+    Route::post('stocks', [StockController::class, 'store'])->name('stocks.store');
+    Route::put('stocks/{stock}', [StockController::class, 'update'])->name('stocks.update');
+    Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
     
     // Stock Report routes
     Route::get('stock-report', [StockReportController::class, 'index'])->name('stock-report.index');

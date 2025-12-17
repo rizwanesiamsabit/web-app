@@ -106,6 +106,7 @@ const mainNavItems = [
         title: 'Product Stock',
         icon: Warehouse,
         children: [
+            { title: 'Stocks', href: '/stocks', icon: Package },
             { title: 'Today Stock Report', href: '/stock-report', icon: BarChart3 },
         ],
     },
