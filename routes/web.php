@@ -258,7 +258,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
     Route::delete('sales/bulk/delete', [SaleController::class, 'bulkDelete'])->name('sales.bulk.delete');
     Route::get('sales/download-pdf', [SaleController::class, 'downloadPdf'])->name('sales.download.pdf');
-    Route::get('sales/{sale}/pdf', [SaleController::class, 'downloadPdf'])->name('sales.pdf');
+
     Route::get('sales/batch/{batchCode}/pdf', [SaleController::class, 'downloadBatchPdf'])->name('sales.batch.pdf');
     
     // Credit Sale routes

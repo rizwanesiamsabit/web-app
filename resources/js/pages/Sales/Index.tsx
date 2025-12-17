@@ -43,6 +43,7 @@ interface Sale {
     due_amount: number;
     remarks: string;
     created_at: string;
+    batch_code?: string;
 }
 
 interface Account {
@@ -220,9 +221,9 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
         });
     };
 
-    const [errors, setErrors] = useState<any>({});
     const [processing, setProcessing] = useState(false);
     const [availableShifts, setAvailableShifts] = useState<Shift[]>(shifts);
+    const [cartErrors, setCartErrors] = useState<{[key: number]: boolean}>({});
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -237,11 +238,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
             shift_id: data.shift_id,
             products: validProducts
         };
-        
-        console.log('=== FORM SUBMISSION DATA ===');
-        console.log('Raw Form Data:', data);
-        console.log('Valid Products:', validProducts);
-        console.log('Submit Data:', submitData);
         
         if (editingSale) {
             const updateData = {
@@ -269,8 +265,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 invoice_no: editingSale.invoice_no,
             };
             
-            console.log('=== EDIT MODE ===');
-            console.log('Update Data:', updateData);
+
             
             router.put(`/sales/${editingSale.id}`, updateData, {
                 onSuccess: () => {
@@ -280,9 +275,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 },
             });
         } else {
-            console.log('=== CREATE MODE ===');
-            console.log('Creating new sale with data:', submitData);
-            
             setProcessing(true);
             router.post('/sales', submitData, {
                 onSuccess: () => {
@@ -290,8 +282,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                     reset();
                     setProcessing(false);
                 },
-                onError: (errors) => {
-                    setErrors(errors);
+                onError: () => {
                     setProcessing(false);
                 },
             });
@@ -460,10 +451,16 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
         }
     };
 
+    const validateCartProduct = (product: any, index: number) => {
+        const hasError = !product.product_id || !product.customer || !product.vehicle_no || !product.quantity || !product.amount || !product.to_account_id || !product.paid_amount;
+        setCartErrors(prev => ({...prev, [index]: hasError}));
+        return !hasError;
+    };
+
     const addProduct = () => {
         const firstProduct = data.products[0];
-        if (!firstProduct.product_id || !firstProduct.customer || !firstProduct.vehicle_no || !firstProduct.quantity || !firstProduct.amount) {
-            alert('Please fill product, customer, vehicle, quantity and amount');
+        if (!validateCartProduct(firstProduct, 0)) {
+            alert('Please fill all required fields');
             return;
         }
 
@@ -801,7 +798,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                             </div>
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Batch Code</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Customer</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Vehicle</th>
@@ -827,7 +823,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">{new Date(sale.sale_date).toLocaleDateString('en-GB')}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.shift.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.batch_code || 'N/A'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.invoice_no}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.customer}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.vehicle_no}</td>
@@ -859,14 +854,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                                 <FileText className="h-4 w-4" />
                                                             </Button>
                                                         )}
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => window.open(`/sales/${sale.id}/pdf`, '_blank')}
-                                                            className="text-green-600 hover:text-green-800"
-                                                        >
-                                                            <FileText className="h-4 w-4" />
-                                                        </Button>
+
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -889,7 +877,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={12} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={11} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No sales found
                                             </td>
@@ -1219,8 +1207,9 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         {data.products.slice(1).filter(p => p.product_id).map((product, index) => {
                                             const selectedProduct = products.find(p => p.id.toString() === product.product_id);
                                             const actualIndex = index + 1;
+                                            const hasError = !product.product_id || !product.customer || !product.vehicle_no || !product.quantity || !product.amount || !product.to_account_id || !product.paid_amount;
                                             return (
-                                                <tr key={actualIndex} className="border-t dark:border-gray-600">
+                                                <tr key={actualIndex} className={`border-t dark:border-gray-600 ${hasError ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}>
                                                     <td className="p-2 text-sm dark:text-white">{index + 1}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.customer || '-'}</td>
                                                     <td className="p-2 text-sm dark:text-white">{product.vehicle_no || '-'}</td>
