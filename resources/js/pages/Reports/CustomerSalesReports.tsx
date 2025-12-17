@@ -154,6 +154,7 @@ export default function CustomerSalesReports({ customerSales = [], customers = [
                                                 <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
                                                 <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
                                                 <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Quantity</th>
+                                                <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Amount</th>
                                                 <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                             </tr>
                                         </thead>
@@ -166,13 +167,14 @@ export default function CustomerSalesReports({ customerSales = [], customers = [
                                                     <td className="p-2 text-[13px] dark:text-gray-300">{sale.invoice_no}</td>
                                                     <td className="p-2 text-right text-[13px] dark:text-gray-300">{parseFloat(sale.quantity.toString()).toLocaleString()}</td>
                                                     <td className="p-2 text-right text-[13px] dark:text-gray-300">{parseFloat(sale.total_amount.toString()).toLocaleString()}</td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-gray-300">{parseFloat(sale.total_amount.toString()).toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                         <tfoot>
                                             <tr className="border-t font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-700">
-                                                <td colSpan={4} className="p-2 text-[13px] dark:text-white">Grand Total:</td>
-                                                <td className="p-2 text-right text-[13px] dark:text-white">{totalQuantity.toFixed(2)}</td>
+                                                <td colSpan={5} className="p-2 text-[13px] dark:text-white">Grand Total:</td>
+                                                <td className="p-2 text-right text-[13px] dark:text-white">{totalAmount.toFixed(2)}</td>
                                                 <td className="p-2 text-right text-[13px] dark:text-white">{totalAmount.toFixed(2)}</td>
                                             </tr>
                                         </tfoot>

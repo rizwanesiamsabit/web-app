@@ -316,6 +316,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Customer Sales Reports routes
     Route::get('customer-wise-sales-reports', [CustomerSalesReportController::class, 'index'])->name('customer-sales-reports.index');
+    Route::get('customer-wise-sales-reports/download-pdf', [CustomerSalesReportController::class, 'downloadPdf'])->name('customer-sales-reports.download.pdf');
 });
 
 require __DIR__.'/settings.php';
