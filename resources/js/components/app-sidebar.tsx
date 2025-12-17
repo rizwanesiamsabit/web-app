@@ -84,12 +84,6 @@ const mainNavItems = [
         icon: Truck,
         children: [
             { title: 'Suppliers', href: '/suppliers', icon: Truck },
-            {
-                title: 'Supplier Payment Voucher Entry',
-                href: '#',
-                icon: FileText,
-            },
-            { title: 'Supplier Ledger Report', href: '#', icon: BarChart3 },
         ],
     },
     {
