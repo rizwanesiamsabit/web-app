@@ -74,7 +74,7 @@ class CreditSaleController extends Controller
             'creditSales' => $creditSales,
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
-            'vehicles' => Vehicle::with(['customer:id,name', 'product:id,product_name'])->select('id', 'vehicle_number', 'customer_id', 'product_id')->get(),
+            'vehicles' => Vehicle::with(['customer:id,name', 'products:id,product_name'])->select('id', 'vehicle_number', 'customer_id')->get(),
             'customers' => Customer::where('status', true)->select('id', 'name')->get(),
             'products' => Product::with('activeRate')->select('id', 'product_name')->get()->map(function($product) {
                 return [
@@ -129,7 +129,7 @@ class CreditSaleController extends Controller
                     'customer_id' => $productData['customer_id'],
                     'vehicle_id' => $productData['vehicle_id'],
                     'product_id' => $productData['product_id'],
-                    'purchase_price' => $product->purchase_price ?? 0,
+                    'purchase_price' => $product->activeRate ? $product->activeRate->purchase_price : 0,
                     'quantity' => $productData['quantity'],
                     'amount' => $amount,
                     'discount' => $discount,

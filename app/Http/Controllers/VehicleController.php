@@ -12,8 +12,8 @@ class VehicleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Vehicle::select('id', 'customer_id', 'product_id', 'vehicle_type', 'vehicle_name', 'vehicle_number', 'reg_date', 'status', 'created_at')
-            ->with('customer:id,name', 'product:id,product_name');
+        $query = Vehicle::select('id', 'customer_id', 'vehicle_type', 'vehicle_name', 'vehicle_number', 'reg_date', 'status', 'created_at')
+            ->with('customer:id,name', 'products:id,product_name');
 
         // Apply filters
         if ($request->search) {
@@ -46,14 +46,13 @@ class VehicleController extends Controller
             return [
                 'id' => $vehicle->id,
                 'customer_id' => $vehicle->customer_id,
-                'product_id' => $vehicle->product_id,
                 'vehicle_type' => $vehicle->vehicle_type,
                 'vehicle_name' => $vehicle->vehicle_name,
                 'vehicle_number' => $vehicle->vehicle_number,
                 'reg_date' => $vehicle->reg_date?->format('Y-m-d'),
                 'status' => $vehicle->status,
                 'customer' => $vehicle->customer,
-                'product' => $vehicle->product,
+                'products' => $vehicle->products,
                 'created_at' => $vehicle->created_at->format('Y-m-d'),
             ];
         });
@@ -73,7 +72,8 @@ class VehicleController extends Controller
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'product_id' => 'nullable|exists:products,id',
+            'product_ids' => 'nullable|array',
+            'product_ids.*' => 'exists:products,id',
             'vehicle_type' => 'nullable|string|max:150',
             'vehicle_name' => 'nullable|string|max:150',
             'vehicle_number' => 'nullable|string|max:50',
@@ -81,15 +81,18 @@ class VehicleController extends Controller
             'status' => 'boolean'
         ]);
 
-        Vehicle::create([
+        $vehicle = Vehicle::create([
             'customer_id' => $request->customer_id,
-            'product_id' => $request->product_id,
             'vehicle_type' => $request->vehicle_type,
             'vehicle_name' => $request->vehicle_name,
             'vehicle_number' => $request->vehicle_number,
             'reg_date' => $request->reg_date,
             'status' => $request->status ?? true,
         ]);
+
+        if ($request->product_ids) {
+            $vehicle->products()->attach($request->product_ids);
+        }
 
         return redirect()->back()->with('success', 'Vehicle created successfully.');
     }
@@ -98,7 +101,8 @@ class VehicleController extends Controller
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'product_id' => 'nullable|exists:products,id',
+            'product_ids' => 'nullable|array',
+            'product_ids.*' => 'exists:products,id',
             'vehicle_type' => 'nullable|string|max:150',
             'vehicle_name' => 'nullable|string|max:150',
             'vehicle_number' => 'nullable|string|max:50',
@@ -108,13 +112,14 @@ class VehicleController extends Controller
 
         $vehicle->update([
             'customer_id' => $request->customer_id,
-            'product_id' => $request->product_id,
             'vehicle_type' => $request->vehicle_type,
             'vehicle_name' => $request->vehicle_name,
             'vehicle_number' => $request->vehicle_number,
             'reg_date' => $request->reg_date,
             'status' => $request->status ?? true,
         ]);
+
+        $vehicle->products()->sync($request->product_ids ?? []);
 
         return redirect()->back()->with('success', 'Vehicle updated successfully.');
     }
@@ -139,8 +144,8 @@ class VehicleController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $query = Vehicle::select('id', 'customer_id', 'product_id', 'vehicle_type', 'vehicle_name', 'vehicle_number', 'reg_date', 'status', 'created_at')
-            ->with('customer:id,name', 'product:id,product_name');
+        $query = Vehicle::select('id', 'customer_id', 'vehicle_type', 'vehicle_name', 'vehicle_number', 'reg_date', 'status', 'created_at')
+            ->with('customer:id,name', 'products:id,product_name');
 
         // Apply same filters as index method
         if ($request->search) {

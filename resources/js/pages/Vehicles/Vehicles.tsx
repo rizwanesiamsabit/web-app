@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DeleteModal } from '@/components/ui/delete-modal';
@@ -26,14 +27,13 @@ interface Product {
 interface Vehicle {
     id: number;
     customer_id: number;
-    product_id?: number;
     vehicle_type?: string;
     vehicle_name?: string;
     vehicle_number?: string;
     reg_date?: string;
     status: boolean;
     customer?: Customer;
-    product?: Product;
+    products?: Product[];
     created_at: string;
 }
 
@@ -85,7 +85,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         customer_id: '',
-        product_id: '',
+        product_ids: [] as string[],
         vehicle_type: '',
         vehicle_name: '',
         vehicle_number: '',
@@ -116,7 +116,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
         setEditingVehicle(vehicle);
         setData({
             customer_id: vehicle.customer_id.toString(),
-            product_id: vehicle.product_id?.toString() || '',
+            product_ids: vehicle.products?.map(p => p.id.toString()) || [],
             vehicle_type: vehicle.vehicle_type || '',
             vehicle_name: vehicle.vehicle_name || '',
             vehicle_number: vehicle.vehicle_number || '',
@@ -416,7 +416,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                             Type
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Product
+                                            Products
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
@@ -462,17 +462,23 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {vehicle.vehicle_type || 'N/A'}
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {vehicle.product?.product_name || 'N/A'}
+                                                <td className="p-4">
+                                                    {vehicle.products && vehicle.products.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {vehicle.products.map(p => (
+                                                                <Badge key={p.id} variant="secondary">
+                                                                    {p.product_name}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-[13px] dark:text-gray-300">N/A</span>
+                                                    )}
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`px-2 py-1 rounded text-xs ${
-                                                        vehicle.status 
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                                    }`}>
+                                                    <Badge variant={vehicle.status ? 'success' : 'destructive'}>
                                                         {vehicle.status ? 'Active' : 'Inactive'}
-                                                    </span>
+                                                    </Badge>
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
@@ -568,25 +574,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                         </Select>
                         {errors.customer_id && <span className="text-sm text-red-500">{errors.customer_id}</span>}
                     </div>
-                    
-                    <div>
-                        <Label className="dark:text-gray-200">Product</Label>
-                        <Select
-                            value={data.product_id}
-                            onValueChange={(value) => setData('product_id', value)}
-                        >
-                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select Product" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {products.map((product) => (
-                                    <SelectItem key={product.id} value={product.id.toString()}>
-                                        {product.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -635,17 +622,40 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                     </div>
 
                     <div>
+                        <Label className="dark:text-gray-200">Products</Label>
+                        <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto border rounded p-2 dark:border-gray-600 dark:bg-gray-700">
+                            {products.map((product) => (
+                                <label key={product.id} className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.product_ids.includes(product.id.toString())}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setData('product_ids', [...data.product_ids, product.id.toString()]);
+                                            } else {
+                                                setData('product_ids', data.product_ids.filter(id => id !== product.id.toString()));
+                                            }
+                                        }}
+                                        className="rounded border-gray-300 dark:border-gray-600"
+                                    />
+                                    <span className="text-sm dark:text-white">{product.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
                         <Label className="dark:text-gray-200">Status</Label>
                         <Select
-                            value={data.status ? 'true' : 'false'}
-                            onValueChange={(value) => setData('status', value === 'true')}
+                            value={data.status ? 'active' : 'inactive'}
+                            onValueChange={(value) => setData('status', value === 'active')}
                         >
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                 <SelectValue placeholder="Select Status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="true">Active</SelectItem>
-                                <SelectItem value="false">Inactive</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -680,25 +690,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                             </SelectContent>
                         </Select>
                         {errors.customer_id && <span className="text-sm text-red-500">{errors.customer_id}</span>}
-                    </div>
-                    
-                    <div>
-                        <Label className="dark:text-gray-200">Product</Label>
-                        <Select
-                            value={data.product_id}
-                            onValueChange={(value) => setData('product_id', value)}
-                        >
-                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select Product" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {products.map((product) => (
-                                    <SelectItem key={product.id} value={product.id.toString()}>
-                                        {product.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -748,17 +739,40 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                     </div>
 
                     <div>
+                        <Label className="dark:text-gray-200">Products</Label>
+                        <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto border rounded p-2 dark:border-gray-600 dark:bg-gray-700">
+                            {products.map((product) => (
+                                <label key={product.id} className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.product_ids.includes(product.id.toString())}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setData('product_ids', [...data.product_ids, product.id.toString()]);
+                                            } else {
+                                                setData('product_ids', data.product_ids.filter(id => id !== product.id.toString()));
+                                            }
+                                        }}
+                                        className="rounded border-gray-300 dark:border-gray-600"
+                                    />
+                                    <span className="text-sm dark:text-white">{product.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
                         <Label className="dark:text-gray-200">Status</Label>
                         <Select
-                            value={data.status ? 'true' : 'false'}
-                            onValueChange={(value) => setData('status', value === 'true')}
+                            value={data.status ? 'active' : 'inactive'}
+                            onValueChange={(value) => setData('status', value === 'active')}
                         >
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                 <SelectValue placeholder="Select Status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="true">Active</SelectItem>
-                                <SelectItem value="false">Inactive</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

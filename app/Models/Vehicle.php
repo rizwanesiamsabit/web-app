@@ -8,7 +8,6 @@ class Vehicle extends Model
 {
     protected $fillable = [
         'customer_id',
-        'product_id',
         'vehicle_type',
         'vehicle_name',
         'vehicle_number',
@@ -26,9 +25,9 @@ class Vehicle extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function product()
+    public function products()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsToMany(Product::class, 'vehicle_products');
     }
 
     public function sales()

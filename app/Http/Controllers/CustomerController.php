@@ -125,7 +125,8 @@ class CustomerController extends Controller
             'address' => 'nullable|string',
             'status' => 'boolean',
             // Vehicle validation
-            'product_id' => 'nullable|exists:products,id',
+            'product_ids' => 'nullable|array',
+            'product_ids.*' => 'exists:products,id',
             'vehicle_type' => 'nullable|string|max:150',
             'vehicle_name' => 'nullable|string|max:150',
             'vehicle_number' => 'nullable|string|max:50',
@@ -162,16 +163,19 @@ class CustomerController extends Controller
         ]);
 
         // Create vehicle if vehicle data provided
-        if ($request->product_id || $request->vehicle_type || $request->vehicle_name || $request->vehicle_number) {
-            Vehicle::create([
+        if ($request->product_ids || $request->vehicle_type || $request->vehicle_name || $request->vehicle_number) {
+            $vehicle = Vehicle::create([
                 'customer_id' => $customer->id,
-                'product_id' => $request->product_id,
                 'vehicle_type' => $request->vehicle_type,
                 'vehicle_name' => $request->vehicle_name,
                 'vehicle_number' => $request->vehicle_number,
                 'reg_date' => $request->reg_date,
                 'status' => $request->status ?? true,
             ]);
+            
+            if ($request->product_ids) {
+                $vehicle->products()->attach($request->product_ids);
+            }
         }
 
         return redirect()->back()->with('success', 'Customer created successfully.');
@@ -181,8 +185,8 @@ class CustomerController extends Controller
     {
         $customer->load([
             'account:id,name,ac_number',
-            'vehicles:id,customer_id,product_id,vehicle_number,vehicle_name,vehicle_type,reg_date',
-            'vehicles.product:id,product_name'
+            'vehicles:id,customer_id,vehicle_number,vehicle_name,vehicle_type,reg_date',
+            'vehicles.products:id,product_name'
         ]);
 
         $recentPayments = [];
