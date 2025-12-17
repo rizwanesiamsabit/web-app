@@ -16,6 +16,14 @@ class CustomerDetailsBillController extends Controller
         $endDate = $request->end_date ?? date('Y-m-d');
         $customerId = $request->customer_id;
 
+        if (!$customerId) {
+            return Inertia::render('CustomerDetailsBill/Index', [
+                'bills' => [],
+                'customers' => Customer::select('id', 'name')->get(),
+                'filters' => $request->only(['customer_id', 'start_date', 'end_date'])
+            ]);
+        }
+
         $query = DB::table('credit_sales')
             ->join('customers', 'credit_sales.customer_id', '=', 'customers.id')
             ->join('vehicles', 'credit_sales.vehicle_id', '=', 'vehicles.id')
@@ -26,11 +34,8 @@ class CustomerDetailsBillController extends Controller
                      ->where('product_rates.status', true);
             })
             ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
-            ->whereBetween('credit_sales.sale_date', [$startDate, $endDate]);
-
-        if ($customerId) {
-            $query->where('credit_sales.customer_id', $customerId);
-        }
+            ->whereBetween('credit_sales.sale_date', [$startDate, $endDate])
+            ->where('credit_sales.customer_id', $customerId);
 
         $sales = $query->select(
             'credit_sales.id',

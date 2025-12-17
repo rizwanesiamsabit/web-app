@@ -59,30 +59,25 @@ interface CustomerDetailsBillProps {
 }
 
 export default function CustomerDetailsBill({ bills = [], customers = [], filters = {} }: CustomerDetailsBillProps) {
-    const [customerId, setCustomerId] = useState(filters.customer_id || 'all');
+    const [customerId, setCustomerId] = useState(filters.customer_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(filters.end_date || new Date().toISOString().split('T')[0]);
 
     const applyFilters = () => {
+        if (!customerId) return;
         const params: any = {
+            customer_id: customerId,
             start_date: startDate,
             end_date: endDate,
         };
-        if (customerId !== 'all') {
-            params.customer_id = customerId;
-        }
         router.get('/customer-details-bill', params, { preserveState: true });
     };
 
     const clearFilters = () => {
         const today = new Date().toISOString().split('T')[0];
-        setCustomerId('all');
+        setCustomerId('');
         setStartDate(today);
         setEndDate(today);
-        router.get('/customer-details-bill', {
-            start_date: today,
-            end_date: today,
-        }, { preserveState: true });
     };
 
     return (
@@ -101,7 +96,7 @@ export default function CustomerDetailsBill({ bills = [], customers = [], filter
                             const params = new URLSearchParams();
                             params.append('start_date', startDate);
                             params.append('end_date', endDate);
-                            if (customerId !== 'all') {
+                            if (customerId) {
                                 params.append('customer_id', customerId);
                             }
                             window.location.href = `/customer-details-bill/download-pdf?${params.toString()}`;
@@ -127,7 +122,7 @@ export default function CustomerDetailsBill({ bills = [], customers = [], filter
                                         <SelectValue placeholder="Select customer" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All Customers</SelectItem>
+
                                         {customers.map((customer) => (
                                             <SelectItem key={customer.id} value={customer.id.toString()}>
                                                 {customer.name}
@@ -155,8 +150,8 @@ export default function CustomerDetailsBill({ bills = [], customers = [], filter
                                 />
                             </div>
                             <div className="flex items-end gap-2 md:col-span-2">
-                                <Button onClick={applyFilters} className="flex-1">Apply Filters</Button>
-                                <Button onClick={clearFilters} variant="secondary" className="flex-1">
+                                <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
+                                <Button onClick={clearFilters} variant="secondary" className="px-4">
                                     <X className="mr-2 h-4 w-4" />Clear
                                 </Button>
                             </div>

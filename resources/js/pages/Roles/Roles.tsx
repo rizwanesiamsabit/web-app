@@ -288,10 +288,10 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                 />
                             </div>
                             <div className="flex items-end gap-2">
-                                <Button onClick={applyFilters} className="flex-1">
+                                <Button onClick={applyFilters} className="px-4">
                                     Apply Filters
                                 </Button>
-                                <Button onClick={clearFilters} variant="outline" className="flex-1">
+                                <Button onClick={clearFilters} variant="outline" className="px-4">
                                     <X className="h-4 w-4 mr-2" />
                                     Clear
                                 </Button>

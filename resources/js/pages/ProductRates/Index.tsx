@@ -334,14 +334,14 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                             <div className="flex items-end gap-2">
                                 <Button
                                     onClick={applyFilters}
-                                    className="flex-1"
+                                    className="px-4"
                                 >
                                     Apply Filters
                                 </Button>
                                 <Button
                                     onClick={clearFilters}
                                     variant="secondary"
-                                    className="flex-1"
+                                    className="px-4"
                                 >
                                     <X className="mr-2 h-4 w-4" />
                                     Clear
