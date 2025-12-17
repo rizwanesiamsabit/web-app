@@ -214,6 +214,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
     Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
     Route::get('suppliers/{supplier}/statement', [SupplierController::class, 'statement'])->name('suppliers.statement');
+    Route::get('suppliers/{supplier}/purchases-pdf', [SupplierController::class, 'downloadPurchasesPdf'])->name('suppliers.purchases.pdf');
+    Route::get('suppliers/{supplier}/payments-pdf', [SupplierController::class, 'downloadPaymentsPdf'])->name('suppliers.payments.pdf');
     Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
     Route::delete('suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
     Route::delete('suppliers/bulk/delete', [SupplierController::class, 'bulkDelete'])->name('suppliers.bulk.delete');

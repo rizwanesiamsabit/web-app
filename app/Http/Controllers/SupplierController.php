@@ -380,4 +380,69 @@ class SupplierController extends Controller
         $filename = 'suppliers_' . date('Y-m-d_H-i-s') . '.pdf';
         return $pdf->download($filename);
     }
+
+    public function downloadPurchasesPdf(Request $request, Supplier $supplier)
+    {
+        $supplier->load('account');
+        
+        $purchaseQuery = $supplier->purchases();
+        
+        if ($request->start_date) {
+            $purchaseQuery->whereDate('purchase_date', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $purchaseQuery->whereDate('purchase_date', '<=', $request->end_date);
+        }
+        
+        $purchases = $purchaseQuery->orderBy('purchase_date', 'desc')
+            ->get(['id', 'purchase_date as date', 'invoice_no', 'net_total_amount as total', 'paid_amount', 'due_amount'])
+            ->map(function ($purchase) {
+                return [
+                    'date' => $purchase->date,
+                    'invoice_no' => $purchase->invoice_no,
+                    'total' => $purchase->total,
+                    'paid' => $purchase->paid_amount,
+                    'due' => $purchase->due_amount
+                ];
+            });
+
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.supplier-purchases', compact('supplier', 'purchases', 'companySetting'));
+        $filename = 'supplier_purchases_' . $supplier->name . '_' . date('Y-m-d_H-i-s') . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function downloadPaymentsPdf(Request $request, Supplier $supplier)
+    {
+        $supplier->load('account');
+        
+        $query = Voucher::where('voucher_type', 'payment')
+            ->where('to_account_id', $supplier->account->id)
+            ->with('toTransaction:id,amount');
+        
+        if ($request->start_date) {
+            $query->whereDate('date', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $query->whereDate('date', '<=', $request->end_date);
+        }
+        
+        $payments = $query->orderBy('date', 'desc')
+            ->get()
+            ->map(function ($voucher) {
+                return [
+                    'id' => $voucher->id,
+                    'date' => $voucher->date,
+                    'amount' => $voucher->toTransaction->amount ?? 0,
+                    'remarks' => $voucher->remarks,
+                ];
+            });
+
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.supplier-payments', compact('supplier', 'payments', 'companySetting'));
+        $filename = 'supplier_payments_' . $supplier->name . '_' . date('Y-m-d_H-i-s') . '.pdf';
+        return $pdf->download($filename);
+    }
 }
