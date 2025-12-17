@@ -53,4 +53,9 @@ class Sale extends Model
     {
         return $this->belongsTo(Transaction::class);
     }
+
+    public function batches()
+    {
+        return $this->hasMany(SaleBatch::class);
+    }
 }

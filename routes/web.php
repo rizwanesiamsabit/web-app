@@ -37,6 +37,7 @@ use App\Http\Controllers\DispenserReadingController;
 use App\Http\Controllers\ProductRateController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\PurchaseReportController;
+use App\Http\Controllers\CustomerSalesReportController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -257,6 +258,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
     Route::delete('sales/bulk/delete', [SaleController::class, 'bulkDelete'])->name('sales.bulk.delete');
     Route::get('sales/download-pdf', [SaleController::class, 'downloadPdf'])->name('sales.download.pdf');
+    Route::get('sales/{sale}/pdf', [SaleController::class, 'downloadPdf'])->name('sales.pdf');
+    Route::get('sales/batch/{batchCode}/pdf', [SaleController::class, 'downloadBatchPdf'])->name('sales.batch.pdf');
     
     // Credit Sale routes
     Route::get('credit-sales', [CreditSaleController::class, 'index'])->name('credit-sales.index');
@@ -310,6 +313,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Purchase Report Details routes
     Route::get('purchase-report-details', [PurchaseReportController::class, 'index'])->name('purchase-report-details.index');
     Route::get('purchase-report-details/download-pdf', [PurchaseReportController::class, 'downloadPdf'])->name('purchase-report-details.download.pdf');
+    
+    // Customer Sales Reports routes
+    Route::get('customer-wise-sales-reports', [CustomerSalesReportController::class, 'index'])->name('customer-sales-reports.index');
 });
 
 require __DIR__.'/settings.php';

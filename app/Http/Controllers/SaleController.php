@@ -10,17 +10,21 @@ use App\Models\Vehicle;
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\IsShiftClose;
+use App\Models\CompanySetting;
 use App\Helpers\TransactionHelper;
 use App\Helpers\InvoiceHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Sale::with(['product', 'shift']);
+        $query = Sale::with(['product', 'shift'])
+            ->leftJoin('sale_batches', 'sales.id', '=', 'sale_batches.sale_id')
+            ->select('sales.*', 'sale_batches.batch_code');
 
         if ($request->search) {
             $query->where(function($q) use ($request) {
@@ -114,6 +118,9 @@ class SaleController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
+            $batchCode = 'BATCH' . now()->format('YmdHis') . rand(100, 999);
+            $saleIds = [];
+            
             foreach ($request->products as $productData) {
                 if (!isset($productData['product_id']) || !$productData['product_id']) {
                     continue;
@@ -132,7 +139,7 @@ class SaleController extends Controller
                         'ac_number' => $toAccount->ac_number,
                         'transaction_type' => 'Cr',
                         'amount' => $productData['paid_amount'],
-                        'description' => 'Sale ' . $product->product_name . ' to ' . $productData['customer'] . ' - Invoice: ' . InvoiceHelper::generateInvoiceId(),
+                        'description' => 'Sale ' . $product->product_name . ' to ' . $productData['customer'] . ' - Batch: ' . $batchCode,
                         'payment_type' => strtolower($productData['payment_type']),
                         'bank_name' => $productData['bank_name'] ?? null,
                         'branch_name' => $productData['branch_name'] ?? null,
@@ -149,7 +156,7 @@ class SaleController extends Controller
                     $toAccount->increment('total_amount', $productData['paid_amount']);
                 }
 
-                Sale::create([
+                $sale = Sale::create([
                     'sale_date' => $request->sale_date,
                     'sale_time' => now()->format('H:i:s'),
                     'invoice_no' => InvoiceHelper::generateInvoiceId(),
@@ -169,12 +176,21 @@ class SaleController extends Controller
                     'remarks' => $productData['remarks'],
                     'status' => true,
                 ]);
+                
+                $saleIds[] = $sale->id;
 
                 $stock = Stock::where('product_id', $productData['product_id'])->first();
                 if ($stock) {
                     $stock->decrement('current_stock', $productData['quantity']);
                     $stock->decrement('available_stock', $productData['quantity']);
                 }
+            }
+            
+            foreach ($saleIds as $saleId) {
+                \App\Models\SaleBatch::create([
+                    'batch_code' => $batchCode,
+                    'sale_id' => $saleId
+                ]);
             }
         });
 
@@ -344,5 +360,35 @@ class SaleController extends Controller
         });
 
         return redirect()->back()->with('success', 'Sales deleted successfully.');
+    }
+
+    public function downloadPdf(Sale $sale)
+    {
+        $sale->load(['product.unit', 'shift']);
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.sale-invoice', [
+            'sale' => $sale,
+            'companySetting' => $companySetting,
+        ]);
+
+        $fileName = 'sale-invoice-' . $sale->invoice_no . '-' . now()->format('Y-m-d-H-i-s') . '.pdf';
+        return $pdf->download($fileName);
+    }
+    
+    public function downloadBatchPdf($batchCode)
+    {
+        $saleIds = \App\Models\SaleBatch::where('batch_code', $batchCode)->pluck('sale_id');
+        $sales = Sale::with(['product.unit', 'shift'])->whereIn('id', $saleIds)->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.sale-batch', [
+            'sales' => $sales,
+            'batchCode' => $batchCode,
+            'companySetting' => $companySetting,
+        ]);
+
+        $fileName = 'sale-batch-' . $batchCode . '-' . now()->format('Y-m-d-H-i-s') . '.pdf';
+        return $pdf->download($fileName);
     }
 }

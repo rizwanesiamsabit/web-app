@@ -801,6 +801,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                             </div>
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Batch Code</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Customer</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Vehicle</th>
@@ -826,6 +827,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">{new Date(sale.sale_date).toLocaleDateString('en-GB')}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.shift.name}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.batch_code || 'N/A'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.invoice_no}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.customer}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.vehicle_no}</td>
@@ -846,6 +848,25 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
+                                                        {sale.batch_code && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => window.open(`/sales/batch/${sale.batch_code}/pdf`, '_blank')}
+                                                                className="text-blue-600 hover:text-blue-800"
+                                                                title="Download Batch PDF"
+                                                            >
+                                                                <FileText className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => window.open(`/sales/${sale.id}/pdf`, '_blank')}
+                                                            className="text-green-600 hover:text-green-800"
+                                                        >
+                                                            <FileText className="h-4 w-4" />
+                                                        </Button>
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -868,7 +889,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={11} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={12} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No sales found
                                             </td>

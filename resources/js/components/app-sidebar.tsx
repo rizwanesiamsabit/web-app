@@ -121,11 +121,9 @@ const mainNavItems = [
         icon: DollarSign,
         children: [
             { title: 'Sales', href: '/sales', icon: DollarSign },
-            { title: 'Challan Wise Sales Reports', href: '#', icon: FileText },
-            { title: 'Invoice Wise Sales Reports', href: '#', icon: FileText },
             {
-                title: 'Customer Wise Sales Reports',
-                href: '#',
+                title: 'Customer Sales Reports',
+                href: '/customer-wise-sales-reports',
                 icon: BarChart3,
             },
         ],
