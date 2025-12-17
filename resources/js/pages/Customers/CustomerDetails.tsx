@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, FileText, DollarSign, CreditCard, Banknote, ChevronDown, ChevronUp } from 'lucide-react';
@@ -31,10 +32,10 @@ interface Customer {
         vehicle_name?: string;
         vehicle_type?: string;
         reg_date?: string;
-        product?: {
+        products?: Array<{
             id: number;
             product_name: string;
-        };
+        }>;
     }>;
     created_at: string;
 }
@@ -415,7 +416,19 @@ export default function CustomerDetails({ customer, recentPayments, recentSales,
                                                     <td className="p-4 text-[13px] dark:text-white">{vehicle.vehicle_number}</td>
                                                     <td className="p-4 text-[13px] dark:text-gray-300">{vehicle.vehicle_name || 'N/A'}</td>
                                                     <td className="p-4 text-[13px] dark:text-gray-300">{vehicle.vehicle_type || 'N/A'}</td>
-                                                    <td className="p-4 text-[13px] dark:text-gray-300">{vehicle.product?.product_name || 'N/A'}</td>
+                                                    <td className="p-4">
+                                                        {vehicle.products && vehicle.products.length > 0 ? (
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {vehicle.products.map(p => (
+                                                                    <Badge key={p.id} variant="secondary">
+                                                                        {p.product_name}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-[13px] dark:text-gray-300">N/A</span>
+                                                        )}
+                                                    </td>
                                                     <td className="p-4 text-[13px] dark:text-gray-300">
                                                         {vehicle.reg_date ? new Date(vehicle.reg_date).toLocaleDateString('en-GB') : 'N/A'}
                                                     </td>

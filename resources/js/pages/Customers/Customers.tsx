@@ -120,7 +120,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
         address: '',
         status: true,
         // Vehicle fields
-        product_id: '',
+        product_ids: [] as string[],
         vehicle_type: '',
         vehicle_name: '',
         vehicle_number: '',
@@ -495,13 +495,13 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                                     {customer.total_paid?.toLocaleString() || '0.00'}
                                                 </td>
                                                 <td className={`p-4 text-right text-[13px] ${
-                                                    customer.current_due > 0 
+                                                    (customer.current_due || 0) > 0 
                                                         ? 'text-red-600 dark:text-red-400' 
-                                                        : customer.current_due < 0 
+                                                        : (customer.current_due || 0) < 0 
                                                             ? 'text-green-600 dark:text-green-400' 
                                                             : 'dark:text-gray-300'
                                                 }`}>
-                                                    {customer.current_due < 0 ? '-' : ''}{Math.abs(customer.current_due || 0).toLocaleString()}
+                                                    {(customer.current_due || 0) < 0 ? '-' : ''}{Math.abs(customer.current_due || 0).toLocaleString()}
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
@@ -681,25 +681,6 @@ export default function Customers({ customers, groups = [], products = [], lastC
                         <div className="space-y-4">
                             <h3 className="text-lg font-medium dark:text-white border-b pb-2">Vehicle Information</h3>
                             
-                            <div>
-                                <Label className="dark:text-gray-200">Product</Label>
-                                <Select
-                                    value={data.product_id}
-                                    onValueChange={(value) => setData('product_id', value)}
-                                >
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="Select Product" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {products.map((product) => (
-                                            <SelectItem key={product.id} value={product.id.toString()}>
-                                                {product.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label htmlFor="vehicle_type" className="dark:text-gray-200">Vehicle Type</Label>
@@ -743,6 +724,29 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                         onChange={(e) => setData('reg_date', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <Label className="dark:text-gray-200">Products</Label>
+                                <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto border rounded p-2 dark:border-gray-600 dark:bg-gray-700">
+                                    {products.map((product) => (
+                                        <label key={product.id} className="flex items-center space-x-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={data.product_ids.includes(product.id.toString())}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setData('product_ids', [...data.product_ids, product.id.toString()]);
+                                                    } else {
+                                                        setData('product_ids', data.product_ids.filter(id => id !== product.id.toString()));
+                                                    }
+                                                }}
+                                                className="rounded border-gray-300 dark:border-gray-600"
+                                            />
+                                            <span className="text-sm dark:text-white">{product.name}</span>
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
                         </div>

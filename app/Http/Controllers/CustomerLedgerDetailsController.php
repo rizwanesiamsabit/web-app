@@ -10,19 +10,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CustomerLedgerDetailsController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, $customer)
     {
         $startDate = $request->start_date ?? date('Y-m-d');
         $endDate = $request->end_date ?? date('Y-m-d');
-        $customerId = $request->customer_id;
-
-        if (!$customerId) {
-            return Inertia::render('CustomerLedgerDetails/Index', [
-                'ledgers' => [],
-                'customers' => Customer::select('id', 'name')->get(),
-                'filters' => $request->only(['customer_id', 'start_date', 'end_date'])
-            ]);
-        }
+        $customerModel = Customer::find($customer);
 
         $creditTransactions = DB::table('credit_sales')
             ->join('customers', 'credit_sales.customer_id', '=', 'customers.id')
@@ -30,7 +22,7 @@ class CustomerLedgerDetailsController extends Controller
             ->join('shifts', 'credit_sales.shift_id', '=', 'shifts.id')
             ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
             ->whereBetween('credit_sales.sale_date', [$startDate, $endDate])
-            ->where('credit_sales.customer_id', $customerId)
+            ->where('credit_sales.customer_id', $customer)
             ->select(
                 'customers.id as customer_id',
                 'customers.name as customer_name',
@@ -51,7 +43,7 @@ class CustomerLedgerDetailsController extends Controller
             ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
             ->where('vouchers.voucher_type', 'Received')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
-            ->where('customers.id', $customerId)
+            ->where('customers.id', $customer)
             ->select(
                 'customers.id as customer_id',
                 'customers.name as customer_name',
@@ -70,7 +62,7 @@ class CustomerLedgerDetailsController extends Controller
             ->orderBy('date')
             ->get();
 
-        $ledgers = $allTransactions->groupBy('customer_id')->map(function($items) {
+        $ledgers = $allTransactions->groupBy('customer_id')->map(function($items) use ($customerModel) {
             $runningBalance = 0;
             $transactions = $items->map(function($item) use (&$runningBalance) {
                 $runningBalance += $item->credit - $item->debit;
@@ -81,6 +73,8 @@ class CustomerLedgerDetailsController extends Controller
             return [
                 'customer_name' => $items->first()->customer_name,
                 'ac_number' => $items->first()->ac_number,
+                'customer_mobile' => $customerModel->mobile ?? 'N/A',
+                'customer_address' => $customerModel->address ?? 'N/A',
                 'transactions' => $transactions->values()->toArray(),
                 'total_debit' => $items->sum('debit'),
                 'total_credit' => $items->sum('credit'),
@@ -90,20 +84,14 @@ class CustomerLedgerDetailsController extends Controller
 
         return Inertia::render('CustomerLedgerDetails/Index', [
             'ledgers' => $ledgers,
-            'customers' => Customer::select('id', 'name')->get(),
-            'filters' => $request->only(['customer_id', 'start_date', 'end_date'])
+            'filters' => $request->only(['start_date', 'end_date'])
         ]);
     }
 
-    public function downloadPdf(Request $request)
+    public function downloadPdf(Request $request, $customer)
     {
         $startDate = $request->start_date ?? date('Y-m-d');
         $endDate = $request->end_date ?? date('Y-m-d');
-        $customerId = $request->customer_id;
-
-        if (!$customerId) {
-            return redirect()->back()->with('error', 'Please select a customer');
-        }
 
         $creditTransactions = DB::table('credit_sales')
             ->join('customers', 'credit_sales.customer_id', '=', 'customers.id')
@@ -111,7 +99,7 @@ class CustomerLedgerDetailsController extends Controller
             ->join('shifts', 'credit_sales.shift_id', '=', 'shifts.id')
             ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
             ->whereBetween('credit_sales.sale_date', [$startDate, $endDate])
-            ->where('credit_sales.customer_id', $customerId)
+            ->where('credit_sales.customer_id', $customer)
             ->select(
                 'customers.id as customer_id',
                 'customers.name as customer_name',
@@ -132,7 +120,7 @@ class CustomerLedgerDetailsController extends Controller
             ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
             ->where('vouchers.voucher_type', 'Received')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
-            ->where('customers.id', $customerId)
+            ->where('customers.id', $customer)
             ->select(
                 'customers.id as customer_id',
                 'customers.name as customer_name',

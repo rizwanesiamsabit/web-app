@@ -288,8 +288,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('customer-ledger-summary/download-pdf', [CustomerLedgerSummaryController::class, 'downloadPdf'])->name('customer-ledger-summary.download.pdf');
     
     // Customer Ledger Details routes
-    Route::get('customer-ledger-details', [CustomerLedgerDetailsController::class, 'index'])->name('customer-ledger-details.index');
-    Route::get('customer-ledger-details/download-pdf', [CustomerLedgerDetailsController::class, 'downloadPdf'])->name('customer-ledger-details.download.pdf');
+    Route::get('customer-ledger-details/{customer}', [CustomerLedgerDetailsController::class, 'index'])->name('customer-ledger-details.index');
+    Route::get('customer-ledger-details/{customer}/download-pdf', [CustomerLedgerDetailsController::class, 'downloadPdf'])->name('customer-ledger-details.download.pdf');
 });
 
 require __DIR__.'/settings.php';

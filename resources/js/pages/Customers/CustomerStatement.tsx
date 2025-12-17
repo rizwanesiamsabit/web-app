@@ -103,7 +103,7 @@ export default function CustomerStatement({ customer, transactions, currentBalan
                         </Button>
                         <Button
                             variant="outline"
-                            onClick={() => router.get(`/customer-ledger-details?customer_id=${customer.id}`)}
+                            onClick={() => router.get(`/customer-ledger-details/${customer.id}`)}
                         >
                             <FileText className="mr-2 h-4 w-4" />
                             Account Statement

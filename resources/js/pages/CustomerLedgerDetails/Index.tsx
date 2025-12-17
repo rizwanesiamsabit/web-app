@@ -29,35 +29,27 @@ interface Ledger {
     total_due: number;
 }
 
-interface Customer {
-    id: number;
-    name: string;
-}
-
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: dashboard().url },
-    { title: 'Customer Ledger Details', href: '/customer-ledger-details' },
+    { title: 'Customers', href: '/customers' },
+    { title: 'Ledger Details', href: '#' },
 ];
 
 interface CustomerLedgerDetailsProps {
     ledgers: Ledger[];
-    customers: Customer[];
     filters: {
-        customer_id?: string;
         start_date?: string;
         end_date?: string;
     };
 }
 
-export default function CustomerLedgerDetails({ ledgers = [], customers = [], filters = {} }: CustomerLedgerDetailsProps) {
-    const [customerId, setCustomerId] = useState(filters.customer_id || '');
+export default function CustomerLedgerDetails({ ledgers = [], filters = {} }: CustomerLedgerDetailsProps) {
     const [startDate, setStartDate] = useState(filters.start_date || new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(filters.end_date || new Date().toISOString().split('T')[0]);
 
     const applyFilters = () => {
-        if (!customerId) return;
-        router.get('/customer-ledger-details', {
-            customer_id: customerId,
+        const customerId = window.location.pathname.split('/').pop();
+        router.get(`/customer-ledger-details/${customerId}`, {
             start_date: startDate,
             end_date: endDate,
         }, { preserveState: true });
@@ -65,7 +57,6 @@ export default function CustomerLedgerDetails({ ledgers = [], customers = [], fi
 
     const clearFilters = () => {
         const today = new Date().toISOString().split('T')[0];
-        setCustomerId('');
         setStartDate(today);
         setEndDate(today);
     };
@@ -83,12 +74,11 @@ export default function CustomerLedgerDetails({ ledgers = [], customers = [], fi
                     <Button
                         variant="success"
                         onClick={() => {
-                            if (!customerId) return;
+                            const customerId = window.location.pathname.split('/').pop();
                             const params = new URLSearchParams();
-                            params.append('customer_id', customerId);
                             params.append('start_date', startDate);
                             params.append('end_date', endDate);
-                            window.location.href = `/customer-ledger-details/download-pdf?${params.toString()}`;
+                            window.location.href = `/customer-ledger-details/${customerId}/download-pdf?${params.toString()}`;
                         }}
                     >
                         <FileText className="mr-2 h-4 w-4" />Download
@@ -103,22 +93,7 @@ export default function CustomerLedgerDetails({ ledgers = [], customers = [], fi
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-                            <div>
-                                <Label className="dark:text-gray-200">Customer</Label>
-                                <Select value={customerId} onValueChange={setCustomerId}>
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="Select customer" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {customers.map((customer) => (
-                                            <SelectItem key={customer.id} value={customer.id.toString()}>
-                                                {customer.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div>
                                 <Label className="dark:text-gray-200">Start Date</Label>
                                 <Input
@@ -138,8 +113,8 @@ export default function CustomerLedgerDetails({ ledgers = [], customers = [], fi
                                 />
                             </div>
                             <div className="flex items-end gap-2 md:col-span-2">
-                                <Button onClick={applyFilters} className="flex-1">Apply Filters</Button>
-                                <Button onClick={clearFilters} variant="secondary" className="flex-1">
+                                <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
+                                <Button onClick={clearFilters} variant="secondary" className="px-4">
                                     <X className="mr-2 h-4 w-4" />Clear
                                 </Button>
                             </div>
@@ -147,16 +122,53 @@ export default function CustomerLedgerDetails({ ledgers = [], customers = [], fi
                     </CardContent>
                 </Card>
 
+                {/* Customer Details Card */}
+                {ledgers.length > 0 && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="dark:text-white">Customer Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Name</Label>
+                                    <p className="text-gray-900 dark:text-white font-medium">{ledgers[0].customer_name}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Account Number</Label>
+                                    <p className="text-gray-900 dark:text-white font-medium">{ledgers[0].ac_number}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Mobile</Label>
+                                    <p className="text-gray-900 dark:text-white font-medium">{ledgers[0].customer_mobile || 'N/A'}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</Label>
+                                    <p className="text-gray-900 dark:text-white font-medium">{ledgers[0].customer_address || 'N/A'}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Due</Label>
+                                    <p className={`font-bold ${
+                                        ledgers[0].total_due > 0 
+                                            ? 'text-red-600 dark:text-red-400' 
+                                            : ledgers[0].total_due < 0 
+                                                ? 'text-green-600 dark:text-green-400' 
+                                                : 'text-gray-900 dark:text-white'
+                                    }`}>
+                                        {ledgers[0].total_due < 0 ? '-' : ''}{Math.abs(ledgers[0].total_due).toFixed(2)}
+                                        {ledgers[0].total_due > 0 && ' (Due)'}
+                                        {ledgers[0].total_due < 0 && ' (Advanced)'}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <div className="space-y-6">
                     {ledgers.length > 0 ? (
                         ledgers.map((ledger, ledgerIndex) => (
                             <Card key={ledgerIndex} className="dark:border-gray-700 dark:bg-gray-800">
-                                <CardHeader className="bg-gray-50 dark:bg-gray-700">
-                                    <div className="space-y-1">
-                                        <p className="text-[14px] font-bold dark:text-white">Customer: {ledger.customer_name}</p>
-                                        <p className="text-[13px] dark:text-gray-300">Account Number: {ledger.ac_number}</p>
-                                    </div>
-                                </CardHeader>
                                 <CardContent className="p-0">
                                     <div className="overflow-x-auto">
                                         <table className="w-full">

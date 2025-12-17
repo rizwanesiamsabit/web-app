@@ -69,15 +69,9 @@ const mainNavItems = [
         children: [
             { title: 'Customers', href: '/customers', icon: Users },
             { title: 'Vehicles', href: '/vehicles', icon: Car },
-            {
-                title: 'Customer Received Voucher Entry',
-                href: '#',
-                icon: FileText,
-            },
             { title: 'Customer Details Bill', href: '/customer-details-bill', icon: FileText },
             { title: 'Customer Summary Bill', href: '/customer-summary-bill', icon: FileText },
             { title: 'Customer Ledger Summary', href: '/customer-ledger-summary', icon: BarChart3 },
-            { title: 'Customer Ledger Details', href: '/customer-ledger-details', icon: BarChart3 },
             {
                 title: 'Daily Statement Report',
                 href: '/daily-statement',
