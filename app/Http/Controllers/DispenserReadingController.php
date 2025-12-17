@@ -40,7 +40,7 @@ class DispenserReadingController extends Controller
             return $product;
         });
         $customers = \App\Models\Customer::where('status', true)->select('id', 'name')->get();
-        $vehicles = Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id', 'product_id')->get();
+        $vehicles = Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id')->get();
         $accounts = Account::with('group')->select('id', 'name', 'ac_number', 'group_id', 'group_code')->get();
         $groupedAccounts = $accounts->groupBy(function ($account) {
             return $account->group ? $account->group->name : 'Other';
