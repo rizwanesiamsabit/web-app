@@ -241,7 +241,10 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
     };
 
     const updateTotals = (readings = data.dispenser_readings, officePaymentValue?: string, creditSalesValue?: string) => {
-        const totalSales = readings.reduce((sum, reading) => sum + reading.total_sale, 0);
+        const totalSales = readings.reduce((sum, reading) => {
+            const sale = Number.isFinite(reading.total_sale) ? reading.total_sale : 0;
+            return sum + sale;
+        }, 0);
         setTotalSalesSum(totalSales);
         const creditSales = parseFloat(creditSalesValue !== undefined ? creditSalesValue : data.credit_sales) || 0;
         const cashSales = totalSales - creditSales;
@@ -257,16 +260,34 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
             final_due_amount: finalDueAmount.toFixed(2),
         }));
         setProductWiseData(prev => {
-            const productWise: ProductWiseData = {};
+            const aggregated: ProductWiseData = {};
             readings.forEach(reading => {
-                if (!productWise[reading.product_id]) {
-                    const existingCreditSales = prev[reading.product_id]?.credit_sales || 0;
-                    productWise[reading.product_id] = { net_reading: 0, total_sale: 0, credit_sales: existingCreditSales, cash_sales: 0 };
-                }
-                productWise[reading.product_id].net_reading += reading.net_reading;
-                productWise[reading.product_id].total_sale += reading.total_sale;
+                const pid = parseInt(reading.product_id?.toString() || '');
+                if (!pid || !Number.isFinite(pid)) return;
+                const net = Number.isFinite(reading.net_reading) ? reading.net_reading : 0;
+                const total = Number.isFinite(reading.total_sale) ? reading.total_sale : 0;
+                const existingCredit = prev[pid]?.credit_sales || 0;
+                const current = aggregated[pid] || { net_reading: 0, total_sale: 0, credit_sales: existingCredit, cash_sales: 0 };
+                aggregated[pid] = {
+                    net_reading: current.net_reading + net,
+                    total_sale: current.total_sale + total,
+                    credit_sales: existingCredit,
+                    cash_sales: 0,
+                };
             });
-            return productWise;
+
+            const next: ProductWiseData = { ...prev };
+            Object.keys(next).forEach(pidStr => {
+                const pid = parseInt(pidStr);
+                if (!aggregated[pid]) {
+                    next[pid] = { net_reading: 0, total_sale: 0, credit_sales: next[pid].credit_sales || 0, cash_sales: 0 };
+                }
+            });
+            Object.entries(aggregated).forEach(([pidStr, val]) => {
+                const pid = parseInt(pidStr);
+                next[pid] = { net_reading: val.net_reading, total_sale: val.total_sale, credit_sales: next[pid]?.credit_sales ?? val.credit_sales, cash_sales: 0 };
+            });
+            return next;
         });
     };
 
@@ -521,12 +542,15 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                         <tbody>
                                             {Object.entries(productWiseData).map(([productId, productData]) => {
                                                 const productInfo = dispenserReading.find(d => d.product_id?.toString() === productId);
+                                                const product = products?.find(p => p.id.toString() === productId);
+                                                const name = product?.product_name ?? productInfo?.product?.product_name ?? 'No Product Assigned';
+                                                const rate = product?.sales_price ?? productInfo?.product?.sales_price ?? 0;
                                                 const cashSales = productData.total_sale - productData.credit_sales;
                                                 return (
                                                     <tr key={productId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                         <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{productId}</td>
-                                                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{productInfo?.product?.product_name || 'No Product Assigned'}</td>
-                                                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{productInfo?.product?.sales_price || 0}</td>
+                                                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{name}</td>
+                                                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{rate}</td>
                                                         <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{productData.net_reading.toFixed(2)}</td>
                                                         <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{productData.total_sale.toFixed(2)}</td>
                                                         <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white">{productData.credit_sales.toFixed(2)}</td>

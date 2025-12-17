@@ -20,7 +20,7 @@ class DispenserReadingController extends Controller
 {
     public function index()
     {
-        $dispenserReading = DispenserReading::with(['product', 'dispenser'])
+        $dispenserReading = DispenserReading::with(['product.activeRate', 'dispenser'])
             ->orderBy('dispenser_id')
             ->orderByDesc('created_at')
             ->get()
@@ -30,6 +30,11 @@ class DispenserReadingController extends Controller
                 $latest->start_reading = $latest->end_reading;
                 $latest->end_reading = $latest->end_reading;
                 $latest->meter_test = 0;
+                $latest->product_id = $latest->product_id ?? ($latest->dispenser->product_id ?? null);
+                if ($latest->product) {
+                    $latest->product->sales_price = $latest->product->activeRate->sales_price ?? ($latest->item_rate ?? 0);
+                }
+                $latest->item_rate = $latest->item_rate ?? ($latest->product->activeRate->sales_price ?? 0);
                 return $latest;
             })
             ->values();
@@ -39,7 +44,7 @@ class DispenserReadingController extends Controller
             $product->sales_price = $product->activeRate ? $product->activeRate->sales_price : 0;
             return $product;
         });
-        $customers = \App\Models\Customer::where('status', true)->select('id', 'name')->get();
+        $customers = Customer::where('status', true)->select('id', 'name')->get();
         $vehicles = Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id')->get();
         $accounts = Account::with('group')->select('id', 'name', 'ac_number', 'group_id', 'group_code')->get();
         $groupedAccounts = $accounts->groupBy(function ($account) {
