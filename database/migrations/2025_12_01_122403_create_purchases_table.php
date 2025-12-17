@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('net_total_amount', 18, 2);
             $table->decimal('paid_amount', 18, 2)->default(0.00);
             $table->decimal('due_amount', 18, 2);
+            $table->enum('status', ['paid', 'due', 'partial'])->default('due');
             $table->timestamps();
         });
     }

@@ -178,6 +178,16 @@ class PurchaseController extends Controller
                 }
 
                 $netTotal = $productData['amount'] - ($productData['discount'] ?? 0);
+                $paidAmount = $productData['paid_amount'];
+                $dueAmount = $productData['due_amount'];
+                
+                // Calculate status
+                $status = 'due';
+                if ($dueAmount == 0) {
+                    $status = 'paid';
+                } elseif ($paidAmount > 0) {
+                    $status = 'partial';
+                }
 
                 Purchase::create([
                     'purchase_date' => $request->purchase_date,
@@ -191,8 +201,9 @@ class PurchaseController extends Controller
                     'unit_price' => $productData['unit_price'],
                     'discount' => $productData['discount'] ?? 0,
                     'net_total_amount' => $netTotal,
-                    'paid_amount' => $productData['paid_amount'],
-                    'due_amount' => $productData['due_amount'],
+                    'paid_amount' => $paidAmount,
+                    'due_amount' => $dueAmount,
+                    'status' => $status,
                     'remarks' => $request->remarks,
                 ]);
 
@@ -263,6 +274,16 @@ class PurchaseController extends Controller
             $product = Product::find($request->product_id);
             
             $netTotal = ($request->unit_price * $request->quantity) - ($request->discount ?? 0);
+            $paidAmount = $request->paid_amount;
+            $dueAmount = $request->due_amount;
+            
+            // Calculate status
+            $status = 'due';
+            if ($dueAmount == 0) {
+                $status = 'paid';
+            } elseif ($paidAmount > 0) {
+                $status = 'partial';
+            }
 
             $purchase->update([
                 'purchase_date' => $request->purchase_date,
@@ -274,8 +295,9 @@ class PurchaseController extends Controller
                 'quantity' => $request->quantity,
                 'discount' => $request->discount ?? 0,
                 'net_total_amount' => $netTotal,
-                'paid_amount' => $request->paid_amount,
-                'due_amount' => $request->due_amount,
+                'paid_amount' => $paidAmount,
+                'due_amount' => $dueAmount,
+                'status' => $status,
                 'remarks' => $request->remarks,
             ]);
 

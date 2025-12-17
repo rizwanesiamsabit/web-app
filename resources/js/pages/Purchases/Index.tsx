@@ -41,6 +41,7 @@ interface Purchase {
     paid_amount: number;
     due_amount: number;
     payment_type: string;
+    status: string;
     remarks: string;
     created_at: string;
 }
@@ -530,7 +531,17 @@ export default function Purchases({
                 const unitPrice =
                     parseFloat(newProducts[index].unit_price) || 0;
                 const quantity = parseFloat(newProducts[index].quantity) || 0;
-                newProducts[index].amount = (unitPrice * quantity).toString();
+                const newAmount = unitPrice * quantity;
+                newProducts[index].amount = newAmount.toString();
+                
+                // Auto-update paid_amount and due_amount when amount changes
+                const currentPaid = parseFloat(newProducts[index].paid_amount) || 0;
+                if (currentPaid > newAmount) {
+                    newProducts[index].paid_amount = newAmount.toFixed(2);
+                    newProducts[index].due_amount = '0.00';
+                } else {
+                    newProducts[index].due_amount = (newAmount - currentPaid).toFixed(2);
+                }
             }
 
             // Calculate quantity if amount is changed
@@ -847,24 +858,16 @@ export default function Purchases({
                                                 <td className="p-4">
                                                     <span
                                                         className={`rounded px-2 py-1 text-xs ${
-                                                            parseFloat(
-                                                                purchase.due_amount.toString(),
-                                                            ) === 0
+                                                            purchase.status === 'paid'
                                                                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                                : parseFloat(
-                                                                        purchase.paid_amount.toString(),
-                                                                    ) > 0
+                                                                : purchase.status === 'partial'
                                                                   ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                                                                   : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                                         }`}
                                                     >
-                                                        {parseFloat(
-                                                            purchase.due_amount.toString(),
-                                                        ) === 0
+                                                        {purchase.status === 'paid'
                                                             ? 'Paid'
-                                                            : parseFloat(
-                                                                    purchase.paid_amount.toString(),
-                                                                ) > 0
+                                                            : purchase.status === 'partial'
                                                               ? 'Partial'
                                                               : 'Due'}
                                                     </span>
@@ -1342,30 +1345,21 @@ export default function Purchases({
                                     value={data.products[0]?.paid_amount || ''}
                                     onChange={(e) => {
                                         const newProducts = [...data.products];
-                                        const paid =
-                                            parseFloat(e.target.value) || 0;
-                                        const amount =
-                                            parseFloat(
-                                                newProducts[0]?.amount,
-                                            ) || 0;
+                                        const paid = parseFloat(e.target.value) || 0;
+                                        const amount = parseFloat(newProducts[0]?.amount) || 0;
+                                        const due = Math.max(0, amount - paid);
+                                        
                                         newProducts[0] = {
                                             ...newProducts[0],
                                             paid_amount: e.target.value,
-                                            due_amount: (amount - paid).toFixed(
-                                                2,
-                                            ),
+                                            due_amount: due.toFixed(2),
                                         };
                                         setData('products', newProducts);
                                     }}
                                     onBlur={(e) => {
-                                        if (!e.target.value) {
-                                            const newProducts = [
-                                                ...data.products,
-                                            ];
-                                            const amount =
-                                                parseFloat(
-                                                    newProducts[0]?.amount,
-                                                ) || 0;
+                                        if (!e.target.value || e.target.value === '0') {
+                                            const newProducts = [...data.products];
+                                            const amount = parseFloat(newProducts[0]?.amount) || 0;
                                             newProducts[0] = {
                                                 ...newProducts[0],
                                                 paid_amount: amount.toFixed(2),

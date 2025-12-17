@@ -20,7 +20,8 @@ class Purchase extends Model
         'discount',
         'net_total_amount',
         'paid_amount',
-        'due_amount'
+        'due_amount',
+        'status'
     ];
 
     protected $casts = [
@@ -30,7 +31,8 @@ class Purchase extends Model
         'discount' => 'decimal:2',
         'net_total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
-        'due_amount' => 'decimal:2'
+        'due_amount' => 'decimal:2',
+        'status' => 'string'
     ];
 
     public function supplier()
