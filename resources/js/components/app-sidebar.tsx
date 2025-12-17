@@ -110,14 +110,9 @@ const mainNavItems = [
         children: [
             { title: 'Purchase', href: '/purchases', icon: ShoppingCart },
             {
-                title: 'Invoice Wise Purchase Report',
+                title: 'Purchase Report Details',
                 href: '#',
                 icon: FileText,
-            },
-            {
-                title: 'Supplier Wise Purchase Register Report',
-                href: '#',
-                icon: BarChart3,
             },
         ],
     },

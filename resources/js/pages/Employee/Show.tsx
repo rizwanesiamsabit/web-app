@@ -17,7 +17,9 @@ import {
     Building,
     User,
     Clock,
-    FileText
+    FileText,
+    UserPlus,
+    Briefcase
 } from 'lucide-react';
 
 interface Employee {
@@ -129,30 +131,75 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                             {employee.employee_name}
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400">
-                            View employee information and details
+                            Employee details and information
                         </p>
                     </div>
                     <div className="flex gap-2">
                         <Button
-                            variant="outline"
-                            onClick={() => router.get('/employees')}
-                        >
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Employees
-                        </Button>
-                        <Button
                             onClick={() => router.get(`/employees/${employee.id}/edit`)}
                         >
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit Employee
+                            Edit
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={() => router.get('/employees')}
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to List
                         </Button>
                     </div>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Employee Code</p>
+                                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{employee.employee_code}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{employee.designation?.name || 'Not Assigned'}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Department</p>
+                                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{employee.department?.name || 'Not Assigned'}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{employee.emp_type?.name || 'Not Assigned'}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                                    <p className={`text-2xl font-bold ${
+                                        employee.status 
+                                            ? 'text-green-600 dark:text-green-400' 
+                                            : 'text-red-600 dark:text-red-400'
+                                    }`}>
+                                        {employee.status ? 'Active' : 'Inactive'}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{employee.job_status}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Employee Basic Info */}
                     <div className="lg:col-span-2">
-                        <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <Card className="h-full dark:border-gray-700 dark:bg-gray-800">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 dark:text-white">
                                     <User className="h-5 w-5" />
@@ -202,6 +249,51 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                     </div>
                                 </div>
 
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                            Date of Birth
+                                        </label>
+                                        <p className="dark:text-white">{employee.dob ? formatDate(employee.dob) : 'Not provided'}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                            Blood Group
+                                        </label>
+                                        <p className="dark:text-white">{employee.blood_group || 'Not provided'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                            Marital Status
+                                        </label>
+                                        <p className="dark:text-white">{employee.marital_status || 'Not provided'}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                            Religion
+                                        </label>
+                                        <p className="dark:text-white">{employee.religion || 'Not provided'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                            NID
+                                        </label>
+                                        <p className="dark:text-white">{employee.nid || 'Not provided'}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                            Father's Name
+                                        </label>
+                                        <p className="dark:text-white">{employee.father_name || 'Not provided'}</p>
+                                    </div>
+                                </div>
+
                                 {employee.present_address && (
                                     <div className="flex items-start gap-3">
                                         <MapPin className="h-5 w-5 text-gray-400 mt-1" />
@@ -217,22 +309,16 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                         </Card>
                     </div>
 
-                    {/* Employee Status & Quick Info */}
+                    {/* Work Information */}
                     <div>
-                        <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <Card className="h-full dark:border-gray-700 dark:bg-gray-800">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 dark:text-white">
                                     <Building className="h-5 w-5" />
-                                    Quick Info
+                                    Work Information
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                        Employee Code
-                                    </label>
-                                    <p className="font-semibold dark:text-white">{employee.employee_code}</p>
-                                </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                                         Joining Date
@@ -250,129 +336,75 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                         {employee.job_status}
                                     </p>
                                 </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Department
+                                    </label>
+                                    <p className="font-semibold dark:text-white">
+                                        {employee.department?.name || 'Not Assigned'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Designation
+                                    </label>
+                                    <p className="font-semibold dark:text-white">
+                                        {employee.designation?.name || 'Not Assigned'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Employee Type
+                                    </label>
+                                    <p className="font-semibold dark:text-white">
+                                        {employee.emp_type?.name || 'Not Assigned'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Gender
+                                    </label>
+                                    <p className="font-semibold dark:text-white">
+                                        {employee.gender}
+                                    </p>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
                 </div>
 
-                {/* Work Information */}
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Building className="h-5 w-5" />
-                            Work Information
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Department
-                                </label>
-                                <p className="mt-1 font-semibold dark:text-white">
-                                    {employee.department?.name || 'Not Assigned'}
-                                </p>
+                {/* Action Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="dark:border-gray-700 dark:bg-gray-800 cursor-pointer" onClick={() => router.get('/employees/create')}>
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                    <UserPlus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Employee</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Create employee record</p>
+                                </div>
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Designation
-                                </label>
-                                <p className="mt-1 font-semibold dark:text-white">
-                                    {employee.designation?.name || 'Not Assigned'}
-                                </p>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="dark:border-gray-700 dark:bg-gray-800 cursor-pointer" onClick={() => router.get('/attendance')}>
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                                    <Briefcase className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Manage Attendance</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Track employee attendance</p>
+                                </div>
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Employee Type
-                                </label>
-                                <p className="mt-1 font-semibold dark:text-white">
-                                    {employee.emp_type?.name || 'Not Assigned'}
-                                </p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Gender
-                                </label>
-                                <p className="mt-1 font-semibold dark:text-white">
-                                    {employee.gender}
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                {/* Personal Details */}
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <User className="h-5 w-5" />
-                            Personal Details
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Date of Birth
-                                </label>
-                                <p className="dark:text-white">{employee.dob ? formatDate(employee.dob) : 'Not provided'}</p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Blood Group
-                                </label>
-                                <p className="dark:text-white">{employee.blood_group || 'Not provided'}</p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Marital Status
-                                </label>
-                                <p className="dark:text-white">{employee.marital_status || 'Not provided'}</p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Religion
-                                </label>
-                                <p className="dark:text-white">{employee.religion || 'Not provided'}</p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    NID
-                                </label>
-                                <p className="dark:text-white">{employee.nid || 'Not provided'}</p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Father's Name
-                                </label>
-                                <p className="dark:text-white">{employee.father_name || 'Not provided'}</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
 
-                {/* System Information */}
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="dark:text-white">System Information</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Created At
-                                </label>
-                                <p className="dark:text-white">{formatDate(employee.created_at)}</p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Last Updated
-                                </label>
-                                <p className="dark:text-white">{formatDate(employee.updated_at)}</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
         </AppLayout>
     );
