@@ -108,9 +108,11 @@ class DispenserReadingController extends Controller
             ->sum('total_amount');
 
         $bankSales = DB::table('sales')
+            ->join('transactions', 'sales.transaction_id', '=', 'transactions.id')
             ->where('sale_date', $date)
             ->where('shift_id', $shiftId)
-            ->sum('total_amount');
+            ->whereIn('transactions.payment_type', ['bank', 'mobile bank'])
+            ->sum('sales.total_amount');
 
         $cashReceive = DB::table('vouchers')
             ->where('date', $date)
