@@ -21,6 +21,10 @@ class CustomerSummaryBillController extends Controller
             ->join('vehicles', 'credit_sales.vehicle_id', '=', 'vehicles.id')
             ->join('products', 'credit_sales.product_id', '=', 'products.id')
             ->join('units', 'products.unit_id', '=', 'units.id')
+            ->join('product_rates', function($join) {
+                $join->on('products.id', '=', 'product_rates.product_id')
+                     ->where('product_rates.status', true);
+            })
             ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
             ->whereBetween('credit_sales.sale_date', [$startDate, $endDate]);
 
@@ -37,7 +41,7 @@ class CustomerSummaryBillController extends Controller
             DB::raw('COALESCE(transactions.transaction_id, "-") as transaction_id'),
             'products.product_name',
             'units.name as unit_name',
-            'products.sales_price as price',
+            'product_rates.sales_price as price',
             'credit_sales.quantity',
             'credit_sales.total_amount'
         )
@@ -72,6 +76,10 @@ class CustomerSummaryBillController extends Controller
             ->join('vehicles', 'credit_sales.vehicle_id', '=', 'vehicles.id')
             ->join('products', 'credit_sales.product_id', '=', 'products.id')
             ->join('units', 'products.unit_id', '=', 'units.id')
+            ->join('product_rates', function($join) {
+                $join->on('products.id', '=', 'product_rates.product_id')
+                     ->where('product_rates.status', true);
+            })
             ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
             ->whereBetween('credit_sales.sale_date', [$startDate, $endDate]);
 
@@ -88,7 +96,7 @@ class CustomerSummaryBillController extends Controller
             DB::raw('COALESCE(transactions.transaction_id, "-") as transaction_id'),
             'products.product_name',
             'units.name as unit_name',
-            'products.sales_price as price',
+            'product_rates.sales_price as price',
             'credit_sales.quantity',
             'credit_sales.total_amount'
         )

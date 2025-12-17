@@ -41,6 +41,11 @@ interface Customer {
     name: string;
 }
 
+interface Shift {
+    id: number;
+    name: string;
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: dashboard().url },
     { title: 'Daily Statement Report', href: '/daily-statement' },
@@ -54,31 +59,39 @@ interface DailyStatementProps {
     cashReceived: CashTransaction[];
     cashPayment: CashTransaction[];
     customers: Customer[];
+    shifts: Shift[];
     filters: {
         search?: string;
         customer_id?: string;
         start_date?: string;
         end_date?: string;
+        shift_id?: string;
     };
 }
 
-export default function DailyStatement({ productWiseSales = [], cashBankSales = [], creditSales = [], customerWiseSales = [], cashReceived = [], cashPayment = [], customers = [], filters = {} }: DailyStatementProps) {
+export default function DailyStatement({ productWiseSales = [], cashBankSales = [], creditSales = [], customerWiseSales = [], cashReceived = [], cashPayment = [], customers = [], shifts = [], filters = {} }: DailyStatementProps) {
     const [search, setSearch] = useState(filters.search || '');
     const [customerId, setCustomerId] = useState(filters.customer_id || 'all');
+    const [shiftId, setShiftId] = useState(filters.shift_id || 'all');
     const [startDate, setStartDate] = useState(filters.start_date || new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(filters.end_date || new Date().toISOString().split('T')[0]);
 
     const applyFilters = () => {
-        router.get('/daily-statement', {
+        const params: any = {
             start_date: startDate,
             end_date: endDate,
-        }, { preserveState: true });
+        };
+        if (shiftId !== 'all') {
+            params.shift_id = shiftId;
+        }
+        router.get('/daily-statement', params, { preserveState: true });
     };
 
     const clearFilters = () => {
         const today = new Date().toISOString().split('T')[0];
         setStartDate(today);
         setEndDate(today);
+        setShiftId('all');
         router.get('/daily-statement', {
             start_date: today,
             end_date: today,
@@ -103,6 +116,9 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                             const params = new URLSearchParams();
                             params.append('start_date', startDate);
                             params.append('end_date', endDate);
+                            if (shiftId !== 'all') {
+                                params.append('shift_id', shiftId);
+                            }
                             window.location.href = `/daily-statement/download-pdf?${params.toString()}`;
                         }}
                     >
@@ -118,7 +134,7 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                             <div>
                                 <Label className="dark:text-gray-200">Start Date</Label>
                                 <Input
@@ -136,6 +152,22 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                                     onChange={(e) => setEndDate(e.target.value)}
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
+                            </div>
+                            <div>
+                                <Label className="dark:text-gray-200">Shift</Label>
+                                <Select value={shiftId} onValueChange={setShiftId}>
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="Select Shift" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Shifts</SelectItem>
+                                        {shifts.map((shift) => (
+                                            <SelectItem key={shift.id} value={shift.id.toString()}>
+                                                {shift.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="flex items-end gap-2 md:col-span-2">
                                 <Button onClick={applyFilters} className="flex-1">Apply Filters</Button>
