@@ -68,7 +68,10 @@ interface Vehicle {
     id: number;
     vehicle_number: string;
     customer_id: number;
-    product_id: number;
+    products?: {
+        id: number;
+        product_name: string;
+    }[];
     customer: {
         id: number;
         name: string;
@@ -438,7 +441,9 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                 const selectedVehicle = vehicles.find(v => v.id.toString() === value);
                 if (selectedVehicle) {
                     newProducts[index].customer_id = selectedVehicle.customer_id.toString();
-                    newProducts[index].product_id = selectedVehicle.product_id.toString();
+                    if (selectedVehicle.products && selectedVehicle.products.length > 0) {
+                        newProducts[index].product_id = selectedVehicle.products[0].id.toString();
+                    }
                 }
             }
 
@@ -481,6 +486,15 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
     const getFilteredVehicles = (customerId: string) => {
         if (!customerId) return vehicles;
         return vehicles.filter(v => v.customer_id.toString() === customerId);
+    };
+
+    const getFilteredProducts = (vehicleId: string) => {
+        if (!vehicleId) return products;
+        const selectedVehicle = vehicles.find(v => v.id.toString() === vehicleId);
+        if (!selectedVehicle || !selectedVehicle.products || selectedVehicle.products.length === 0) {
+            return [];
+        }
+        return products.filter(p => selectedVehicle.products!.some(vp => vp.id === p.id));
     };
 
     const getAvailableShifts = (selectedDate: string) => {
@@ -857,7 +871,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                             <SelectValue placeholder="Select product" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {products.map((product) => (
+                                            {getFilteredProducts(data.products[0]?.vehicle_id).map((product) => (
                                                 <SelectItem key={product.id} value={product.id.toString()}>
                                                     {product.product_name}
                                                 </SelectItem>
@@ -870,7 +884,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                     <Input
                                         type="number"
                                         step="0.01"
-                                        value={products.find(p => p.id.toString() === data.products[0]?.product_id)?.sales_price || ''}
+                                        value={getFilteredProducts(data.products[0]?.vehicle_id).find(p => p.id.toString() === data.products[0]?.product_id)?.sales_price || ''}
                                         readOnly
                                         className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />

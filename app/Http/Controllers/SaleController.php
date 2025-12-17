@@ -81,7 +81,7 @@ class SaleController extends Controller
             'sales' => $sales,
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
-            'vehicles' => Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id', 'product_id')->get(),
+            'vehicles' => Vehicle::with(['customer:id,name', 'products:id,product_name'])->select('id', 'vehicle_number', 'customer_id')->get(),
             'salesHistory' => $salesHistory,
             'products' => Product::with(['unit', 'stock', 'activeRate'])->select('id', 'product_name', 'product_code', 'unit_id')->get()->map(function ($product) {
                 $product->sales_price = $product->activeRate ? $product->activeRate->sales_price : 0;

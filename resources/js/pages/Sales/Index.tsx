@@ -67,7 +67,10 @@ interface Vehicle {
     id: number;
     vehicle_number: string;
     customer_id: number;
-    product_id: number;
+    products?: {
+        id: number;
+        product_name: string;
+    }[];
     customer: {
         id: number;
         name: string;
@@ -591,9 +594,10 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                 setData((prevData: any) => {
                     const newProducts = [...prevData.products];
                     newProducts[index].customer = vehicle.customer?.name || '';
-                    if (vehicle.product_id) {
-                        newProducts[index].product_id = vehicle.product_id.toString();
-                        const selectedProduct = products.find(p => p.id === vehicle.product_id);
+                    if (vehicle.products && vehicle.products.length > 0) {
+                        const firstProduct = vehicle.products[0];
+                        newProducts[index].product_id = firstProduct.id.toString();
+                        const selectedProduct = products.find(p => p.id === firstProduct.id);
                         if (selectedProduct && selectedProduct.sales_price) {
                             const quantity = parseFloat(newProducts[index].quantity) || 0;
                             newProducts[index].amount = (selectedProduct.sales_price * quantity).toString();
