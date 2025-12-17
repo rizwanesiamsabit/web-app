@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Stock;
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -13,6 +14,7 @@ class StockController extends Controller
     {
         $query = Stock::with(['product.unit', 'product.category']);
 
+        // Apply filters
         if ($request->search) {
             $query->whereHas('product', function ($q) use ($request) {
                 $q->where('product_name', 'like', '%' . $request->search . '%')
@@ -20,21 +22,48 @@ class StockController extends Controller
             });
         }
 
-        $stocks = $query->paginate($request->per_page ?? 10);
+        if ($request->category && $request->category !== 'all') {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('category_id', $request->category);
+            });
+        }
+
+        if ($request->status && $request->status !== 'all') {
+            if ($request->status === 'in_stock') {
+                $query->where('current_stock', '>', 0);
+            } elseif ($request->status === 'out_of_stock') {
+                $query->where('current_stock', '<=', 0);
+            } elseif ($request->status === 'low_stock') {
+                $query->where('current_stock', '>', 0)->where('current_stock', '<=', 10);
+            }
+        }
+
+        if ($request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        // Apply sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Paginate
+        $perPage = $request->get('per_page', 10);
+        $stocks = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Stocks/Stocks', [
             'stocks' => $stocks,
             'products' => Product::select('id', 'product_name')->get(),
-            'filters' => $request->only(['search', 'per_page'])
+            'categories' => Category::select('id', 'name')->get(),
+            'filters' => $request->only(['search', 'category', 'status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }
 
-    public function create()
-    {
-        return Inertia::render('Stocks/Create', [
-            'products' => Product::select('id', 'product_name')->get()
-        ]);
-    }
+
 
     public function store(Request $request)
     {
@@ -46,16 +75,10 @@ class StockController extends Controller
 
         Stock::create($request->all());
 
-        return redirect()->route('stocks.index')->with('success', 'Stock created successfully.');
+        return redirect()->back()->with('success', 'Stock created successfully.');
     }
 
-    public function edit(Stock $stock)
-    {
-        return Inertia::render('Stocks/Edit', [
-            'stock' => $stock->load('product'),
-            'products' => Product::select('id', 'product_name')->get()
-        ]);
-    }
+
 
     public function update(Request $request, Stock $stock)
     {
@@ -67,13 +90,71 @@ class StockController extends Controller
 
         $stock->update($request->all());
 
-        return redirect()->route('stocks.index')->with('success', 'Stock updated successfully.');
+        return redirect()->back()->with('success', 'Stock updated successfully.');
     }
 
     public function destroy(Stock $stock)
     {
         $stock->delete();
+        return redirect()->back()->with('success', 'Stock deleted successfully.');
+    }
 
-        return redirect()->route('stocks.index')->with('success', 'Stock deleted successfully.');
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:stocks,id'
+        ]);
+
+        Stock::whereIn('id', $request->ids)->delete();
+        return redirect()->back()->with('success', count($request->ids) . ' stocks deleted successfully.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = Stock::with(['product.unit', 'product.category']);
+
+        // Apply same filters as index method
+        if ($request->search) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('product_name', 'like', '%' . $request->search . '%')
+                    ->orWhere('product_code', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->category && $request->category !== 'all') {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('category_id', $request->category);
+            });
+        }
+
+        if ($request->status && $request->status !== 'all') {
+            if ($request->status === 'in_stock') {
+                $query->where('current_stock', '>', 0);
+            } elseif ($request->status === 'out_of_stock') {
+                $query->where('current_stock', '<=', 0);
+            } elseif ($request->status === 'low_stock') {
+                $query->where('current_stock', '>', 0)->where('current_stock', '<=', 10);
+            }
+        }
+
+        if ($request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $stocks = $query->get();
+        $companySetting = \App\Models\CompanySetting::first();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.stocks', compact('stocks', 'companySetting'));
+        $filename = 'stocks_' . date('Y-m-d_H-i-s') . '.pdf';
+        return $pdf->download($filename);
     }
 }

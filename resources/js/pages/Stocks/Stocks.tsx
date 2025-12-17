@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Edit, Filter, Package, Plus, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, FileText, Filter, Package, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Stock {
@@ -32,6 +32,11 @@ interface Product {
     product_name: string;
 }
 
+interface Category {
+    id: number;
+    name: string;
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: dashboard().url },
     { title: 'Stocks', href: '/stocks' },
@@ -48,17 +53,32 @@ interface StocksProps {
         to: number;
     };
     products: Product[];
+    categories: Category[];
     filters: {
         search?: string;
+        category?: string;
+        status?: string;
+        start_date?: string;
+        end_date?: string;
+        sort_by?: string;
+        sort_order?: string;
         per_page?: number;
     };
 }
 
-export default function Stocks({ stocks, products = [], filters = {} }: StocksProps) {
+export default function Stocks({ stocks, products = [], categories = [], filters = {} }: StocksProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingStock, setEditingStock] = useState<Stock | null>(null);
     const [deletingStock, setDeletingStock] = useState<Stock | null>(null);
+    const [selectedStocks, setSelectedStocks] = useState<number[]>([]);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters.search || '');
+    const [category, setCategory] = useState(filters.category || 'all');
+
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
+    const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
     const [perPage, setPerPage] = useState(filters.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -75,13 +95,39 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
     const applyFilters = () => {
         router.get('/stocks', {
             search: search || undefined,
+            category: category === 'all' ? undefined : category,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            sort_by: sortBy,
+            sort_order: sortOrder,
             per_page: perPage,
         }, { preserveState: true });
     };
 
     const clearFilters = () => {
         setSearch('');
+        setCategory('all');
+
+        setStartDate('');
+        setEndDate('');
         router.get('/stocks', {
+            sort_by: sortBy,
+            sort_order: sortOrder,
+            per_page: perPage,
+        }, { preserveState: true });
+    };
+
+    const handleSort = (column: string) => {
+        const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
+        setSortBy(column);
+        setSortOrder(newOrder);
+        router.get('/stocks', {
+            search: search || undefined,
+            category: category === 'all' ? undefined : category,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            sort_by: column,
+            sort_order: newOrder,
             per_page: perPage,
         }, { preserveState: true });
     };
@@ -89,6 +135,11 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
     const handlePageChange = (page: number) => {
         router.get('/stocks', {
             search: search || undefined,
+            category: category === 'all' ? undefined : category,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            sort_by: sortBy,
+            sort_order: sortOrder,
             per_page: perPage,
             page,
         }, { preserveState: true });
@@ -134,6 +185,36 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
         }
     };
 
+    const handleBulkDelete = () => {
+        setIsBulkDeleting(true);
+    };
+
+    const confirmBulkDelete = () => {
+        router.delete('/stocks/bulk/delete', {
+            data: { ids: selectedStocks },
+            onSuccess: () => {
+                setSelectedStocks([]);
+                setIsBulkDeleting(false);
+            },
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedStocks.length === stocks.data.length) {
+            setSelectedStocks([]);
+        } else {
+            setSelectedStocks(stocks.data.map((stock) => stock.id));
+        }
+    };
+
+    const toggleSelectStock = (stockId: number) => {
+        if (selectedStocks.includes(stockId)) {
+            setSelectedStocks(selectedStocks.filter((id) => id !== stockId));
+        } else {
+            setSelectedStocks([...selectedStocks, stockId]);
+        }
+    };
+
     useEffect(() => {
         const timer = setTimeout(() => {
             if (search !== (filters.search || '')) {
@@ -153,9 +234,33 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
                         <h1 className="text-3xl font-bold dark:text-white">Stocks</h1>
                         <p className="text-gray-600 dark:text-gray-400">Manage stock levels</p>
                     </div>
-                    <Button onClick={handleCreate} variant="success">
-                        <Plus className="mr-2 h-4 w-4" />Add Stock
-                    </Button>
+                    <div className="flex gap-2">
+                        {selectedStocks.length > 0 && (
+                            <Button variant="destructive" onClick={handleBulkDelete}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Selected ({selectedStocks.length})
+                            </Button>
+                        )}
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                if (search) params.append('search', search);
+                                if (category !== 'all') params.append('category', category);
+
+                                if (startDate) params.append('start_date', startDate);
+                                if (endDate) params.append('end_date', endDate);
+                                if (sortBy) params.append('sort_by', sortBy);
+                                if (sortOrder) params.append('sort_order', sortOrder);
+                                window.location.href = `/stocks/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />Download
+                        </Button>
+                        <Button onClick={handleCreate}>
+                            <Plus className="mr-2 h-4 w-4" />Add Stock
+                        </Button>
+                    </div>
                 </div>
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
@@ -166,13 +271,46 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                             <div>
                                 <Label className="dark:text-gray-200">Search</Label>
                                 <Input
                                     placeholder="Search products..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label className="dark:text-gray-200">Category</Label>
+                                <Select value={category} onValueChange={(value) => { setCategory(value); applyFilters(); }}>
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="All categories" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All categories</SelectItem>
+                                        {categories.map((cat) => (
+                                            <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div>
+                                <Label className="dark:text-gray-200">Start Date</Label>
+                                <Input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label className="dark:text-gray-200">End Date</Label>
+                                <Input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
@@ -192,12 +330,35 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedStocks.length === stocks.data.length && stocks.data.length > 0}
+                                                onChange={toggleSelectAll}
+                                                className="rounded border-gray-300 dark:border-gray-600"
+                                            />
+                                        </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Product Code</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Product Name</th>
+                                        <th className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300" onClick={() => handleSort('product_name')}>
+                                            <div className="flex items-center gap-1">
+                                                Product Name
+                                                {sortBy === 'product_name' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                            </div>
+                                        </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Category</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Unit</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Current Stock</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Available Stock</th>
+                                        <th className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300" onClick={() => handleSort('current_stock')}>
+                                            <div className="flex items-center gap-1">
+                                                Current Stock
+                                                {sortBy === 'current_stock' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                            </div>
+                                        </th>
+                                        <th className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300" onClick={() => handleSort('available_stock')}>
+                                            <div className="flex items-center gap-1">
+                                                Available Stock
+                                                {sortBy === 'available_stock' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                            </div>
+                                        </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
                                 </thead>
@@ -205,6 +366,14 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
                                     {stocks.data.length > 0 ? (
                                         stocks.data.map((stock) => (
                                             <tr key={stock.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                <td className="p-4">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedStocks.includes(stock.id)}
+                                                        onChange={() => toggleSelectStock(stock.id)}
+                                                        className="rounded border-gray-300 dark:border-gray-600"
+                                                    />
+                                                </td>
                                                 <td className="p-4 text-[13px] dark:text-white">{stock.product.product_code}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{stock.product.product_name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{stock.product.category.name}</td>
@@ -235,7 +404,7 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={7} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <Package className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No stocks found
                                             </td>
@@ -253,7 +422,18 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
                             total={stocks.total}
                             perPage={perPage}
                             onPageChange={handlePageChange}
-                            onPerPageChange={(newPerPage) => { setPerPage(newPerPage); applyFilters(); }}
+                            onPerPageChange={(newPerPage) => {
+                                setPerPage(newPerPage);
+                                router.get('/stocks', {
+                                    search: search || undefined,
+                                    category: category === 'all' ? undefined : category,
+                                    start_date: startDate || undefined,
+                                    end_date: endDate || undefined,
+                                    sort_by: sortBy,
+                                    sort_order: sortOrder,
+                                    per_page: newPerPage,
+                                }, { preserveState: true });
+                            }}
                         />
                     </CardContent>
                 </Card>
@@ -376,6 +556,14 @@ export default function Stocks({ stocks, products = [], filters = {} }: StocksPr
                     onConfirm={confirmDelete}
                     title="Delete Stock"
                     message={`Are you sure you want to delete the stock for "${deletingStock?.product.product_name}"? This action cannot be undone.`}
+                />
+
+                <DeleteModal
+                    isOpen={isBulkDeleting}
+                    onClose={() => setIsBulkDeleting(false)}
+                    onConfirm={confirmBulkDelete}
+                    title="Delete Selected Stocks"
+                    message={`Are you sure you want to delete ${selectedStocks.length} selected stocks? This action cannot be undone.`}
                 />
             </div>
         </AppLayout>

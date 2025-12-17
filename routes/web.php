@@ -273,6 +273,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('stocks', [StockController::class, 'store'])->name('stocks.store');
     Route::put('stocks/{stock}', [StockController::class, 'update'])->name('stocks.update');
     Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
+    Route::delete('stocks/bulk/delete', [StockController::class, 'bulkDelete'])->name('stocks.bulk.delete');
+    Route::get('stocks/download-pdf', [StockController::class, 'downloadPdf'])->name('stocks.download.pdf');
     
     // Stock Report routes
     Route::get('stock-report', [StockReportController::class, 'index'])->name('stock-report.index');
