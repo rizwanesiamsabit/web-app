@@ -187,6 +187,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
     Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     Route::get('customers/{customer}/statement', [CustomerController::class, 'statement'])->name('customers.statement');
+    Route::get('customers/{customer}/sales-pdf', [CustomerController::class, 'downloadSalesPdf'])->name('customers.sales.pdf');
+    Route::get('customers/{customer}/payments-pdf', [CustomerController::class, 'downloadPaymentsPdf'])->name('customers.payments.pdf');
     Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
     

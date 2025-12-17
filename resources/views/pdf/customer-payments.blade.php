@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Payment Summary - {{ $supplier->name }}</title>
+    <title>Payment Summary - {{ $customer->name }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,14 +60,14 @@
             font-weight: bold;
             font-size: 14px;
         }
-        .supplier-info {
+        .customer-info {
             margin-bottom: 15px;
         }
-        .supplier-info table {
+        .customer-info table {
             width: 100%;
             border: none;
         }
-        .supplier-info td {
+        .customer-info td {
             border: none;
             padding: 2px 0;
             font-size: 12px;
@@ -144,15 +144,15 @@
         <div class="title-box">Payment Summary</div>
     </div>
 
-    <div class="supplier-info">
+    <div class="customer-info">
         <table>
             <tr>
-                <td><strong>Supplier Name:</strong> {{ $supplier->name }}</td>
-                <td><strong>Mobile:</strong> {{ $supplier->mobile ?? 'N/A' }}</td>
+                <td><strong>Customer Name:</strong> {{ $customer->name }}</td>
+                <td><strong>Mobile:</strong> {{ $customer->mobile ?? 'N/A' }}</td>
             </tr>
             <tr>
-                <td><strong>Address:</strong> {{ $supplier->address ?? 'N/A' }}</td>
-                <td><strong>Account Number:</strong> {{ $supplier->account->ac_number ?? 'N/A' }}</td>
+                <td><strong>Address:</strong> {{ $customer->address ?? 'N/A' }}</td>
+                <td><strong>Account Number:</strong> {{ $customer->account->ac_number ?? 'N/A' }}</td>
             </tr>
         </table>
     </div>

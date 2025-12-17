@@ -2,7 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, FileText, Filter, X } from 'lucide-react';
+import { ArrowLeft, FileText, Filter, X, Download } from 'lucide-react';
 import { useState } from 'react';
 
 interface Supplier {
@@ -42,6 +42,7 @@ interface Payment {
     date: string;
     amount: number;
     remarks?: string;
+    payment_type?: string;
 }
 
 interface PaginatedPayments {
@@ -192,7 +193,22 @@ export default function SupplierStatement({ supplier, transactions, currentBalan
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardHeader>
-                            <CardTitle className="dark:text-white">Purchase Summary</CardTitle>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="dark:text-white">Purchase Summary</CardTitle>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const params = new URLSearchParams();
+                                        if (startDate) params.append('start_date', startDate);
+                                        if (endDate) params.append('end_date', endDate);
+                                        window.location.href = `/suppliers/${supplier.id}/purchases-pdf?${params.toString()}`;
+                                    }}
+                                >
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Download
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto">
@@ -234,7 +250,22 @@ export default function SupplierStatement({ supplier, transactions, currentBalan
 
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardHeader>
-                            <CardTitle className="dark:text-white">Payment Summary</CardTitle>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="dark:text-white">Payment Summary</CardTitle>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const params = new URLSearchParams();
+                                        if (startDate) params.append('start_date', startDate);
+                                        if (endDate) params.append('end_date', endDate);
+                                        window.location.href = `/suppliers/${supplier.id}/payments-pdf?${params.toString()}`;
+                                    }}
+                                >
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Download
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto">
@@ -244,6 +275,7 @@ export default function SupplierStatement({ supplier, transactions, currentBalan
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">SL</th>
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Date</th>
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Amount</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Remark</th>
                                         </tr>
                                     </thead>
@@ -259,13 +291,16 @@ export default function SupplierStatement({ supplier, transactions, currentBalan
                                                         {payment.amount.toLocaleString()}
                                                     </td>
                                                     <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        {payment.payment_type || 'N/A'}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
                                                         {payment.remarks || 'N/A'}
                                                     </td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan={4} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                                <td colSpan={5} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                     No payments found
                                                 </td>
                                             </tr>

@@ -426,10 +426,6 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Mobile
                                         </th>
-
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Status
-                                        </th>
                                         <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
                                             Total Sale
                                         </th>
@@ -437,7 +433,10 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                             Total Payment
                                         </th>
                                         <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
-                                            Total Due/Advanced
+                                            Total
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Status
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
@@ -478,7 +477,19 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {customer.mobile || 'N/A'}
                                                 </td>
-
+                                                <td className="p-4 text-[13px] text-right dark:text-white font-semibold">
+                                                    {customer.total_sales?.toLocaleString() || '0'}
+                                                </td>
+                                                <td className="p-4 text-[13px] text-right dark:text-green-400 font-semibold">
+                                                    {customer.total_paid?.toLocaleString() || '0'}
+                                                </td>
+                                                <td className="p-4 text-[13px] text-right font-semibold">
+                                                    <span className={(customer.current_due || 0) > 0 ? 'text-red-600 dark:text-red-400' : (customer.current_due || 0) < 0 ? 'text-green-600 dark:text-green-400' : 'dark:text-white'}>
+                                                        {Math.abs(customer.current_due || 0).toLocaleString()}
+                                                        {(customer.current_due || 0) > 0 && ' (Due)'}
+                                                        {(customer.current_due || 0) < 0 && ' (Adv)'}
+                                                    </span>
+                                                </td>
                                                 <td className="p-4">
                                                     <span className={`px-2 py-1 rounded text-xs ${
                                                         customer.status 
@@ -487,21 +498,6 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                                     }`}>
                                                         {customer.status ? 'Active' : 'Inactive'}
                                                     </span>
-                                                </td>
-                                                <td className="p-4 text-right text-[13px] dark:text-gray-300">
-                                                    {customer.total_sales?.toLocaleString() || '0.00'}
-                                                </td>
-                                                <td className="p-4 text-right text-[13px] dark:text-gray-300">
-                                                    {customer.total_paid?.toLocaleString() || '0.00'}
-                                                </td>
-                                                <td className={`p-4 text-right text-[13px] ${
-                                                    (customer.current_due || 0) > 0 
-                                                        ? 'text-red-600 dark:text-red-400' 
-                                                        : (customer.current_due || 0) < 0 
-                                                            ? 'text-green-600 dark:text-green-400' 
-                                                            : 'dark:text-gray-300'
-                                                }`}>
-                                                    {(customer.current_due || 0) < 0 ? '-' : ''}{Math.abs(customer.current_due || 0).toLocaleString()}
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="flex gap-2">

@@ -3,7 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, FileText, Filter } from 'lucide-react';
+import { ArrowLeft, FileText, Filter, Download } from 'lucide-react';
 import { useState } from 'react';
 
 interface Customer {
@@ -166,6 +166,16 @@ export default function CustomerStatement({ customer, transactions, currentBalan
                             <div className="flex justify-between items-center">
                                 <CardTitle className="dark:text-white">Sales Summary</CardTitle>
                                 <div className="flex gap-2 items-center">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            window.location.href = `/customers/${customer.id}/sales-pdf?year=${selectedYear}`;
+                                        }}
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Download
+                                    </Button>
                                     <Select value={selectedYear} onValueChange={setSelectedYear}>
                                         <SelectTrigger className="w-20 h-8 text-xs">
                                             <SelectValue />
@@ -230,6 +240,19 @@ export default function CustomerStatement({ customer, transactions, currentBalan
                             <div className="flex justify-between items-center">
                                 <CardTitle className="dark:text-white">Payment Summary</CardTitle>
                                 <div className="flex gap-2 items-center">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            const params = new URLSearchParams();
+                                            if (startDate) params.append('start_date', startDate);
+                                            if (endDate) params.append('end_date', endDate);
+                                            window.location.href = `/customers/${customer.id}/payments-pdf?${params.toString()}`;
+                                        }}
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Download
+                                    </Button>
                                     <input 
                                         type="date"
                                         value={startDate}

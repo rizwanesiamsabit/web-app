@@ -36,6 +36,18 @@ class SupplierController extends Controller
 
         $perPage = $request->get('per_page', 10);
         $suppliers = $query->paginate($perPage)->withQueryString()->through(function ($supplier) {
+            $totalPurchases = $supplier->purchases()->sum('net_total_amount');
+            $purchasePaid = $supplier->purchases()->sum('paid_amount');
+            $voucherPayments = \App\Models\Voucher::where('to_account_id', $supplier->account_id)
+                ->where('voucher_type', 'payment')
+                ->with('toTransaction')
+                ->get()
+                ->sum(function($voucher) {
+                    return $voucher->toTransaction->amount ?? 0;
+                });
+            $totalPaid = $purchasePaid + $voucherPayments;
+            $totalDue = $totalPurchases - $totalPaid;
+            
             return [
                 'id' => $supplier->id,
                 'name' => $supplier->name,
@@ -45,6 +57,10 @@ class SupplierController extends Controller
                 'proprietor_name' => $supplier->proprietor_name,
                 'group_id' => $supplier->account->group_id ?? null,
                 'group_code' => $supplier->account->group->code ?? null,
+                'account_number' => $supplier->account->ac_number ?? null,
+                'total_purchases' => $totalPurchases,
+                'total_payment' => $totalPaid,
+                'total_due' => $totalDue,
                 'status' => $supplier->status,
                 'created_at' => $supplier->created_at->format('Y-m-d'),
             ];
@@ -316,7 +332,7 @@ class SupplierController extends Controller
         if ($supplier->account) {
             $query = Voucher::where('voucher_type', 'payment')
                 ->where('to_account_id', $supplier->account->id)
-                ->with('toTransaction:id,amount');
+                ->with('toTransaction:id,amount,payment_type');
             
             if ($request->start_date) {
                 $query->whereDate('date', '>=', $request->start_date);
@@ -333,6 +349,7 @@ class SupplierController extends Controller
                         'id' => $voucher->id,
                         'date' => $voucher->date,
                         'amount' => $voucher->toTransaction->amount ?? 0,
+                        'payment_type' => $voucher->toTransaction->payment_type ?? null,
                         'remarks' => $voucher->remarks,
                     ];
                 });
@@ -419,7 +436,7 @@ class SupplierController extends Controller
         
         $query = Voucher::where('voucher_type', 'payment')
             ->where('to_account_id', $supplier->account->id)
-            ->with('toTransaction:id,amount');
+            ->with('toTransaction:id,amount,payment_type');
         
         if ($request->start_date) {
             $query->whereDate('date', '>=', $request->start_date);
@@ -435,6 +452,7 @@ class SupplierController extends Controller
                     'id' => $voucher->id,
                     'date' => $voucher->date,
                     'amount' => $voucher->toTransaction->amount ?? 0,
+                    'payment_type' => $voucher->toTransaction->payment_type ?? null,
                     'remarks' => $voucher->remarks,
                 ];
             });

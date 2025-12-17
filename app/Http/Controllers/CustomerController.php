@@ -522,4 +522,64 @@ class CustomerController extends Controller
         $filename = 'customers_' . date('Y-m-d_H-i-s') . '.pdf';
         return $pdf->download($filename);
     }
+
+    public function downloadSalesPdf(Request $request, Customer $customer)
+    {
+        $customer->load('account');
+        
+        $year = $request->get('year', date('Y'));
+        
+        $monthlySales = CreditSale::where('customer_id', $customer->id)
+            ->whereYear('sale_date', $year)
+            ->selectRaw('YEAR(sale_date) as year, MONTH(sale_date) as month, SUM(total_amount) as total')
+            ->groupBy('year', 'month')
+            ->orderBy('month', 'asc')
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'month' => date('F Y', mktime(0, 0, 0, $sale->month, 1, $sale->year)),
+                    'total' => $sale->total
+                ];
+            });
+
+        $companySetting = \App\Models\CompanySetting::first();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.customer-sales', compact('customer', 'monthlySales', 'year', 'companySetting'));
+        $filename = 'customer_sales_' . $customer->name . '_' . $year . '_' . date('Y-m-d_H-i-s') . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function downloadPaymentsPdf(Request $request, Customer $customer)
+    {
+        $customer->load('account');
+        
+        $query = Voucher::where('voucher_type', 'Received')
+            ->where('to_account_id', $customer->account->id)
+            ->with('toTransaction:id,amount,payment_type');
+        
+        if ($request->start_date) {
+            $query->whereDate('date', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $query->whereDate('date', '<=', $request->end_date);
+        }
+        
+        $payments = $query->orderBy('date', 'desc')
+            ->get()
+            ->map(function ($voucher) {
+                return [
+                    'id' => $voucher->id,
+                    'date' => $voucher->date,
+                    'amount' => $voucher->toTransaction->amount ?? 0,
+                    'payment_type' => $voucher->toTransaction->payment_type ?? null,
+                    'remarks' => $voucher->remarks,
+                ];
+            });
+
+        $companySetting = \App\Models\CompanySetting::first();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.customer-payments', compact('customer', 'payments', 'companySetting'));
+        $filename = 'customer_payments_' . $customer->name . '_' . date('Y-m-d_H-i-s') . '.pdf';
+        return $pdf->download($filename);
+    }
 }

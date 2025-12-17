@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Payment Summary - {{ $supplier->name }}</title>
+    <title>Sales Summary - {{ $customer->name }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,14 +60,14 @@
             font-weight: bold;
             font-size: 14px;
         }
-        .supplier-info {
+        .customer-info {
             margin-bottom: 15px;
         }
-        .supplier-info table {
+        .customer-info table {
             width: 100%;
             border: none;
         }
-        .supplier-info td {
+        .customer-info td {
             border: none;
             padding: 2px 0;
             font-size: 12px;
@@ -141,18 +141,18 @@
     </div>
 
     <div class="title-section">
-        <div class="title-box">Payment Summary</div>
+        <div class="title-box">Sales Summary ({{ $year }})</div>
     </div>
 
-    <div class="supplier-info">
+    <div class="customer-info">
         <table>
             <tr>
-                <td><strong>Supplier Name:</strong> {{ $supplier->name }}</td>
-                <td><strong>Mobile:</strong> {{ $supplier->mobile ?? 'N/A' }}</td>
+                <td><strong>Customer Name:</strong> {{ $customer->name }}</td>
+                <td><strong>Mobile:</strong> {{ $customer->mobile ?? 'N/A' }}</td>
             </tr>
             <tr>
-                <td><strong>Address:</strong> {{ $supplier->address ?? 'N/A' }}</td>
-                <td><strong>Account Number:</strong> {{ $supplier->account->ac_number ?? 'N/A' }}</td>
+                <td><strong>Address:</strong> {{ $customer->address ?? 'N/A' }}</td>
+                <td><strong>Account Number:</strong> {{ $customer->account->ac_number ?? 'N/A' }}</td>
             </tr>
         </table>
     </div>
@@ -161,30 +161,26 @@
         <thead>
             <tr>
                 <th class="text-center">SL</th>
-                <th>Date</th>
-                <th class="text-right">Amount</th>
-                <th>Payment Type</th>
-                <th>Remark</th>
+                <th>Month</th>
+                <th class="text-right">Total Sale</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($payments as $index => $payment)
+            @forelse($monthlySales as $index => $sale)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ \Carbon\Carbon::parse($payment['date'])->format('d/m/Y') }}</td>
-                <td class="text-right">{{ number_format($payment['amount'], 2) }}</td>
-                <td>{{ $payment['payment_type'] ?? 'N/A' }}</td>
-                <td>{{ $payment['remarks'] ?? 'N/A' }}</td>
+                <td>{{ $sale['month'] }}</td>
+                <td class="text-right">{{ number_format($sale['total'], 2) }}</td>
             </tr>
             @empty
-            <tr><td colspan="5" class="text-center" style="padding: 20px; color: #999;">No records found</td></tr>
+            <tr><td colspan="3" class="text-center" style="padding: 20px; color: #999;">No records found</td></tr>
             @endforelse
         </tbody>
     </table>
 
-    @if(count($payments) > 0)
+    @if(count($monthlySales) > 0)
     @php
-        $grandTotal = collect($payments)->sum('amount');
+        $grandTotal = collect($monthlySales)->sum('total');
         
         function numberToWords($num) {
             $ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
@@ -218,11 +214,11 @@
     <table style="margin-top: 20px;">
         <tbody>
             <tr style="font-weight: bold; background-color: #d0d0d0; font-size: 14px;">
-                <td colspan="4" style="padding: 12px;">Grand Total:</td>
+                <td colspan="2" style="padding: 12px;">Grand Total:</td>
                 <td class="text-right" style="padding: 12px;">{{ number_format($grandTotal, 2) }}</td>
             </tr>
             <tr style="background-color: #f5f5f5;">
-                <td colspan="5" style="padding: 12px; font-style: italic; font-size: 12px;">
+                <td colspan="3" style="padding: 12px; font-style: italic; font-size: 12px;">
                     In words: {{ numberToWords(floor($grandTotal)) }}
                 </td>
             </tr>
@@ -235,7 +231,7 @@
             Generated on: {{ date('Y-m-d H:i:s') }}
         </div>
         <div class="footer-right">
-            Total Payments: {{ count($payments) }}
+            Year: {{ $year }}
         </div>
     </div>
 </body>

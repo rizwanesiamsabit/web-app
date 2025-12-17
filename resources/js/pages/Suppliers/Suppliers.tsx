@@ -40,6 +40,10 @@ interface Supplier {
     proprietor_name: string;
     group_id?: number;
     group_code?: string;
+    account_number?: string;
+    total_purchases?: number;
+    total_payment?: number;
+    total_due?: number;
     status: boolean;
     created_at: string;
 }
@@ -385,6 +389,9 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                                 className="rounded border-gray-300 dark:border-gray-600"
                                             />
                                         </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            SL
+                                        </th>
                                         <th
                                             className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
                                             onClick={() => handleSort('name')}
@@ -400,13 +407,19 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                             </div>
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Account Number
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Mobile
                                         </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Email
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Total Purchases
                                         </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Proprietor
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Total Payment
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Total
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
@@ -418,7 +431,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                 </thead>
                                 <tbody>
                                     {suppliers.data.length > 0 ? (
-                                        suppliers.data.map((supplier) => (
+                                        suppliers.data.map((supplier, index) => (
                                             <tr
                                                 key={supplier.id}
                                                 className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
@@ -432,16 +445,29 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                                     />
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">
+                                                    {(suppliers.current_page - 1) * suppliers.per_page + index + 1}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-white">
                                                     {supplier.name}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {supplier.account_number || 'N/A'}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {supplier.mobile || 'N/A'}
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {supplier.email || 'N/A'}
+                                                <td className="p-4 text-[13px] text-right dark:text-white font-semibold">
+                                                    {supplier.total_purchases?.toLocaleString() || '0'}
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {supplier.proprietor_name || 'N/A'}
+                                                <td className="p-4 text-[13px] text-right dark:text-green-400 font-semibold">
+                                                    {supplier.total_payment?.toLocaleString() || '0'}
+                                                </td>
+                                                <td className="p-4 text-[13px] text-right font-semibold">
+                                                    <span className={supplier.total_due > 0 ? 'text-red-600 dark:text-red-400' : supplier.total_due < 0 ? 'text-green-600 dark:text-green-400' : 'dark:text-white'}>
+                                                        {Math.abs(supplier.total_due || 0).toLocaleString()}
+                                                        {supplier.total_due > 0 && ' (Due)'}
+                                                        {supplier.total_due < 0 && ' (Adv)'}
+                                                    </span>
                                                 </td>
                                                 <td className="p-4">
                                                     <span
@@ -487,7 +513,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={10}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <SuppliersIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
