@@ -388,4 +388,50 @@ class SaleController extends Controller
 
         return $pdf->stream("batch-invoice-{$batchCode}.pdf");
     }
+
+    public function downloadPdf(Request $request)
+    {
+        $query = Sale::with(['product', 'shift'])
+            ->leftJoin('sale_batches', 'sales.id', '=', 'sale_batches.sale_id')
+            ->select('sales.*', 'sale_batches.batch_code');
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('invoice_no', 'like', '%' . $request->search . '%')
+                    ->orWhere('customer', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->customer && $request->customer !== 'all') {
+            $query->where('customer', $request->customer);
+        }
+
+        if ($request->payment_status && $request->payment_status !== 'all') {
+            if ($request->payment_status === 'paid') {
+                $query->where('due_amount', 0);
+            } elseif ($request->payment_status === 'partial') {
+                $query->where('paid_amount', '>', 0)->where('due_amount', '>', 0);
+            } elseif ($request->payment_status === 'due') {
+                $query->where('paid_amount', 0);
+            }
+        }
+
+        if ($request->start_date) {
+            $query->where('sale_date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->where('sale_date', '<=', $request->end_date);
+        }
+
+        $sortBy = $request->sort_by ?? 'created_at';
+        $sortOrder = $request->sort_order ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        $sales = $query->get();
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.sales', compact('sales', 'companySetting'));
+        return $pdf->stream('sales.pdf');
+    }
 }

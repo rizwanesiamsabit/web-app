@@ -347,6 +347,6 @@ class ReceivedVoucherController extends Controller
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.received-vouchers', compact('vouchers', 'companySetting'));
-        return $pdf->download('received-vouchers.pdf');
+        return $pdf->stream('received-vouchers.pdf');
     }
 }

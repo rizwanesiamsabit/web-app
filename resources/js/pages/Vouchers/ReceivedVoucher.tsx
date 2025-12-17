@@ -24,8 +24,8 @@ import {
     FileText,
     Filter,
     Plus,
-    Trash2,
     Receipt,
+    Trash2,
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -100,15 +100,33 @@ interface ReceivedVoucherProps {
     };
 }
 
-export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, accounts = [], groupedAccounts = {}, shifts = [], filters = {} }: ReceivedVoucherProps) {
+export default function ReceivedVoucher({
+    vouchers = {
+        data: [],
+        current_page: 1,
+        last_page: 1,
+        per_page: 10,
+        total: 0,
+        from: 0,
+        to: 0,
+    },
+    accounts = [],
+    groupedAccounts = {},
+    shifts = [],
+    filters = {},
+}: ReceivedVoucherProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [editingVoucher, setEditingVoucher] = useState<ReceivedVoucher | null>(null);
-    const [deletingVoucher, setDeletingVoucher] = useState<ReceivedVoucher | null>(null);
+    const [editingVoucher, setEditingVoucher] =
+        useState<ReceivedVoucher | null>(null);
+    const [deletingVoucher, setDeletingVoucher] =
+        useState<ReceivedVoucher | null>(null);
     const [selectedVouchers, setSelectedVouchers] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters?.search || '');
 
-    const [paymentType, setPaymentType] = useState(filters?.payment_type || 'all');
+    const [paymentType, setPaymentType] = useState(
+        filters?.payment_type || 'all',
+    );
     const [startDate, setStartDate] = useState(filters?.start_date || '');
     const [endDate, setEndDate] = useState(filters?.end_date || '');
     const [sortBy, setSortBy] = useState(filters?.sort_by || 'created_at');
@@ -136,9 +154,14 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
     });
 
     const getFilteredAccounts = () => {
-        const groupName = data.payment_type === 'Cash' ? 'Cash in hand' : 
-                         data.payment_type === 'Bank' ? 'Bank Account' :
-                         data.payment_type === 'Mobile Bank' ? 'Mobile Bank' : 'Other';
+        const groupName =
+            data.payment_type === 'Cash'
+                ? 'Cash in hand'
+                : data.payment_type === 'Bank'
+                  ? 'Bank Account'
+                  : data.payment_type === 'Mobile Bank'
+                    ? 'Mobile Bank'
+                    : 'Other';
         return groupedAccounts[groupName] || [];
     };
 
@@ -244,7 +267,8 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
     };
 
     const handleSort = (column: string) => {
-        const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
+        const newOrder =
+            sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
         setSortBy(column);
         setSortOrder(newOrder);
         router.get(
@@ -289,7 +313,9 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
 
     const toggleSelectVoucher = (voucherId: number) => {
         if (selectedVouchers.includes(voucherId)) {
-            setSelectedVouchers(selectedVouchers.filter((id) => id !== voucherId));
+            setSelectedVouchers(
+                selectedVouchers.filter((id) => id !== voucherId),
+            );
         } else {
             setSelectedVouchers([...selectedVouchers, voucherId]);
         }
@@ -334,12 +360,15 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                 const params = new URLSearchParams();
                                 if (search) params.append('search', search);
 
-                                if (paymentType !== 'all') params.append('payment_type', paymentType);
-                                if (startDate) params.append('start_date', startDate);
+                                if (paymentType !== 'all')
+                                    params.append('payment_type', paymentType);
+                                if (startDate)
+                                    params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
                                 if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                router.visit(`/vouchers/received/download-pdf?${params.toString()}`, { method: 'get' });
+                                if (sortOrder)
+                                    params.append('sort_order', sortOrder);
+                                window.location.href = `/vouchers/received/download-pdf?${params.toString()}`;
                             }}
                         >
                             <FileText className="mr-2 h-4 w-4" />
@@ -363,7 +392,9 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                             <div>
-                                <Label className="dark:text-gray-200">Search</Label>
+                                <Label className="dark:text-gray-200">
+                                    Search
+                                </Label>
                                 <Input
                                     placeholder="Search vouchers..."
                                     value={search}
@@ -373,7 +404,9 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                             </div>
 
                             <div>
-                                <Label className="dark:text-gray-200">Payment Type</Label>
+                                <Label className="dark:text-gray-200">
+                                    Payment Type
+                                </Label>
                                 <Select
                                     value={paymentType}
                                     onValueChange={(value) => {
@@ -385,24 +418,38 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                         <SelectValue placeholder="All types" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All types</SelectItem>
-                                        <SelectItem value="Cash">Cash</SelectItem>
-                                        <SelectItem value="Bank">Bank</SelectItem>
-                                        <SelectItem value="Mobile Bank">Mobile Bank</SelectItem>
+                                        <SelectItem value="all">
+                                            All types
+                                        </SelectItem>
+                                        <SelectItem value="Cash">
+                                            Cash
+                                        </SelectItem>
+                                        <SelectItem value="Bank">
+                                            Bank
+                                        </SelectItem>
+                                        <SelectItem value="Mobile Bank">
+                                            Mobile Bank
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
+                                <Label className="dark:text-gray-200">
+                                    Start Date
+                                </Label>
                                 <Input
                                     type="date"
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
+                                    onChange={(e) =>
+                                        setStartDate(e.target.value)
+                                    }
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
                             <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
+                                <Label className="dark:text-gray-200">
+                                    End Date
+                                </Label>
                                 <Input
                                     type="date"
                                     value={endDate}
@@ -414,7 +461,11 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                 <Button onClick={applyFilters} className="px-4">
                                     Apply Filters
                                 </Button>
-                                <Button onClick={clearFilters} variant="secondary" className="px-4">
+                                <Button
+                                    onClick={clearFilters}
+                                    variant="secondary"
+                                    className="px-4"
+                                >
                                     <X className="mr-2 h-4 w-4" />
                                     Clear
                                 </Button>
@@ -432,7 +483,11 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                         <th className="p-4 text-left font-medium dark:text-gray-300">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedVouchers.length === vouchers.data.length && vouchers.data.length > 0}
+                                                checked={
+                                                    selectedVouchers.length ===
+                                                        vouchers.data.length &&
+                                                    vouchers.data.length > 0
+                                                }
                                                 onChange={toggleSelectAll}
                                                 className="rounded border-gray-300 dark:border-gray-600"
                                             />
@@ -443,34 +498,68 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                         >
                                             <div className="flex items-center gap-1">
                                                 Date
-                                                {sortBy === 'date' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                {sortBy === 'date' &&
+                                                    (sortOrder === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    ))}
                                             </div>
                                         </th>
-                
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Received From</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">To Account</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Amount</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
+
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Received From
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            To Account
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Amount
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Payment Type
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {vouchers.data.length > 0 ? (
                                         vouchers.data.map((voucher) => (
-                                            <tr key={voucher.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                            <tr
+                                                key={voucher.id}
+                                                className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                                            >
                                                 <td className="p-4">
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedVouchers.includes(voucher.id)}
-                                                        onChange={() => toggleSelectVoucher(voucher.id)}
+                                                        checked={selectedVouchers.includes(
+                                                            voucher.id,
+                                                        )}
+                                                        onChange={() =>
+                                                            toggleSelectVoucher(
+                                                                voucher.id,
+                                                            )
+                                                        }
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
                                                 </td>
-                                                <td className="p-4 text-[13px] dark:text-white">{new Date(voucher.date).toLocaleDateString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-white">
+                                                    {new Date(
+                                                        voucher.date,
+                                                    ).toLocaleDateString()}
+                                                </td>
 
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.from_account.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.to_account.name}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.amount.toLocaleString()}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {voucher.from_account.name}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {voucher.to_account.name}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {voucher.amount.toLocaleString()}
+                                                </td>
                                                 <td className="p-4">
                                                     <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-200">
                                                         {voucher.payment_type}
@@ -481,7 +570,11 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => handleEdit(voucher)}
+                                                            onClick={() =>
+                                                                handleEdit(
+                                                                    voucher,
+                                                                )
+                                                            }
                                                             className="text-indigo-600 hover:text-indigo-800"
                                                         >
                                                             <Edit className="h-4 w-4" />
@@ -489,7 +582,11 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => handleDelete(voucher)}
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    voucher,
+                                                                )
+                                                            }
                                                             className="text-red-600 hover:text-red-800"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
@@ -500,7 +597,10 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td
+                                                colSpan={8}
+                                                className="p-8 text-center text-gray-500 dark:text-gray-400"
+                                            >
                                                 <Receipt className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No received vouchers found
                                             </td>
@@ -533,119 +633,224 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                         setEditingVoucher(null);
                         reset();
                     }}
-                    title={editingVoucher ? "Edit Received Voucher" : "Create Received Voucher"}
+                    title={
+                        editingVoucher
+                            ? 'Edit Received Voucher'
+                            : 'Create Received Voucher'
+                    }
                     onSubmit={handleSubmit}
                     processing={processing}
-                    submitText={editingVoucher ? "Update" : "Create"}
+                    submitText={editingVoucher ? 'Update' : 'Create'}
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label htmlFor="date" className="dark:text-gray-200">Date</Label>
+                            <Label
+                                htmlFor="date"
+                                className="dark:text-gray-200"
+                            >
+                                Date
+                            </Label>
                             <Input
                                 id="date"
                                 type="date"
                                 value={data.date}
-                                onChange={(e) => setData('date', e.target.value)}
+                                onChange={(e) =>
+                                    setData('date', e.target.value)
+                                }
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
-                            {errors.date && <span className="text-sm text-red-500">{errors.date}</span>}
+                            {errors.date && (
+                                <span className="text-sm text-red-500">
+                                    {errors.date}
+                                </span>
+                            )}
                         </div>
                         <div>
-                            <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
-                            <Select value={data.shift_id} onValueChange={(value) => setData('shift_id', value)}>
+                            <Label
+                                htmlFor="shift_id"
+                                className="dark:text-gray-200"
+                            >
+                                Shift
+                            </Label>
+                            <Select
+                                value={data.shift_id}
+                                onValueChange={(value) =>
+                                    setData('shift_id', value)
+                                }
+                            >
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                     <SelectValue placeholder="Choose shift" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {shifts.map((shift) => (
-                                        <SelectItem key={shift.id} value={shift.id.toString()}>
+                                        <SelectItem
+                                            key={shift.id}
+                                            value={shift.id.toString()}
+                                        >
                                             {shift.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.shift_id && <span className="text-sm text-red-500">{errors.shift_id}</span>}
+                            {errors.shift_id && (
+                                <span className="text-sm text-red-500">
+                                    {errors.shift_id}
+                                </span>
+                            )}
                         </div>
                     </div>
 
                     <div>
-                        <Label htmlFor="payment_type" className="dark:text-gray-200">Payment Type</Label>
-                        <Select value={data.payment_type} onValueChange={(value) => {
-                            setData('payment_type', value);
-                            if (!editingVoucher) {
-                                setData('from_account_id', ''); // Reset account only in create mode
-                            }
-                        }}>
+                        <Label
+                            htmlFor="payment_type"
+                            className="dark:text-gray-200"
+                        >
+                            Payment Type
+                        </Label>
+                        <Select
+                            value={data.payment_type}
+                            onValueChange={(value) => {
+                                setData('payment_type', value);
+                                if (!editingVoucher) {
+                                    setData('from_account_id', ''); // Reset account only in create mode
+                                }
+                            }}
+                        >
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                 <SelectValue placeholder="Choose payment method" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Cash">Cash</SelectItem>
                                 <SelectItem value="Bank">Bank</SelectItem>
-                                <SelectItem value="Mobile Bank">Mobile Bank</SelectItem>
+                                <SelectItem value="Mobile Bank">
+                                    Mobile Bank
+                                </SelectItem>
                             </SelectContent>
                         </Select>
-                        {errors.payment_type && <span className="text-sm text-red-500">{errors.payment_type}</span>}
+                        {errors.payment_type && (
+                            <span className="text-sm text-red-500">
+                                {errors.payment_type}
+                            </span>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label htmlFor="to_account_id" className="dark:text-gray-200">Received From</Label>
-                            <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
+                            <Label
+                                htmlFor="to_account_id"
+                                className="dark:text-gray-200"
+                            >
+                                Received From
+                            </Label>
+                            <Select
+                                value={data.to_account_id}
+                                onValueChange={(value) =>
+                                    setData('to_account_id', value)
+                                }
+                            >
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                     <SelectValue placeholder="Choose received from account" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {accounts.map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                        <SelectItem
+                                            key={account.id}
+                                            value={account.id.toString()}
+                                        >
                                             {account.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
+                            {errors.to_account_id && (
+                                <span className="text-sm text-red-500">
+                                    {errors.to_account_id}
+                                </span>
+                            )}
                         </div>
                         <div>
-                            <Label htmlFor="from_account_id" className="dark:text-gray-200">To Account</Label>
-                            <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
+                            <Label
+                                htmlFor="from_account_id"
+                                className="dark:text-gray-200"
+                            >
+                                To Account
+                            </Label>
+                            <Select
+                                value={data.from_account_id}
+                                onValueChange={(value) =>
+                                    setData('from_account_id', value)
+                                }
+                            >
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                     <SelectValue placeholder="Choose destination account" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {getFilteredAccounts().map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                        <SelectItem
+                                            key={account.id}
+                                            value={account.id.toString()}
+                                        >
                                             {account.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
+                            {errors.from_account_id && (
+                                <span className="text-sm text-red-500">
+                                    {errors.from_account_id}
+                                </span>
+                            )}
                         </div>
                     </div>
 
                     {data.payment_type === 'Bank' && (
                         <div className="space-y-4 border-t pt-4">
-                            <h4 className="font-medium dark:text-white">Bank Payment Details</h4>
+                            <h4 className="font-medium dark:text-white">
+                                Bank Payment Details
+                            </h4>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label htmlFor="bank_type" className="dark:text-gray-200">Bank Type</Label>
-                                    <Select value={data.bank_type} onValueChange={(value) => setData('bank_type', value)}>
+                                    <Label
+                                        htmlFor="bank_type"
+                                        className="dark:text-gray-200"
+                                    >
+                                        Bank Type
+                                    </Label>
+                                    <Select
+                                        value={data.bank_type}
+                                        onValueChange={(value) =>
+                                            setData('bank_type', value)
+                                        }
+                                    >
                                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                             <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Cheque">Cheque</SelectItem>
-                                            <SelectItem value="Cash Deposit">Cash Deposit</SelectItem>
-                                            <SelectItem value="Online">Online</SelectItem>
+                                            <SelectItem value="Cheque">
+                                                Cheque
+                                            </SelectItem>
+                                            <SelectItem value="Cash Deposit">
+                                                Cash Deposit
+                                            </SelectItem>
+                                            <SelectItem value="Online">
+                                                Online
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label htmlFor="bank_name" className="dark:text-gray-200">Bank Name</Label>
+                                    <Label
+                                        htmlFor="bank_name"
+                                        className="dark:text-gray-200"
+                                    >
+                                        Bank Name
+                                    </Label>
                                     <Input
                                         id="bank_name"
                                         value={data.bank_name}
-                                        onChange={(e) => setData('bank_name', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('bank_name', e.target.value)
+                                        }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
@@ -653,21 +858,41 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                             {data.bank_type === 'Cheque' && (
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque No</Label>
+                                        <Label
+                                            htmlFor="cheque_no"
+                                            className="dark:text-gray-200"
+                                        >
+                                            Cheque No
+                                        </Label>
                                         <Input
                                             id="cheque_no"
                                             value={data.cheque_no}
-                                            onChange={(e) => setData('cheque_no', e.target.value)}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'cheque_no',
+                                                    e.target.value,
+                                                )
+                                            }
                                             className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="cheque_date" className="dark:text-gray-200">Cheque Date</Label>
+                                        <Label
+                                            htmlFor="cheque_date"
+                                            className="dark:text-gray-200"
+                                        >
+                                            Cheque Date
+                                        </Label>
                                         <Input
                                             id="cheque_date"
                                             type="date"
                                             value={data.cheque_date}
-                                            onChange={(e) => setData('cheque_date', e.target.value)}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'cheque_date',
+                                                    e.target.value,
+                                                )
+                                            }
                                             className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                         />
                                     </div>
@@ -678,27 +903,55 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
 
                     {data.payment_type === 'Mobile Bank' && (
                         <div className="space-y-4 border-t pt-4">
-                            <h4 className="font-medium dark:text-white">Mobile Bank Details</h4>
+                            <h4 className="font-medium dark:text-white">
+                                Mobile Bank Details
+                            </h4>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label htmlFor="mobile_bank" className="dark:text-gray-200">Mobile Bank</Label>
-                                    <Select value={data.mobile_bank} onValueChange={(value) => setData('mobile_bank', value)}>
+                                    <Label
+                                        htmlFor="mobile_bank"
+                                        className="dark:text-gray-200"
+                                    >
+                                        Mobile Bank
+                                    </Label>
+                                    <Select
+                                        value={data.mobile_bank}
+                                        onValueChange={(value) =>
+                                            setData('mobile_bank', value)
+                                        }
+                                    >
                                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                             <SelectValue placeholder="Select mobile bank" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="bKash">bKash</SelectItem>
-                                            <SelectItem value="Nagad">Nagad</SelectItem>
-                                            <SelectItem value="Rocket">Rocket</SelectItem>
+                                            <SelectItem value="bKash">
+                                                bKash
+                                            </SelectItem>
+                                            <SelectItem value="Nagad">
+                                                Nagad
+                                            </SelectItem>
+                                            <SelectItem value="Rocket">
+                                                Rocket
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label htmlFor="mobile_number" className="dark:text-gray-200">Mobile Number</Label>
+                                    <Label
+                                        htmlFor="mobile_number"
+                                        className="dark:text-gray-200"
+                                    >
+                                        Mobile Number
+                                    </Label>
                                     <Input
                                         id="mobile_number"
                                         value={data.mobile_number}
-                                        onChange={(e) => setData('mobile_number', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'mobile_number',
+                                                e.target.value,
+                                            )
+                                        }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
@@ -707,7 +960,9 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                     )}
 
                     <div>
-                        <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
+                        <Label htmlFor="amount" className="dark:text-gray-200">
+                            Amount
+                        </Label>
                         <Input
                             id="amount"
                             type="number"
@@ -717,11 +972,17 @@ export default function ReceivedVoucher({ vouchers = { data: [], current_page: 1
                             onChange={(e) => setData('amount', e.target.value)}
                             className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         />
-                        {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
+                        {errors.amount && (
+                            <span className="text-sm text-red-500">
+                                {errors.amount}
+                            </span>
+                        )}
                     </div>
 
                     <div>
-                        <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
+                        <Label htmlFor="remarks" className="dark:text-gray-200">
+                            Remarks
+                        </Label>
                         <Input
                             id="remarks"
                             placeholder="Enter remarks (optional)"
