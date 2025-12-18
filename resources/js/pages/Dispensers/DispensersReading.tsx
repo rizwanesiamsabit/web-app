@@ -840,11 +840,30 @@ export default function DispenserReading({
                                     <Label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
                                         Credit Sales(Other Products)
                                     </Label>
-                                    <Input
-                                        value={data.credit_sales_other}
-                                        readOnly
-                                        className="w-full bg-gray-50 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            value={data.credit_sales_other}
+                                            readOnly
+                                            className="w-full bg-gray-50 pr-10 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            size="sm"
+                                            className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
+                                            onClick={() => {
+                                                setCreditSalesData((prev) => ({
+                                                    ...prev,
+                                                    sale_date:
+                                                        data.transaction_date,
+                                                    shift_id: data.shift_id,
+                                                }));
+                                                setIsCreditSalesOpen(true);
+                                            }}
+                                        >
+                                            <FileText className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div>
                                     <Label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
