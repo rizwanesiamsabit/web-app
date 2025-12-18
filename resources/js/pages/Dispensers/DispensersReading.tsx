@@ -245,11 +245,7 @@ export default function DispenserReading({
         }))
     );
     
-    // Initialize cash_sales_other when component mounts
-    useEffect(() => {
-        const totalOtherProductsSales = otherProductsSales.reduce((sum, sale) => sum + (sale.total_sales || 0), 0);
-        setData('cash_sales_other', totalOtherProductsSales.toFixed(2));
-    }, [otherProductsSales]);
+
 
     const { data, setData, post, processing } = useForm({
         transaction_date: '',
@@ -475,10 +471,6 @@ export default function DispenserReading({
             total_sales: totalSales,
         };
         setOtherProductsSales(newSales);
-        
-        // Calculate total of all other products sales
-        const totalOtherProductsSales = newSales.reduce((sum, sale) => sum + (sale.total_sales || 0), 0);
-        setData('cash_sales_other', totalOtherProductsSales.toFixed(2));
     };
 
     const calculateReading = (index: number, field: string, value: string) => {
@@ -704,9 +696,22 @@ export default function DispenserReading({
         }
     };
 
+    // Calculate cash_sales_other when other products sales change
+    const updateOtherProductsCashSales = () => {
+        const totalOtherProductsSales = otherProductsSales.reduce((sum, sale) => sum + (sale.total_sales || 0), 0);
+        const creditSalesOther = parseFloat(data.credit_sales_other) || 0;
+        const bankSalesOther = parseFloat(data.bank_sales_other) || 0;
+        const cashSalesOther = totalOtherProductsSales - creditSalesOther - bankSalesOther;
+        setData('cash_sales_other', cashSalesOther.toFixed(2));
+    };
+    
     useEffect(() => {
         updateTotals();
     }, []);
+    
+    useEffect(() => {
+        updateOtherProductsCashSales();
+    }, [otherProductsSales, data.credit_sales_other, data.bank_sales_other]);
 
     useEffect(() => {
         console.log(
