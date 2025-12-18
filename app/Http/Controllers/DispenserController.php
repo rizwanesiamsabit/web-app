@@ -8,7 +8,6 @@ use App\Models\Product;
 use App\Models\ProductRate;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -58,7 +57,11 @@ class DispenserController extends Controller
             ];
         });
 
-        $products = Product::select('id', 'product_name')->get();
+        $products = Product::select('id', 'product_name')
+            ->whereHas('category', function($query) {
+                $query->where('code', '1001');
+            })
+            ->get();
 
         return Inertia::render('Dispensers/Dispensers', [
             'dispensers' => $dispensers,
