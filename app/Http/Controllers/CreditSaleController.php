@@ -146,12 +146,18 @@ class CreditSaleController extends Controller
 
     public function edit(CreditSale $creditSale)
     {
+        if ($creditSale->type !== 'regular') {
+            abort(404);
+        }
         $creditSale->load(['product', 'shift', 'customer', 'vehicle', 'transaction']);
         return response()->json(['creditSale' => $creditSale]);
     }
 
     public function update(Request $request, CreditSale $creditSale)
     {
+        if ($creditSale->type !== 'regular') {
+            abort(404);
+        }
         $request->validate([
             'sale_date' => 'required|date',
             'customer_id' => 'required|exists:customers,id',
@@ -209,6 +215,9 @@ class CreditSaleController extends Controller
 
     public function destroy(CreditSale $creditSale)
     {
+        if ($creditSale->type !== 'regular') {
+            abort(404);
+        }
         DB::transaction(function () use ($creditSale) {
             $stock = Stock::where('product_id', $creditSale->product_id)->first();
             if ($stock) {
@@ -230,7 +239,7 @@ class CreditSaleController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $creditSales = CreditSale::whereIn('id', $request->ids)->get();
+            $creditSales = CreditSale::whereIn('id', $request->ids)->where('type', 'regular')->get();
 
             foreach ($creditSales as $creditSale) {
                 $stock = Stock::where('product_id', $creditSale->product_id)->first();

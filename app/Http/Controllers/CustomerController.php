@@ -221,6 +221,7 @@ class CustomerController extends Controller
 
         // Get recent credit sales for this customer
         $recentSales = CreditSale::where('customer_id', $customer->id)
+            ->where('type', 'regular')
             ->with('vehicle:id,vehicle_number')
             ->orderBy('sale_date', 'desc')
             ->limit(5)
@@ -553,6 +554,7 @@ class CustomerController extends Controller
         $year = $request->get('year', date('Y'));
 
         $monthlySales = CreditSale::where('customer_id', $customer->id)
+            ->where('type', 'regular')
             ->whereYear('sale_date', $year)
             ->selectRaw('YEAR(sale_date) as year, MONTH(sale_date) as month, SUM(total_amount) as total')
             ->groupBy('year', 'month')

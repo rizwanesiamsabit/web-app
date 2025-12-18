@@ -182,7 +182,7 @@ export default function CustomerStatement({ customer, transactions, currentBalan
                                         </SelectTrigger>
                                         <SelectContent>
                                             {availableYears && availableYears.length > 0 ? (
-                                                availableYears.map((year) => (
+                                                availableYears.filter(year => year != null).map((year) => (
                                                     <SelectItem key={year} value={year.toString()}>
                                                         {year}
                                                     </SelectItem>

@@ -130,8 +130,9 @@ class SaleController extends Controller
                 }
 
                 $toAccount = Account::find($productData['to_account_id']);
-                $product = Product::find($productData['product_id']);
+                $product = Product::with('category')->find($productData['product_id']);
                 $totalAmount = $productData['amount'] - ($productData['discount'] ?? 0);
+                $categoryCode = $product->category ? $product->category->code : null;
 
                 $transaction = null;
                 if ($productData['payment_type'] !== 'Cash') {
@@ -169,6 +170,7 @@ class SaleController extends Controller
                     'customer' => $productData['customer'],
                     'vehicle_no' => $productData['vehicle_no'],
                     'product_id' => $productData['product_id'],
+                    'category_code' => $categoryCode,
                     'purchase_price' => $product->activeRate ? $product->activeRate->purchase_price : 0,
                     'quantity' => $productData['quantity'],
                     'amount' => $productData['amount'],
@@ -190,7 +192,7 @@ class SaleController extends Controller
             }
 
             foreach ($saleIds as $saleId) {
-                \App\Models\SaleBatch::create([
+                SaleBatch::create([
                     'batch_code' => $batchCode,
                     'sale_id' => $saleId
                 ]);
@@ -240,8 +242,9 @@ class SaleController extends Controller
             }
 
             $toAccount = Account::find($request->to_account_id);
-            $product = Product::find($request->product_id);
+            $product = Product::with('category')->find($request->product_id);
             $totalAmount = $request->amount - ($request->discount ?? 0);
+            $categoryCode = $product->category ? $product->category->code : null;
 
             $transaction = null;
             if ($request->payment_type !== 'Cash') {
@@ -274,6 +277,7 @@ class SaleController extends Controller
                 'customer' => $request->customer,
                 'vehicle_no' => $request->vehicle_no,
                 'product_id' => $request->product_id,
+                'category_code' => $categoryCode,
                 'shift_id' => $request->shift_id,
                 'transaction_id' => $transaction ? $transaction->id : null,
                 'invoice_no' => $request->invoice_no,

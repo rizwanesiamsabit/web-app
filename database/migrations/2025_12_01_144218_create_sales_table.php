@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('customer')->nullable();
             $table->string('vehicle_no')->nullable();
             $table->foreignId('product_id')->constrained('products');
+            $table->string('category_code')->nullable();
             $table->decimal('purchase_price', 18, 2)->default(0.00);
             $table->decimal('quantity', 18, 2)->default(0.00);
             $table->decimal('amount', 18, 2)->default(0.00);

@@ -16,6 +16,7 @@ class Sale extends Model
         'customer',
         'vehicle_no',
         'product_id',
+        'category_code',
         'purchase_price',
         'quantity',
         'amount',
@@ -57,5 +58,10 @@ class Sale extends Model
     public function batches()
     {
         return $this->hasMany(SaleBatch::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_code', 'code');
     }
 }
