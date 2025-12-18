@@ -105,7 +105,6 @@ export default function Customers({ customers, groups = [], products = [], lastC
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
-        code: '',
         name: '',
 
         mobile: '',
@@ -117,6 +116,7 @@ export default function Customers({ customers, groups = [], products = [], lastC
         discount_rate: 0,
         security_deposit: 0,
         credit_limit: 0,
+        previous_due: 0,
         address: '',
         status: true,
         // Vehicle fields
@@ -149,7 +149,6 @@ export default function Customers({ customers, groups = [], products = [], lastC
     const handleEdit = (customer: Customer) => {
         setEditingCustomer(customer);
         setData({
-            code: customer.code || '',
             name: customer.name,
 
             mobile: customer.mobile || '',
@@ -599,17 +598,16 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                     {errors.name && <span className="text-sm text-red-500">{errors.name}</span>}
                                 </div>
                                 <div>
-                                    <Label htmlFor="code" className="dark:text-gray-200">Code</Label>
+                                    <Label htmlFor="email" className="dark:text-gray-200">Email</Label>
                                     <Input
-                                        id="code"
-                                        value={data.code}
-                                        onChange={(e) => setData('code', e.target.value)}
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(e) => setData('email', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
                             </div>
-                            
-
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -622,28 +620,28 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="email" className="dark:text-gray-200">Email</Label>
+                                    <Label htmlFor="address" className="dark:text-gray-200">Address</Label>
                                     <Input
-                                        id="email"
-                                        type="email"
-                                        value={data.email}
-                                        onChange={(e) => setData('email', e.target.value)}
+                                        id="address"
+                                        value={data.address}
+                                        onChange={(e) => setData('address', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
                             </div>
                             
-                            <div>
-                                <Label htmlFor="address" className="dark:text-gray-200">Address</Label>
-                                <Input
-                                    id="address"
-                                    value={data.address}
-                                    onChange={(e) => setData('address', e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            
                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="previous_due" className="dark:text-gray-200">Previous Due</Label>
+                                    <Input
+                                        id="previous_due"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.previous_due}
+                                        onChange={(e) => setData('previous_due', parseFloat(e.target.value) || 0)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
                                 <div>
                                     <Label htmlFor="security_deposit" className="dark:text-gray-200">Security Deposit</Label>
                                     <Input
@@ -652,6 +650,18 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                         step="0.01"
                                         value={data.security_deposit}
                                         onChange={(e) => setData('security_deposit', parseFloat(e.target.value) || 0)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="nid_number" className="dark:text-gray-200">NID Card</Label>
+                                    <Input
+                                        id="nid_number"
+                                        value={data.nid_number}
+                                        onChange={(e) => setData('nid_number', e.target.value)}
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
@@ -730,12 +740,12 @@ export default function Customers({ customers, groups = [], products = [], lastC
                                         <label key={product.id} className="flex items-center space-x-2 cursor-pointer">
                                             <input
                                                 type="checkbox"
-                                                checked={data.product_ids.includes(product.id.toString())}
+                                                checked={data.product_ids?.includes(product.id.toString()) || false}
                                                 onChange={(e) => {
                                                     if (e.target.checked) {
-                                                        setData('product_ids', [...data.product_ids, product.id.toString()]);
+                                                        setData('product_ids', [...(data.product_ids || []), product.id.toString()]);
                                                     } else {
-                                                        setData('product_ids', data.product_ids.filter(id => id !== product.id.toString()));
+                                                        setData('product_ids', (data.product_ids || []).filter(id => id !== product.id.toString()));
                                                     }
                                                 }}
                                                 className="rounded border-gray-300 dark:border-gray-600"
@@ -772,11 +782,12 @@ export default function Customers({ customers, groups = [], products = [], lastC
                             {errors.name && <span className="text-sm text-red-500">{errors.name}</span>}
                         </div>
                         <div>
-                            <Label htmlFor="edit-code" className="dark:text-gray-200">Code</Label>
+                            <Label htmlFor="edit-email" className="dark:text-gray-200">Email</Label>
                             <Input
-                                id="edit-code"
-                                value={data.code}
-                                onChange={(e) => setData('code', e.target.value)}
+                                id="edit-email"
+                                type="email"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
@@ -793,23 +804,25 @@ export default function Customers({ customers, groups = [], products = [], lastC
                             />
                         </div>
                         <div>
-                            <Label htmlFor="edit-email" className="dark:text-gray-200">Email</Label>
-                            <Input
-                                id="edit-email"
-                                type="email"
-                                value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
                             <Label htmlFor="edit-address" className="dark:text-gray-200">Address</Label>
                             <Input
                                 id="edit-address"
                                 value={data.address}
                                 onChange={(e) => setData('address', e.target.value)}
+                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="edit-previous_due" className="dark:text-gray-200">Previous Due</Label>
+                            <Input
+                                id="edit-previous_due"
+                                type="number"
+                                step="0.01"
+                                value={data.previous_due}
+                                onChange={(e) => setData('previous_due', parseFloat(e.target.value) || 0)}
                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
@@ -825,20 +838,32 @@ export default function Customers({ customers, groups = [], products = [], lastC
                             />
                         </div>
                     </div>
-                    <div>
-                        <Label className="dark:text-gray-200">Status</Label>
-                        <Select
-                            value={data.status ? 'true' : 'false'}
-                            onValueChange={(value) => setData('status', value === 'true')}
-                        >
-                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <SelectValue placeholder="Select Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="true">Active</SelectItem>
-                                <SelectItem value="false">Inactive</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="edit-nid_number" className="dark:text-gray-200">NID Card</Label>
+                            <Input
+                                id="edit-nid_number"
+                                value={data.nid_number}
+                                onChange={(e) => setData('nid_number', e.target.value)}
+                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                        </div>
+                        <div>
+                            <Label className="dark:text-gray-200">Status</Label>
+                            <Select
+                                value={data.status ? 'true' : 'false'}
+                                onValueChange={(value) => setData('status', value === 'true')}
+                            >
+                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="true">Active</SelectItem>
+                                    <SelectItem value="false">Inactive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </FormModal>
 

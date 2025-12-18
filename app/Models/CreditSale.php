@@ -17,6 +17,7 @@ class CreditSale extends Model
         'vehicle_id',
         'product_id',
         'category_code',
+        'type',
         'purchase_price',
         'quantity',
         'amount',
@@ -37,7 +38,8 @@ class CreditSale extends Model
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
-        'status' => 'boolean'
+        'status' => 'boolean',
+        'type' => 'string'
     ];
 
     public function product()

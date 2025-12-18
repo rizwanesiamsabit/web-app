@@ -9,6 +9,7 @@ use App\Models\Vehicle;
 use App\Models\Product;
 use App\Models\CompanySetting;
 use App\Helpers\AccountHelper;
+use App\Helpers\CustomerHelper;
 use App\Models\CreditSale;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
@@ -46,7 +47,7 @@ class CustomerController extends Controller
         $customers = $query->paginate($perPage)->withQueryString()->through(function ($customer) {
             // Calculate total sales for this customer
             $totalSales = CreditSale::where('customer_id', $customer->id)->sum('total_amount');
-            
+
             // Calculate total paid for this customer
             $totalPaid = 0;
             if ($customer->account) {
@@ -54,15 +55,15 @@ class CustomerController extends Controller
                     ->where('to_account_id', $customer->account->id)
                     ->with('toTransaction:id,amount')
                     ->get();
-                
+
                 $totalPaid = $payments->sum(function ($voucher) {
                     return $voucher->toTransaction->amount ?? 0;
                 });
             }
-            
+
             // Calculate current due/advanced (Total Sales - Total Paid)
             $currentDue = $totalSales - $totalPaid;
-            
+
             return [
                 'id' => $customer->id,
                 'account_id' => $customer->account_id,
@@ -112,7 +113,6 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'code' => 'nullable|string|max:150',
             'name' => 'required|string|max:150',
             'mobile' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:50',
@@ -123,6 +123,7 @@ class CustomerController extends Controller
             'discount_rate' => 'nullable|numeric|min:0',
             'security_deposit' => 'nullable|numeric|min:0',
             'credit_limit' => 'nullable|numeric|min:0',
+            'previous_due' => 'nullable|numeric|min:0',
             'address' => 'nullable|string',
             'status' => 'boolean',
             // Vehicle validation
@@ -145,10 +146,9 @@ class CustomerController extends Controller
             'status' => $request->status ?? true,
         ]);
 
-        // Create customer with account_id
         $customer = Customer::create([
             'account_id' => $account->id,
-            'code' => $request->code,
+            'code' => CustomerHelper::generateCustomerCode(),
             'name' => $request->name,
             'mobile' => $request->mobile,
             'email' => $request->email,
@@ -173,10 +173,21 @@ class CustomerController extends Controller
                 'reg_date' => $request->reg_date,
                 'status' => $request->status ?? true,
             ]);
-            
+
             if ($request->product_ids) {
                 $vehicle->products()->attach($request->product_ids);
             }
+        }
+
+        if ($request->previous_due && $request->previous_due > 0) {
+            CreditSale::create([
+                'customer_id' => $customer->id,
+                'total_amount' => $request->previous_due,
+                'due_amount' => $request->previous_due,
+                'type' => 'previous',
+                'remarks' => 'Previous Due',
+                'status' => true,
+            ]);
         }
 
         return redirect()->back()->with('success', 'Customer created successfully.');
@@ -229,7 +240,7 @@ class CustomerController extends Controller
         // Calculate total sales for this customer
         $totalSales = CreditSale::where('customer_id', $customer->id)
             ->sum('total_amount');
-        
+
         $salesCount = CreditSale::where('customer_id', $customer->id)
             ->count();
 
@@ -241,14 +252,14 @@ class CustomerController extends Controller
                 ->where('to_account_id', $customer->account->id)
                 ->with('toTransaction:id,amount')
                 ->get();
-            
+
             $totalPaid = $payments->sum(function ($voucher) {
                 return $voucher->toTransaction->amount ?? 0;
             });
-            
+
             $paymentCount = $payments->count();
         }
-        
+
         // Calculate current due/advanced (Total Sales - Total Paid)
         $currentDue = $totalSales - $totalPaid;
 
@@ -285,7 +296,7 @@ class CustomerController extends Controller
     public function statement(Request $request, Customer $customer)
     {
         $customer->load('account:id,name,ac_number');
-        
+
         $year = $request->get('year', date('Y'));
 
         // Get all sales for this customer
@@ -364,7 +375,7 @@ class CustomerController extends Controller
             $query = Voucher::where('voucher_type', 'Received')
                 ->where('to_account_id', $customer->account->id)
                 ->with('toTransaction:id,amount');
-            
+
             // Apply date range filter if provided
             if ($request->start_date) {
                 $query->whereDate('date', '>=', $request->start_date);
@@ -372,7 +383,7 @@ class CustomerController extends Controller
             if ($request->end_date) {
                 $query->whereDate('date', '<=', $request->end_date);
             }
-            
+
             $recentPayments = $query->orderBy('date', 'desc')
                 ->paginate(10)
                 ->withQueryString()
@@ -418,6 +429,7 @@ class CustomerController extends Controller
             'discount_rate' => 'nullable|numeric|min:0',
             'security_deposit' => 'nullable|numeric|min:0',
             'credit_limit' => 'nullable|numeric|min:0',
+            'previous_due' => 'nullable|numeric|min:0',
             'address' => 'nullable|string',
             'status' => 'boolean'
         ]);
@@ -445,6 +457,17 @@ class CustomerController extends Controller
             'address' => $request->address,
             'status' => $request->status ?? true,
         ]);
+
+        if ($request->previous_due && $request->previous_due > 0) {
+            CreditSale::create([
+                'customer_id' => $customer->id,
+                'total_amount' => $request->previous_due,
+                'due_amount' => $request->previous_due,
+                'type' => 'previous',
+                'remarks' => 'Previous Due',
+                'status' => true,
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Customer updated successfully.');
     }
@@ -493,7 +516,7 @@ class CustomerController extends Controller
         $customers = $query->get()->map(function ($customer) {
             // Calculate total sales for this customer
             $totalSales = CreditSale::where('customer_id', $customer->id)->sum('total_amount');
-            
+
             // Calculate total paid for this customer
             $totalPaid = 0;
             if ($customer->account) {
@@ -501,22 +524,22 @@ class CustomerController extends Controller
                     ->where('to_account_id', $customer->account->id)
                     ->with('toTransaction:id,amount')
                     ->get();
-                
+
                 $totalPaid = $payments->sum(function ($voucher) {
                     return $voucher->toTransaction->amount ?? 0;
                 });
             }
-            
+
             // Calculate current due/advanced (Total Sales - Total Paid)
             $currentDue = $totalSales - $totalPaid;
-            
+
             $customer->total_sales = $totalSales;
             $customer->total_paid = $totalPaid;
             $customer->current_due = $currentDue;
-            
+
             return $customer;
         });
-        
+
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.customers', compact('customers', 'companySetting'));
@@ -526,9 +549,9 @@ class CustomerController extends Controller
     public function downloadSalesPdf(Request $request, Customer $customer)
     {
         $customer->load('account');
-        
+
         $year = $request->get('year', date('Y'));
-        
+
         $monthlySales = CreditSale::where('customer_id', $customer->id)
             ->whereYear('sale_date', $year)
             ->selectRaw('YEAR(sale_date) as year, MONTH(sale_date) as month, SUM(total_amount) as total')
@@ -551,18 +574,18 @@ class CustomerController extends Controller
     public function downloadPaymentsPdf(Request $request, Customer $customer)
     {
         $customer->load('account');
-        
+
         $query = Voucher::where('voucher_type', 'Received')
             ->where('to_account_id', $customer->account->id)
             ->with('toTransaction:id,amount,payment_type');
-        
+
         if ($request->start_date) {
             $query->whereDate('date', '>=', $request->start_date);
         }
         if ($request->end_date) {
             $query->whereDate('date', '<=', $request->end_date);
         }
-        
+
         $payments = $query->orderBy('date', 'desc')
             ->get()
             ->map(function ($voucher) {

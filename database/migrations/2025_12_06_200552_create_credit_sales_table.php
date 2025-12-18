@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('vehicle_id')->nullable()->constrained('vehicles');
             $table->foreignId('product_id')->nullable()->constrained('products');
             $table->string('category_code')->nullable();
+            $table->enum('type', ['regular', 'previous'])->default('regular');
             $table->decimal('purchase_price', 18, 2)->default(0.00);
             $table->decimal('quantity', 18, 2)->default(0.00);
             $table->decimal('amount', 18, 2)->default(0.00);

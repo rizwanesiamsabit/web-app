@@ -20,7 +20,8 @@ class CreditSaleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CreditSale::with(['product', 'shift', 'customer', 'vehicle']);
+        $query = CreditSale::with(['product', 'shift', 'customer', 'vehicle'])
+            ->where('type', 'regular');
 
         if ($request->search) {
             $query->where(function($q) use ($request) {
@@ -120,6 +121,7 @@ class CreditSaleController extends Controller
                     'vehicle_id' => $productData['vehicle_id'],
                     'product_id' => $productData['product_id'],
                     'category_code' => $categoryCode,
+                    'type' => 'regular',
                     'purchase_price' => $product->activeRate ? $product->activeRate->purchase_price : 0,
                     'quantity' => $productData['quantity'],
                     'amount' => $amount,
@@ -246,7 +248,8 @@ class CreditSaleController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $query = CreditSale::with(['product', 'shift', 'customer', 'vehicle']);
+        $query = CreditSale::with(['product', 'shift', 'customer', 'vehicle'])
+            ->where('type', 'regular');
 
         if ($request->search) {
             $query->where(function($q) use ($request) {

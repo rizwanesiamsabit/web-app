@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Customer;
 use App\Models\Account;
 use App\Helpers\AccountHelper;
+use App\Helpers\CustomerHelper;
 use Illuminate\Database\Seeder;
 
 class CustomerSeeder extends Seeder
@@ -25,7 +26,7 @@ class CustomerSeeder extends Seeder
 
             Customer::create([
                 'account_id' => $account->id,
-                'code' => "CUST00$i",
+                'code' => CustomerHelper::generateCustomerCode(),
                 'name' => "Customer $i",
                 'mobile' => "01800000$i",
                 'email' => "customer$i@example.com",
