@@ -101,6 +101,7 @@ interface DispenserReadingProps {
     shifts: Shift[];
     closedShifts: ClosedShift[];
     products?: Product[];
+    otherProducts?: Product[];
     customers?: Customer[];
     vehicles?: Vehicle[];
     accounts?: Account[];
@@ -115,6 +116,7 @@ export default function DispenserReading({
     shifts = [],
     closedShifts = [],
     products = [],
+    otherProducts = [],
     customers = [],
     vehicles = [],
     accounts = [],
@@ -224,6 +226,14 @@ export default function DispenserReading({
     });
     const [officePaymentProcessing, setOfficePaymentProcessing] =
         useState(false);
+    const [otherProductsSales, setOtherProductsSales] = useState(
+        otherProducts.map((product) => ({
+            product_id: product.id,
+            sell_quantity: 0,
+            sell_by: '',
+            total_sales: 0,
+        }))
+    );
 
     const { data, setData, post, processing } = useForm({
         transaction_date: '',
@@ -231,6 +241,9 @@ export default function DispenserReading({
         credit_sales: '0',
         bank_sales: '0',
         cash_sales: '0',
+        credit_sales_other: '0',
+        bank_sales_other: '0',
+        cash_sales_other: '0',
         cash_receive: '0',
         total_cash: '0',
         cash_payment: '0',
@@ -253,6 +266,19 @@ export default function DispenserReading({
         value: shift.id.toString(),
         label: shift.name,
     }));
+
+    const calculateOtherProductSale = (index: number, sellQuantity: number) => {
+        const newSales = [...otherProductsSales];
+        const product = otherProducts[index];
+        const salesPrice = Number(product?.sales_price) || 0;
+        const totalSales = sellQuantity * salesPrice;
+        newSales[index] = {
+            ...newSales[index],
+            sell_quantity: sellQuantity,
+            total_sales: totalSales,
+        };
+        setOtherProductsSales(newSales);
+    };
 
     const calculateReading = (index: number, field: string, value: string) => {
         const newReadings = [...data.dispenser_readings];
@@ -406,6 +432,12 @@ export default function DispenserReading({
                     ).toString(),
                     bank_sales: (
                         summaryData.total_bank_sale_amount || 0
+                    ).toString(),
+                    credit_sales_other: (
+                        summaryData.total_credit_sales_other_amount || 0
+                    ).toString(),
+                    bank_sales_other: (
+                        summaryData.total_bank_sales_other_amount || 0
                     ).toString(),
                     cash_receive: (
                         summaryData.total_cash_receive_amount || 0
@@ -615,7 +647,7 @@ export default function DispenserReading({
                                     </Label>
                                     <div className="relative">
                                         <Input
-                                            value="0"
+                                            value={data.credit_sales_other}
                                             readOnly
                                             className="w-full bg-gray-50 pr-10 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                         />
@@ -644,7 +676,7 @@ export default function DispenserReading({
                                     </Label>
                                     <div className="relative">
                                         <Input
-                                            value="0"
+                                            value={data.bank_sales_other}
                                             readOnly
                                             className="w-full bg-gray-50 pr-10 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                         />
@@ -672,7 +704,7 @@ export default function DispenserReading({
                                         Cash Sales(Other Products)
                                     </Label>
                                     <Input
-                                        value="0"
+                                        value={data.cash_sales_other}
                                         readOnly
                                         className="w-full bg-gray-50 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />
@@ -1007,13 +1039,13 @@ export default function DispenserReading({
                                                     SL
                                                 </th>
                                                 <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
-                                                    Product Category
-                                                </th>
-                                                <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
                                                     Product Name
                                                 </th>
                                                 <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
                                                     Product ID
+                                                </th>
+                                                <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                                    Unit
                                                 </th>
                                                 <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
                                                     Item Rate
@@ -1036,177 +1068,79 @@ export default function DispenserReading({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    1
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    Others
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    Air Filter
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    1002001
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    250.00
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    50
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 dark:border-gray-600">
-                                                    <Input
-                                                        type="number"
-                                                        step="1"
-                                                        defaultValue="0"
-                                                        className="h-8 w-20 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                    />
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    50
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 dark:border-gray-600">
-                                                    <Select>
-                                                        <SelectTrigger className="h-8 w-32 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                                            <SelectValue placeholder="Select" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {employees.map(
-                                                                (emp) => (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            emp.id
-                                                                        }
-                                                                        value={emp.id.toString()}
-                                                                    >
-                                                                        {
-                                                                            emp.employee_name
-                                                                        }
-                                                                    </SelectItem>
-                                                                ),
-                                                            )}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    0.00
-                                                </td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    2
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    Others
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    Oil Filter
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    1002002
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    180.00
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    30
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 dark:border-gray-600">
-                                                    <Input
-                                                        type="number"
-                                                        step="1"
-                                                        defaultValue="0"
-                                                        className="h-8 w-20 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                    />
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    30
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 dark:border-gray-600">
-                                                    <Select>
-                                                        <SelectTrigger className="h-8 w-32 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                                            <SelectValue placeholder="Select" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {employees.map(
-                                                                (emp) => (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            emp.id
-                                                                        }
-                                                                        value={emp.id.toString()}
-                                                                    >
-                                                                        {
-                                                                            emp.employee_name
-                                                                        }
-                                                                    </SelectItem>
-                                                                ),
-                                                            )}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    0.00
-                                                </td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    3
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    Others
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    Spark Plug
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    1002003
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    120.00
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    100
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 dark:border-gray-600">
-                                                    <Input
-                                                        type="number"
-                                                        step="1"
-                                                        defaultValue="0"
-                                                        className="h-8 w-20 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                    />
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    100
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 dark:border-gray-600">
-                                                    <Select>
-                                                        <SelectTrigger className="h-8 w-32 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                                            <SelectValue placeholder="Select" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {employees.map(
-                                                                (emp) => (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            emp.id
-                                                                        }
-                                                                        value={emp.id.toString()}
-                                                                    >
-                                                                        {
-                                                                            emp.employee_name
-                                                                        }
-                                                                    </SelectItem>
-                                                                ),
-                                                            )}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </td>
-                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                    0.00
-                                                </td>
-                                            </tr>
+                                            {otherProducts.map((product, index) => {
+                                                const currentStock = Number(product.stock?.current_stock) || 0;
+                                                const sellQuantity = otherProductsSales[index]?.sell_quantity || 0;
+                                                const newStock = currentStock - sellQuantity;
+                                                const totalSales = otherProductsSales[index]?.total_sales || 0;
+                                                return (
+                                                    <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {index + 1}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {product.product_name}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {product.product_code}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {product.unit?.name || 'N/A'}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {(Number(product.sales_price) || 0).toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {currentStock}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 dark:border-gray-600">
+                                                            <Input
+                                                                type="number"
+                                                                step="1"
+                                                                value={sellQuantity}
+                                                                onChange={(e) => {
+                                                                    const quantity = parseInt(e.target.value) || 0;
+                                                                    calculateOtherProductSale(index, quantity);
+                                                                }}
+                                                                className="h-8 w-20 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                            />
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {newStock}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 dark:border-gray-600">
+                                                            <Select
+                                                                value={otherProductsSales[index]?.sell_by || ''}
+                                                                onValueChange={(value) => {
+                                                                    const newSales = [...otherProductsSales];
+                                                                    newSales[index] = {
+                                                                        ...newSales[index],
+                                                                        sell_by: value,
+                                                                    };
+                                                                    setOtherProductsSales(newSales);
+                                                                }}
+                                                            >
+                                                                <SelectTrigger className="h-8 w-32 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                                                    <SelectValue placeholder="Select" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {employees.map((emp) => (
+                                                                        <SelectItem
+                                                                            key={emp.id}
+                                                                            value={emp.id.toString()}
+                                                                        >
+                                                                            {emp.employee_name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {totalSales.toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

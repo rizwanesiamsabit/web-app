@@ -44,6 +44,16 @@ class DispenserReadingController extends Controller
             $product->sales_price = $product->activeRate ? $product->activeRate->sales_price : 0;
             return $product;
         });
+        $otherProducts = Product::with(['unit', 'stock', 'activeRate', 'category'])
+            ->where('status', 1)
+            ->whereHas('category', function($query) {
+                $query->where('code', '!=', '1001');
+            })
+            ->get()
+            ->map(function ($product) {
+                $product->sales_price = $product->activeRate ? $product->activeRate->sales_price : 0;
+                return $product;
+            });
         $customers = Customer::where('status', true)->select('id', 'name')->get();
         $vehicles = Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id')->get();
         $accounts = Account::with('group')->select('id', 'name', 'ac_number', 'group_id', 'group_code')->get();
@@ -89,6 +99,7 @@ class DispenserReadingController extends Controller
             'shifts' => $shifts,
             'closedShifts' => $closedShifts,
             'products' => $products,
+            'otherProducts' => $otherProducts,
             'customers' => $customers,
             'vehicles' => $vehicles,
             'accounts' => $accounts,
@@ -107,15 +118,33 @@ class DispenserReadingController extends Controller
 
     public function getShiftClosingData($date, $shiftId)
     {
+        // Oil category (1001) sales
         $creditSales = DB::table('credit_sales')
             ->where('sale_date', $date)
             ->where('shift_id', $shiftId)
+            ->where('category_code', '1001')
             ->sum('total_amount');
 
         $bankSales = DB::table('sales')
             ->join('transactions', 'sales.transaction_id', '=', 'transactions.id')
             ->where('sale_date', $date)
             ->where('shift_id', $shiftId)
+            ->where('sales.category_code', '1001')
+            ->whereIn('transactions.payment_type', ['bank', 'mobile bank'])
+            ->sum('sales.total_amount');
+
+        // Other products (not 1001) sales
+        $creditSalesOther = DB::table('credit_sales')
+            ->where('sale_date', $date)
+            ->where('shift_id', $shiftId)
+            ->where('category_code', '!=', '1001')
+            ->sum('total_amount');
+
+        $bankSalesOther = DB::table('sales')
+            ->join('transactions', 'sales.transaction_id', '=', 'transactions.id')
+            ->where('sale_date', $date)
+            ->where('shift_id', $shiftId)
+            ->where('sales.category_code', '!=', '1001')
             ->whereIn('transactions.payment_type', ['bank', 'mobile bank'])
             ->sum('sales.total_amount');
 
@@ -156,6 +185,8 @@ class DispenserReadingController extends Controller
                 'total_cash_receive_amount' => $cashReceive,
                 'total_cash_payment_amount' => $cashPayment,
                 'total_office_payment_amount' => $officePayment,
+                'total_credit_sales_other_amount' => $creditSalesOther,
+                'total_bank_sales_other_amount' => $bankSalesOther,
             ]],
             'getCreditSalesDetailsReport' => $creditSalesDetails
         ]);
