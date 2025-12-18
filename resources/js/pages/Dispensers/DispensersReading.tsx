@@ -83,6 +83,14 @@ interface Vehicle {
     vehicle_number: string;
     customer_id: number;
     product_id: number;
+    products?: {
+        id: number;
+        product_name: string;
+    }[];
+    customer?: {
+        id: number;
+        name: string;
+    } | null;
 }
 
 interface Account {
@@ -130,9 +138,6 @@ export default function DispenserReading({
     const [availableShifts, setAvailableShifts] = useState<Shift[]>([]);
     const [isCreditSalesOpen, setIsCreditSalesOpen] = useState(false);
     const [isBankSalesOpen, setIsBankSalesOpen] = useState(false);
-    const [isCashReceiveOpen, setIsCashReceiveOpen] = useState(false);
-    const [isCashPaymentOpen, setIsCashPaymentOpen] = useState(false);
-    const [isOfficePaymentOpen, setIsOfficePaymentOpen] = useState(false);
     const [creditSalesData, setCreditSalesData] = useState({
         sale_date: '',
         shift_id: '',
@@ -150,6 +155,9 @@ export default function DispenserReading({
         ],
     });
     const [creditProcessing, setCreditProcessing] = useState(false);
+    const [isCashReceiveOpen, setIsCashReceiveOpen] = useState(false);
+    const [isCashPaymentOpen, setIsCashPaymentOpen] = useState(false);
+    const [isOfficePaymentOpen, setIsOfficePaymentOpen] = useState(false);
     const [bankSalesData, setBankSalesData] = useState({
         sale_date: '',
         shift_id: '',
@@ -267,6 +275,187 @@ export default function DispenserReading({
         label: shift.name,
     }));
 
+    const updateCreditProduct = (
+        index: number,
+        field: string,
+        value: string,
+    ) => {
+        setCreditSalesData((prevData: any) => {
+            const newProducts = [...prevData.products];
+            newProducts[index] = { ...newProducts[index], [field]: value };
+
+            if (field === 'customer_id') {
+                newProducts[index].vehicle_id = '';
+                newProducts[index].product_id = '';
+                newProducts[index].quantity = '';
+                newProducts[index].amount = '';
+                newProducts[index].due_amount = '';
+            }
+
+            if (field === 'vehicle_id' && value) {
+                const selectedVehicle = vehicles.find(
+                    (v) => v.id.toString() === value,
+                );
+                if (selectedVehicle) {
+                    newProducts[index].customer_id =
+                        selectedVehicle.customer_id.toString();
+                    if (
+                        selectedVehicle.products &&
+                        selectedVehicle.products.length > 0
+                    ) {
+                        newProducts[index].product_id =
+                            selectedVehicle.products[0].id.toString();
+
+                        // Trigger price update for the auto-selected product
+                        const selectedProduct = products.find(
+                            (p) => p.id.toString() === selectedVehicle.products![0].id.toString(),
+                        );
+                        if (selectedProduct && selectedProduct.sales_price) {
+                            // Reset quantity if price changes logic is needed, or keep existing.
+                            // For now, let's just ensure price reference is correct for future calcs.
+                            // But we also need to calc amount if quantity exists.
+                            const quantity = parseFloat(newProducts[index].quantity) || 0;
+                            if (quantity > 0) {
+                                const amount = selectedProduct.sales_price * quantity;
+                                newProducts[index].amount = amount.toString();
+                                newProducts[index].due_amount = amount.toFixed(2);
+                            }
+                        }
+                    } else if (selectedVehicle.product_id) {
+                        newProducts[index].product_id =
+                            selectedVehicle.product_id.toString();
+
+                        const selectedProduct = products.find(
+                            (p) => p.id.toString() === selectedVehicle.product_id.toString(),
+                        );
+                        if (selectedProduct && selectedProduct.sales_price) {
+                            const quantity = parseFloat(newProducts[index].quantity) || 0;
+                            if (quantity > 0) {
+                                const amount = selectedProduct.sales_price * quantity;
+                                newProducts[index].amount = amount.toString();
+                                newProducts[index].due_amount = amount.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (field === 'product_id' && value) {
+                const selectedProduct = products.find(
+                    (p) => p.id.toString() === value,
+                );
+                if (selectedProduct && selectedProduct.sales_price) {
+                    const quantity =
+                        parseFloat(newProducts[index].quantity) || 0;
+                    const amount = selectedProduct.sales_price * quantity;
+                    newProducts[index].amount = amount.toString();
+                    newProducts[index].due_amount = amount.toFixed(2);
+                }
+            }
+
+            if (field === 'quantity' && value) {
+                const selectedProduct = products.find(
+                    (p) => p.id.toString() === newProducts[index].product_id,
+                );
+                if (selectedProduct && selectedProduct.sales_price) {
+                    const quantity = parseFloat(value) || 0;
+                    const amount = selectedProduct.sales_price * quantity;
+                    newProducts[index].amount = amount.toString();
+                    newProducts[index].due_amount = amount.toFixed(2);
+                }
+            }
+
+            if (field === 'amount' && value) {
+                const selectedProduct = products.find(
+                    (p) => p.id.toString() === newProducts[index].product_id,
+                );
+                if (
+                    selectedProduct &&
+                    selectedProduct.sales_price &&
+                    selectedProduct.sales_price > 0
+                ) {
+                    const amount = parseFloat(value) || 0;
+                    newProducts[index].quantity = (
+                        amount / selectedProduct.sales_price
+                    ).toFixed(2);
+                    newProducts[index].due_amount = amount.toFixed(2);
+                }
+            }
+
+            console.log('Updating Credit Product:', { index, field, value, newProduct: newProducts[index] });
+
+            return {
+                ...prevData,
+                products: newProducts,
+            };
+        });
+    };
+
+    const addCreditProduct = () => {
+        const firstProduct = creditSalesData.products[0];
+        if (
+            !firstProduct.product_id ||
+            !firstProduct.customer_id ||
+            !firstProduct.vehicle_id ||
+            !firstProduct.quantity
+        ) {
+            alert('Please fill product, customer, vehicle and quantity');
+            return;
+        }
+
+        const newProducts = [
+            {
+                product_id: '',
+                customer_id: '',
+                vehicle_id: '',
+                memo_no: '',
+                quantity: '',
+                amount: '',
+                due_amount: '',
+                remarks: '',
+            },
+            ...creditSalesData.products,
+        ];
+
+        setCreditSalesData({
+            ...creditSalesData,
+            products: newProducts,
+        });
+    };
+
+    const removeCreditProduct = (index: number) => {
+        const newProducts = creditSalesData.products.filter(
+            (_, i) => i !== index,
+        );
+        setCreditSalesData((prev) => ({ ...prev, products: newProducts }));
+    };
+
+    const getCreditFilteredVehicles = (customerId: string) => {
+        console.log('getCreditFilteredVehicles:', { customerId, vehiclesCount: vehicles.length });
+        if (!customerId) return vehicles;
+        const filtered = vehicles.filter((v) => v.customer_id.toString() === customerId);
+        console.log('Filtered Vehicles:', filtered.length);
+        return filtered;
+    };
+
+    const getCreditFilteredProducts = (vehicleId: string) => {
+        if (!vehicleId) return products;
+        const selectedVehicle = vehicles.find(
+            (v) => v.id.toString() === vehicleId,
+        );
+        if (!selectedVehicle) return products;
+
+        if (selectedVehicle.products && selectedVehicle.products.length > 0) {
+            return products.filter(p => selectedVehicle.products!.some(vp => vp.id === p.id));
+        }
+
+        if (selectedVehicle.product_id) {
+            return products.filter(p => p.id === selectedVehicle.product_id);
+        }
+
+        return products;
+    };
+
     const calculateOtherProductSale = (index: number, sellQuantity: number) => {
         const newSales = [...otherProductsSales];
         const product = otherProducts[index];
@@ -310,6 +499,7 @@ export default function DispenserReading({
             return sum + sale;
         }, 0);
         setTotalSalesSum(totalSales);
+
         const creditSales =
             parseFloat(
                 creditSalesValue !== undefined
@@ -344,17 +534,17 @@ export default function DispenserReading({
                 const total = Number.isFinite(reading.total_sale)
                     ? reading.total_sale
                     : 0;
-                const existingCredit = prev[pid]?.credit_sales || 0;
+
                 const current = aggregated[pid] || {
                     net_reading: 0,
                     total_sale: 0,
-                    credit_sales: existingCredit,
+                    credit_sales: 0,
                     cash_sales: 0,
                 };
                 aggregated[pid] = {
                     net_reading: current.net_reading + net,
                     total_sale: current.total_sale + total,
-                    credit_sales: existingCredit,
+                    credit_sales: 0,
                     cash_sales: 0,
                 };
             });
@@ -366,7 +556,7 @@ export default function DispenserReading({
                     next[pid] = {
                         net_reading: 0,
                         total_sale: 0,
-                        credit_sales: next[pid].credit_sales || 0,
+                        credit_sales: 0,
                         cash_sales: 0,
                     };
                 }
@@ -376,7 +566,7 @@ export default function DispenserReading({
                 next[pid] = {
                     net_reading: val.net_reading,
                     total_sale: val.total_sale,
-                    credit_sales: next[pid]?.credit_sales ?? val.credit_sales,
+                    credit_sales: next[pid]?.credit_sales || 0,
                     cash_sales: 0,
                 };
             });
@@ -424,6 +614,7 @@ export default function DispenserReading({
                 });
                 return updated;
             });
+
             setData((prev) => {
                 const newData = {
                     ...prev,
@@ -573,6 +764,7 @@ export default function DispenserReading({
                                 <div></div>
                             </div>
                             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+
                                 <div>
                                     <Label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
                                         Credit Sales
@@ -641,34 +833,16 @@ export default function DispenserReading({
                                         className="w-full bg-gray-50 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                     />
                                 </div>
+
                                 <div>
                                     <Label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
                                         Credit Sales(Other Products)
                                     </Label>
-                                    <div className="relative">
-                                        <Input
-                                            value={data.credit_sales_other}
-                                            readOnly
-                                            className="w-full bg-gray-50 pr-10 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
-                                            onClick={() => {
-                                                setCreditSalesData((prev) => ({
-                                                    ...prev,
-                                                    sale_date:
-                                                        data.transaction_date,
-                                                    shift_id: data.shift_id,
-                                                }));
-                                                setIsCreditSalesOpen(true);
-                                            }}
-                                        >
-                                            <FileText className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </div>
+                                    <Input
+                                        value={data.credit_sales_other}
+                                        readOnly
+                                        className="w-full bg-gray-50 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                    />
                                 </div>
                                 <div>
                                     <Label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -794,6 +968,7 @@ export default function DispenserReading({
                                                 updateTotals(
                                                     data.dispenser_readings,
                                                     e.target.value,
+                                                    data.credit_sales,
                                                 );
                                             }}
                                             className="w-full pr-10 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
@@ -963,7 +1138,7 @@ export default function DispenserReading({
                                                                         index
                                                                     ] = {
                                                                         ...newReadings[
-                                                                            index
+                                                                        index
                                                                         ],
                                                                         reading_by:
                                                                             value,
@@ -1169,9 +1344,6 @@ export default function DispenserReading({
                                                     Total Sale
                                                 </th>
                                                 <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
-                                                    Credit Sales
-                                                </th>
-                                                <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
                                                     Cash Sales
                                                 </th>
                                             </tr>
@@ -1204,8 +1376,7 @@ export default function DispenserReading({
                                                             ?.sales_price ??
                                                         0;
                                                     const cashSales =
-                                                        productData.total_sale -
-                                                        productData.credit_sales;
+                                                        productData.total_sale;
                                                     return (
                                                         <tr
                                                             key={productId}
@@ -1227,11 +1398,6 @@ export default function DispenserReading({
                                                             </td>
                                                             <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
                                                                 {productData.total_sale.toFixed(
-                                                                    2,
-                                                                )}
-                                                            </td>
-                                                            <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                                {productData.credit_sales.toFixed(
                                                                     2,
                                                                 )}
                                                             </td>
@@ -1263,638 +1429,7 @@ export default function DispenserReading({
                     </form>
                 </Card>
 
-                <FormModal
-                    isOpen={isCreditSalesOpen}
-                    onClose={() => {
-                        setIsCreditSalesOpen(false);
-                        setCreditSalesData({
-                            sale_date: '',
-                            shift_id: '',
-                            products: [
-                                {
-                                    product_id: '',
-                                    customer_id: '',
-                                    vehicle_id: '',
-                                    memo_no: '',
-                                    quantity: '',
-                                    amount: '',
-                                    due_amount: '',
-                                    remarks: '',
-                                },
-                            ],
-                        });
-                    }}
-                    title="Credit Sales"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        const validProducts = creditSalesData.products.filter(
-                            (p) =>
-                                p.product_id &&
-                                p.customer_id &&
-                                p.vehicle_id &&
-                                p.quantity,
-                        );
-                        if (validProducts.length === 0) {
-                            alert('Please add at least one product to cart');
-                            return;
-                        }
-                        setCreditProcessing(true);
-                        router.post(
-                            '/credit-sales',
-                            { ...creditSalesData, products: validProducts },
-                            {
-                                onSuccess: () => {
-                                    setIsCreditSalesOpen(false);
-                                    setCreditSalesData({
-                                        sale_date: '',
-                                        shift_id: '',
-                                        products: [
-                                            {
-                                                product_id: '',
-                                                customer_id: '',
-                                                vehicle_id: '',
-                                                memo_no: '',
-                                                quantity: '',
-                                                amount: '',
-                                                due_amount: '',
-                                                remarks: '',
-                                            },
-                                        ],
-                                    });
-                                    setCreditProcessing(false);
-                                    if (
-                                        data.transaction_date &&
-                                        data.shift_id
-                                    ) {
-                                        fetchShiftData(
-                                            data.transaction_date,
-                                            data.shift_id,
-                                        );
-                                    }
-                                },
-                                onError: () => setCreditProcessing(false),
-                            },
-                        );
-                    }}
-                    processing={creditProcessing}
-                    submitText="Create Sale"
-                    className="max-h-[90vh] max-w-[65vw]"
-                >
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-5 gap-4">
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Sale Date{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    type="date"
-                                    value={creditSalesData.sale_date}
-                                    onChange={(e) => {
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            sale_date: e.target.value,
-                                            shift_id: '',
-                                        }));
-                                        setAvailableShifts(
-                                            getAvailableShifts(e.target.value),
-                                        );
-                                    }}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Shift{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Select
-                                    value={creditSalesData.shift_id}
-                                    onValueChange={(value) =>
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            shift_id: value,
-                                        }))
-                                    }
-                                    disabled={!creditSalesData.sale_date}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue
-                                            placeholder={
-                                                creditSalesData.sale_date
-                                                    ? 'Select shift'
-                                                    : 'Select date first'
-                                            }
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableShifts.map((shift) => (
-                                            <SelectItem
-                                                key={shift.id}
-                                                value={shift.id.toString()}
-                                            >
-                                                {shift.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Memo No
-                                </Label>
-                                <Input
-                                    value={
-                                        creditSalesData.products[0]?.memo_no ||
-                                        ''
-                                    }
-                                    onChange={(e) => {
-                                        const newProducts = [
-                                            ...creditSalesData.products,
-                                        ];
-                                        newProducts[0] = {
-                                            ...newProducts[0],
-                                            memo_no: e.target.value,
-                                        };
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            products: newProducts,
-                                        }));
-                                    }}
-                                    placeholder="Enter memo number"
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Customer{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <SearchableSelect
-                                    options={customers.map((customer) => ({
-                                        value: customer.id.toString(),
-                                        label: customer.name,
-                                    }))}
-                                    value={
-                                        creditSalesData.products[0]
-                                            ?.customer_id || ''
-                                    }
-                                    onValueChange={(value) => {
-                                        const newProducts = [
-                                            ...creditSalesData.products,
-                                        ];
-                                        newProducts[0] = {
-                                            ...newProducts[0],
-                                            customer_id: value,
-                                        };
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            products: newProducts,
-                                        }));
-                                    }}
-                                    placeholder="Select customer"
-                                    searchPlaceholder="Search customers..."
-                                />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Vehicle{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <SearchableSelect
-                                    options={vehicles.map((vehicle) => ({
-                                        value: vehicle.id.toString(),
-                                        label: vehicle.vehicle_number,
-                                        subtitle: customers.find(
-                                            (c) => c.id === vehicle.customer_id,
-                                        )?.name,
-                                    }))}
-                                    value={
-                                        creditSalesData.products[0]
-                                            ?.vehicle_id || ''
-                                    }
-                                    onValueChange={(value) => {
-                                        const selectedVehicle = vehicles.find(
-                                            (v) => v.id.toString() === value,
-                                        );
-                                        const newProducts = [
-                                            ...creditSalesData.products,
-                                        ];
-                                        newProducts[0] = {
-                                            ...newProducts[0],
-                                            vehicle_id: value,
-                                            customer_id:
-                                                selectedVehicle?.customer_id.toString() ||
-                                                '',
-                                            product_id:
-                                                selectedVehicle?.product_id.toString() ||
-                                                '',
-                                        };
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            products: newProducts,
-                                        }));
-                                    }}
-                                    placeholder="Select vehicle"
-                                    searchPlaceholder="Search vehicles..."
-                                />
-                            </div>
-                        </div>
 
-                        <div className="grid grid-cols-5 gap-4">
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Product
-                                </Label>
-                                <Select
-                                    value={
-                                        creditSalesData.products[0]
-                                            ?.product_id || ''
-                                    }
-                                    onValueChange={(value) => {
-                                        const selectedProduct = products.find(
-                                            (p) => p.id.toString() === value,
-                                        );
-                                        const quantity =
-                                            parseFloat(
-                                                creditSalesData.products[0]
-                                                    ?.quantity,
-                                            ) || 0;
-                                        const amount =
-                                            (selectedProduct?.sales_price ||
-                                                0) * quantity;
-                                        const newProducts = [
-                                            ...creditSalesData.products,
-                                        ];
-                                        newProducts[0] = {
-                                            ...newProducts[0],
-                                            product_id: value,
-                                            amount: amount.toString(),
-                                            due_amount: amount.toFixed(2),
-                                        };
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            products: newProducts,
-                                        }));
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select product" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {products.map((product) => (
-                                            <SelectItem
-                                                key={product.id}
-                                                value={product.id.toString()}
-                                            >
-                                                {product.product_name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Sales Price
-                                </Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={
-                                        products.find(
-                                            (p) =>
-                                                p.id.toString() ===
-                                                creditSalesData.products[0]
-                                                    ?.product_id,
-                                        )?.sales_price || ''
-                                    }
-                                    readOnly
-                                    className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Quantity
-                                </Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={
-                                        creditSalesData.products[0]?.quantity ||
-                                        ''
-                                    }
-                                    onChange={(e) => {
-                                        const selectedProduct = products.find(
-                                            (p) =>
-                                                p.id.toString() ===
-                                                creditSalesData.products[0]
-                                                    ?.product_id,
-                                        );
-                                        const quantity =
-                                            parseFloat(e.target.value) || 0;
-                                        const amount =
-                                            (selectedProduct?.sales_price ||
-                                                0) * quantity;
-                                        const newProducts = [
-                                            ...creditSalesData.products,
-                                        ];
-                                        newProducts[0] = {
-                                            ...newProducts[0],
-                                            quantity: e.target.value,
-                                            amount: amount.toString(),
-                                            due_amount: amount.toFixed(2),
-                                        };
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            products: newProducts,
-                                        }));
-                                    }}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Amount
-                                </Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={
-                                        creditSalesData.products[0]?.amount ||
-                                        ''
-                                    }
-                                    onChange={(e) => {
-                                        const selectedProduct = products.find(
-                                            (p) =>
-                                                p.id.toString() ===
-                                                creditSalesData.products[0]
-                                                    ?.product_id,
-                                        );
-                                        const amount =
-                                            parseFloat(e.target.value) || 0;
-                                        const quantity =
-                                            (selectedProduct?.sales_price ||
-                                                0) > 0
-                                                ? amount /
-                                                  (selectedProduct?.sales_price ||
-                                                      1)
-                                                : 0;
-                                        const newProducts = [
-                                            ...creditSalesData.products,
-                                        ];
-                                        newProducts[0] = {
-                                            ...newProducts[0],
-                                            amount: e.target.value,
-                                            quantity: quantity.toFixed(2),
-                                            due_amount: amount.toFixed(2),
-                                        };
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            products: newProducts,
-                                        }));
-                                    }}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Total Amount
-                                </Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={
-                                        creditSalesData.products[0]
-                                            ?.due_amount || ''
-                                    }
-                                    readOnly
-                                    className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-10">
-                                <Label className="text-sm font-medium dark:text-gray-200">
-                                    Remarks
-                                </Label>
-                                <Input
-                                    value={
-                                        creditSalesData.products[0]?.remarks ||
-                                        ''
-                                    }
-                                    onChange={(e) => {
-                                        const newProducts = [
-                                            ...creditSalesData.products,
-                                        ];
-                                        newProducts[0] = {
-                                            ...newProducts[0],
-                                            remarks: e.target.value,
-                                        };
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            products: newProducts,
-                                        }));
-                                    }}
-                                    placeholder="Enter any remarks"
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div className="col-span-2 flex flex-col justify-end">
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        const firstProduct =
-                                            creditSalesData.products[0];
-                                        if (
-                                            !firstProduct.product_id ||
-                                            !firstProduct.customer_id ||
-                                            !firstProduct.vehicle_id ||
-                                            !firstProduct.quantity
-                                        ) {
-                                            alert(
-                                                'Please fill product, customer, vehicle and quantity',
-                                            );
-                                            return;
-                                        }
-                                        setCreditSalesData((prev) => ({
-                                            ...prev,
-                                            products: [
-                                                {
-                                                    product_id: '',
-                                                    customer_id: '',
-                                                    vehicle_id: '',
-                                                    memo_no: '',
-                                                    quantity: '',
-                                                    amount: '',
-                                                    due_amount: '',
-                                                    remarks: '',
-                                                },
-                                                ...prev.products,
-                                            ],
-                                        }));
-                                    }}
-                                    className="bg-blue-600 hover:bg-blue-700"
-                                >
-                                    <Plus className="mr-1 h-4 w-4" />
-                                    Add to Cart
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="mt-6">
-                            <table className="w-full border border-gray-300 dark:border-gray-600">
-                                <thead className="bg-gray-100 dark:bg-gray-700">
-                                    <tr>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
-                                            SL
-                                        </th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
-                                            Customer
-                                        </th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
-                                            Vehicle
-                                        </th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
-                                            Product Name
-                                        </th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
-                                            Quantity
-                                        </th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
-                                            Total
-                                        </th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
-                                            Action
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {creditSalesData.products
-                                        .slice(1)
-                                        .filter((p) => p.product_id)
-                                        .map((product, index) => {
-                                            const selectedProduct =
-                                                products.find(
-                                                    (p) =>
-                                                        p.id.toString() ===
-                                                        product.product_id,
-                                                );
-                                            const selectedCustomer =
-                                                customers.find(
-                                                    (c) =>
-                                                        c.id.toString() ===
-                                                        product.customer_id,
-                                                );
-                                            const selectedVehicle =
-                                                vehicles.find(
-                                                    (v) =>
-                                                        v.id.toString() ===
-                                                        product.vehicle_id,
-                                                );
-                                            return (
-                                                <tr
-                                                    key={index}
-                                                    className="border-t dark:border-gray-600"
-                                                >
-                                                    <td className="p-2 text-sm dark:text-white">
-                                                        {index + 1}
-                                                    </td>
-                                                    <td className="p-2 text-sm dark:text-white">
-                                                        {selectedCustomer?.name ||
-                                                            '-'}
-                                                    </td>
-                                                    <td className="p-2 text-sm dark:text-white">
-                                                        {selectedVehicle?.vehicle_number ||
-                                                            '-'}
-                                                    </td>
-                                                    <td className="p-2 text-sm dark:text-white">
-                                                        {
-                                                            selectedProduct?.product_name
-                                                        }
-                                                    </td>
-                                                    <td className="p-2 text-sm dark:text-white">
-                                                        {product.quantity}
-                                                    </td>
-                                                    <td className="p-2 text-sm dark:text-white">
-                                                        {product.due_amount ||
-                                                            '0'}
-                                                    </td>
-                                                    <td className="p-2">
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    const editProduct =
-                                                                        creditSalesData
-                                                                            .products[
-                                                                            index +
-                                                                                1
-                                                                        ];
-                                                                    const newProducts =
-                                                                        creditSalesData.products.filter(
-                                                                            (
-                                                                                _,
-                                                                                i,
-                                                                            ) =>
-                                                                                i !==
-                                                                                index +
-                                                                                    1,
-                                                                        );
-                                                                    newProducts[0] =
-                                                                        editProduct;
-                                                                    setCreditSalesData(
-                                                                        (
-                                                                            prev,
-                                                                        ) => ({
-                                                                            ...prev,
-                                                                            products:
-                                                                                newProducts,
-                                                                        }),
-                                                                    );
-                                                                }}
-                                                                className="text-indigo-600 hover:text-indigo-800"
-                                                            >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    const newProducts =
-                                                                        creditSalesData.products.filter(
-                                                                            (
-                                                                                _,
-                                                                                i,
-                                                                            ) =>
-                                                                                i !==
-                                                                                index +
-                                                                                    1,
-                                                                        );
-                                                                    setCreditSalesData(
-                                                                        (
-                                                                            prev,
-                                                                        ) => ({
-                                                                            ...prev,
-                                                                            products:
-                                                                                newProducts,
-                                                                        }),
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </FormModal>
 
                 <FormModal
                     isOpen={isBankSalesOpen}
@@ -2406,8 +1941,8 @@ export default function DispenserReading({
                                             (selectedProduct?.sales_price ||
                                                 0) > 0
                                                 ? amount /
-                                                  (selectedProduct?.sales_price ||
-                                                      1)
+                                                (selectedProduct?.sales_price ||
+                                                    1)
                                                 : 0;
                                         const discount =
                                             parseFloat(
@@ -2512,22 +2047,22 @@ export default function DispenserReading({
                                         {(bankSalesData.products[0]
                                             ?.payment_type === 'Cash'
                                             ? groupedAccounts['Cash in hand'] ||
-                                              groupedAccounts['Cash'] ||
-                                              []
+                                            groupedAccounts['Cash'] ||
+                                            []
                                             : bankSalesData.products[0]
-                                                    ?.payment_type === 'Bank'
-                                              ? groupedAccounts[
-                                                    'Bank Account'
+                                                ?.payment_type === 'Bank'
+                                                ? groupedAccounts[
+                                                'Bank Account'
                                                 ] ||
                                                 groupedAccounts['Bank'] ||
                                                 []
-                                              : bankSalesData.products[0]
-                                                      ?.payment_type ===
-                                                  'Mobile Bank'
-                                                ? groupedAccounts[
-                                                      'Mobile Bank'
-                                                  ] || []
-                                                : []
+                                                : bankSalesData.products[0]
+                                                    ?.payment_type ===
+                                                    'Mobile Bank'
+                                                    ? groupedAccounts[
+                                                    'Mobile Bank'
+                                                    ] || []
+                                                    : []
                                         ).map((account) => (
                                             <SelectItem
                                                 key={account.id}
@@ -2541,87 +2076,60 @@ export default function DispenserReading({
                             </div>
                             {bankSalesData.products[0]?.payment_type ===
                                 'Bank' && (
-                                <>
-                                    <div>
-                                        <Label className="text-sm font-medium dark:text-gray-200">
-                                            Bank Type
-                                        </Label>
-                                        <Select
-                                            value={
-                                                bankSalesData.products[0]
-                                                    ?.bank_type || ''
-                                            }
-                                            onValueChange={(value) => {
-                                                const newProducts = [
-                                                    ...bankSalesData.products,
-                                                ];
-                                                newProducts[0] = {
-                                                    ...newProducts[0],
-                                                    bank_type: value,
-                                                };
-                                                setBankSalesData((prev) => ({
-                                                    ...prev,
-                                                    products: newProducts,
-                                                }));
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Cheque">
-                                                    Cheque
-                                                </SelectItem>
-                                                <SelectItem value="Cash Deposit">
-                                                    Cash Deposit
-                                                </SelectItem>
-                                                <SelectItem value="Online">
-                                                    Online
-                                                </SelectItem>
-                                                <SelectItem value="CHT">
-                                                    CHT
-                                                </SelectItem>
-                                                <SelectItem value="RTGS">
-                                                    RTGS
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-sm font-medium dark:text-gray-200">
-                                            Bank Name
-                                        </Label>
-                                        <Input
-                                            value={
-                                                bankSalesData.products[0]
-                                                    ?.bank_name || ''
-                                            }
-                                            onChange={(e) => {
-                                                const newProducts = [
-                                                    ...bankSalesData.products,
-                                                ];
-                                                newProducts[0] = {
-                                                    ...newProducts[0],
-                                                    bank_name: e.target.value,
-                                                };
-                                                setBankSalesData((prev) => ({
-                                                    ...prev,
-                                                    products: newProducts,
-                                                }));
-                                            }}
-                                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        />
-                                    </div>
-                                    {bankSalesData.products[0]?.bank_type ===
-                                        'Cheque' && (
+                                    <>
                                         <div>
                                             <Label className="text-sm font-medium dark:text-gray-200">
-                                                Cheque No
+                                                Bank Type
+                                            </Label>
+                                            <Select
+                                                value={
+                                                    bankSalesData.products[0]
+                                                        ?.bank_type || ''
+                                                }
+                                                onValueChange={(value) => {
+                                                    const newProducts = [
+                                                        ...bankSalesData.products,
+                                                    ];
+                                                    newProducts[0] = {
+                                                        ...newProducts[0],
+                                                        bank_type: value,
+                                                    };
+                                                    setBankSalesData((prev) => ({
+                                                        ...prev,
+                                                        products: newProducts,
+                                                    }));
+                                                }}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Cheque">
+                                                        Cheque
+                                                    </SelectItem>
+                                                    <SelectItem value="Cash Deposit">
+                                                        Cash Deposit
+                                                    </SelectItem>
+                                                    <SelectItem value="Online">
+                                                        Online
+                                                    </SelectItem>
+                                                    <SelectItem value="CHT">
+                                                        CHT
+                                                    </SelectItem>
+                                                    <SelectItem value="RTGS">
+                                                        RTGS
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label className="text-sm font-medium dark:text-gray-200">
+                                                Bank Name
                                             </Label>
                                             <Input
                                                 value={
                                                     bankSalesData.products[0]
-                                                        ?.cheque_no || ''
+                                                        ?.bank_name || ''
                                                 }
                                                 onChange={(e) => {
                                                     const newProducts = [
@@ -2629,93 +2137,120 @@ export default function DispenserReading({
                                                     ];
                                                     newProducts[0] = {
                                                         ...newProducts[0],
-                                                        cheque_no:
-                                                            e.target.value,
+                                                        bank_name: e.target.value,
                                                     };
-                                                    setBankSalesData(
-                                                        (prev) => ({
-                                                            ...prev,
-                                                            products:
-                                                                newProducts,
-                                                        }),
-                                                    );
+                                                    setBankSalesData((prev) => ({
+                                                        ...prev,
+                                                        products: newProducts,
+                                                    }));
                                                 }}
                                                 className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                             />
                                         </div>
-                                    )}
-                                </>
-                            )}
+                                        {bankSalesData.products[0]?.bank_type ===
+                                            'Cheque' && (
+                                                <div>
+                                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                                        Cheque No
+                                                    </Label>
+                                                    <Input
+                                                        value={
+                                                            bankSalesData.products[0]
+                                                                ?.cheque_no || ''
+                                                        }
+                                                        onChange={(e) => {
+                                                            const newProducts = [
+                                                                ...bankSalesData.products,
+                                                            ];
+                                                            newProducts[0] = {
+                                                                ...newProducts[0],
+                                                                cheque_no:
+                                                                    e.target.value,
+                                                            };
+                                                            setBankSalesData(
+                                                                (prev) => ({
+                                                                    ...prev,
+                                                                    products:
+                                                                        newProducts,
+                                                                }),
+                                                            );
+                                                        }}
+                                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                    />
+                                                </div>
+                                            )}
+                                    </>
+                                )}
                             {bankSalesData.products[0]?.payment_type ===
                                 'Mobile Bank' && (
-                                <>
-                                    <div>
-                                        <Label className="text-sm font-medium dark:text-gray-200">
-                                            Mobile Bank
-                                        </Label>
-                                        <Select
-                                            value={
-                                                bankSalesData.products[0]
-                                                    ?.mobile_bank || ''
-                                            }
-                                            onValueChange={(value) => {
-                                                const newProducts = [
-                                                    ...bankSalesData.products,
-                                                ];
-                                                newProducts[0] = {
-                                                    ...newProducts[0],
-                                                    mobile_bank: value,
-                                                };
-                                                setBankSalesData((prev) => ({
-                                                    ...prev,
-                                                    products: newProducts,
-                                                }));
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select mobile bank" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="bKash">
-                                                    bKash
-                                                </SelectItem>
-                                                <SelectItem value="Nagad">
-                                                    Nagad
-                                                </SelectItem>
-                                                <SelectItem value="Rocket">
-                                                    Rocket
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-sm font-medium dark:text-gray-200">
-                                            Mobile Number
-                                        </Label>
-                                        <Input
-                                            value={
-                                                bankSalesData.products[0]
-                                                    ?.mobile_number || ''
-                                            }
-                                            onChange={(e) => {
-                                                const newProducts = [
-                                                    ...bankSalesData.products,
-                                                ];
-                                                newProducts[0] = {
-                                                    ...newProducts[0],
-                                                    mobile_number:
-                                                        e.target.value,
-                                                };
-                                                setBankSalesData((prev) => ({
-                                                    ...prev,
-                                                    products: newProducts,
-                                                }));
-                                            }}
-                                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        />
-                                    </div>
-                                </>
-                            )}
+                                    <>
+                                        <div>
+                                            <Label className="text-sm font-medium dark:text-gray-200">
+                                                Mobile Bank
+                                            </Label>
+                                            <Select
+                                                value={
+                                                    bankSalesData.products[0]
+                                                        ?.mobile_bank || ''
+                                                }
+                                                onValueChange={(value) => {
+                                                    const newProducts = [
+                                                        ...bankSalesData.products,
+                                                    ];
+                                                    newProducts[0] = {
+                                                        ...newProducts[0],
+                                                        mobile_bank: value,
+                                                    };
+                                                    setBankSalesData((prev) => ({
+                                                        ...prev,
+                                                        products: newProducts,
+                                                    }));
+                                                }}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select mobile bank" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="bKash">
+                                                        bKash
+                                                    </SelectItem>
+                                                    <SelectItem value="Nagad">
+                                                        Nagad
+                                                    </SelectItem>
+                                                    <SelectItem value="Rocket">
+                                                        Rocket
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label className="text-sm font-medium dark:text-gray-200">
+                                                Mobile Number
+                                            </Label>
+                                            <Input
+                                                value={
+                                                    bankSalesData.products[0]
+                                                        ?.mobile_number || ''
+                                                }
+                                                onChange={(e) => {
+                                                    const newProducts = [
+                                                        ...bankSalesData.products,
+                                                    ];
+                                                    newProducts[0] = {
+                                                        ...newProducts[0],
+                                                        mobile_number:
+                                                            e.target.value,
+                                                    };
+                                                    setBankSalesData((prev) => ({
+                                                        ...prev,
+                                                        products: newProducts,
+                                                    }));
+                                                }}
+                                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                            />
+                                        </div>
+                                    </>
+                                )}
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
                                     Paid Amount{' '}
@@ -2891,8 +2426,8 @@ export default function DispenserReading({
                                                                     const editProduct =
                                                                         bankSalesData
                                                                             .products[
-                                                                            index +
-                                                                                1
+                                                                        index +
+                                                                        1
                                                                         ];
                                                                     const newProducts =
                                                                         bankSalesData.products.filter(
@@ -2902,7 +2437,7 @@ export default function DispenserReading({
                                                                             ) =>
                                                                                 i !==
                                                                                 index +
-                                                                                    1,
+                                                                                1,
                                                                         );
                                                                     newProducts[0] =
                                                                         editProduct;
@@ -2933,7 +2468,7 @@ export default function DispenserReading({
                                                                             ) =>
                                                                                 i !==
                                                                                 index +
-                                                                                    1,
+                                                                                1,
                                                                         );
                                                                     setBankSalesData(
                                                                         (
@@ -3155,18 +2690,18 @@ export default function DispenserReading({
                                 <SelectContent>
                                     {(cashReceiveData.payment_type === 'Cash'
                                         ? groupedAccounts['Cash in hand'] ||
-                                          groupedAccounts['Cash'] ||
-                                          []
+                                        groupedAccounts['Cash'] ||
+                                        []
                                         : cashReceiveData.payment_type ===
                                             'Bank'
-                                          ? groupedAccounts['Bank Account'] ||
+                                            ? groupedAccounts['Bank Account'] ||
                                             groupedAccounts['Bank'] ||
                                             []
-                                          : cashReceiveData.payment_type ===
-                                              'Mobile Bank'
-                                            ? groupedAccounts['Mobile Bank'] ||
-                                              []
-                                            : []
+                                            : cashReceiveData.payment_type ===
+                                                'Mobile Bank'
+                                                ? groupedAccounts['Mobile Bank'] ||
+                                                []
+                                                : []
                                     ).map((account) => (
                                         <SelectItem
                                             key={account.id}
@@ -3760,18 +3295,18 @@ export default function DispenserReading({
                                 <SelectContent>
                                     {(cashPaymentData.payment_type === 'Cash'
                                         ? groupedAccounts['Cash in hand'] ||
-                                          groupedAccounts['Cash'] ||
-                                          []
+                                        groupedAccounts['Cash'] ||
+                                        []
                                         : cashPaymentData.payment_type ===
                                             'Bank'
-                                          ? groupedAccounts['Bank Account'] ||
+                                            ? groupedAccounts['Bank Account'] ||
                                             groupedAccounts['Bank'] ||
                                             []
-                                          : cashPaymentData.payment_type ===
-                                              'Mobile Bank'
-                                            ? groupedAccounts['Mobile Bank'] ||
-                                              []
-                                            : []
+                                            : cashPaymentData.payment_type ===
+                                                'Mobile Bank'
+                                                ? groupedAccounts['Mobile Bank'] ||
+                                                []
+                                                : []
                                     ).map((account) => (
                                         <SelectItem
                                             key={account.id}
@@ -4012,17 +3547,17 @@ export default function DispenserReading({
                             <SelectContent>
                                 {(officePaymentData.payment_type === 'Cash'
                                     ? groupedAccounts['Cash in hand'] ||
-                                      groupedAccounts['Cash'] ||
-                                      []
+                                    groupedAccounts['Cash'] ||
+                                    []
                                     : officePaymentData.payment_type ===
                                         'Bank Account'
-                                      ? groupedAccounts['Bank Account'] ||
+                                        ? groupedAccounts['Bank Account'] ||
                                         groupedAccounts['Bank'] ||
                                         []
-                                      : officePaymentData.payment_type ===
-                                          'Mobile Bank'
-                                        ? groupedAccounts['Mobile Bank'] || []
-                                        : []
+                                        : officePaymentData.payment_type ===
+                                            'Mobile Bank'
+                                            ? groupedAccounts['Mobile Bank'] || []
+                                            : []
                                 ).map((account) => (
                                     <SelectItem
                                         key={account.id}
@@ -4069,6 +3604,505 @@ export default function DispenserReading({
                             }
                             className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         />
+                    </div>
+                </FormModal>
+
+                <FormModal
+                    isOpen={isCreditSalesOpen}
+                    onClose={() => {
+                        setIsCreditSalesOpen(false);
+                        setCreditSalesData({
+                            sale_date: '',
+                            shift_id: '',
+                            products: [
+                                {
+                                    product_id: '',
+                                    customer_id: '',
+                                    vehicle_id: '',
+                                    memo_no: '',
+                                    quantity: '',
+                                    amount: '',
+                                    due_amount: '',
+                                    remarks: '',
+                                },
+                            ],
+                        });
+                    }}
+                    title="Credit Sales"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const validProducts = creditSalesData.products.filter(
+                            (p) =>
+                                p.product_id &&
+                                p.customer_id &&
+                                p.vehicle_id &&
+                                p.quantity,
+                        );
+                        if (validProducts.length === 0) {
+                            alert('Please add at least one product to cart');
+                            return;
+                        }
+
+                        const submitData = {
+                            sale_date: creditSalesData.sale_date,
+                            shift_id: creditSalesData.shift_id,
+                            products: validProducts,
+                        };
+
+                        setCreditProcessing(true);
+                        router.post('/credit-sales', submitData, {
+                            onSuccess: () => {
+                                setIsCreditSalesOpen(false);
+                                setCreditSalesData({
+                                    sale_date: '',
+                                    shift_id: '',
+                                    products: [
+                                        {
+                                            product_id: '',
+                                            customer_id: '',
+                                            vehicle_id: '',
+                                            memo_no: '',
+                                            quantity: '',
+                                            amount: '',
+                                            due_amount: '',
+                                            remarks: '',
+                                        },
+                                    ],
+                                });
+                                setCreditProcessing(false);
+                                if (data.transaction_date && data.shift_id) {
+                                    fetchShiftData(
+                                        data.transaction_date,
+                                        data.shift_id,
+                                    );
+                                }
+                            },
+                            onError: () => {
+                                setCreditProcessing(false);
+                            },
+                        });
+                    }}
+                    processing={creditProcessing}
+                    submitText="Create Sale"
+                    className="max-h-[90vh] max-w-[65vw]"
+                >
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-5 gap-4">
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Sale Date <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                    type="date"
+                                    value={creditSalesData.sale_date}
+                                    onChange={(e) => {
+                                        setCreditSalesData((prev) => ({
+                                            ...prev,
+                                            sale_date: e.target.value,
+                                            shift_id: '',
+                                        }));
+                                        setAvailableShifts(
+                                            getAvailableShifts(e.target.value),
+                                        );
+                                    }}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Shift <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={creditSalesData.shift_id}
+                                    onValueChange={(value) =>
+                                        setCreditSalesData((prev) => ({
+                                            ...prev,
+                                            shift_id: value,
+                                        }))
+                                    }
+                                    disabled={!creditSalesData.sale_date}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select shift" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableShifts.map((shift) => (
+                                            <SelectItem
+                                                key={shift.id}
+                                                value={shift.id.toString()}
+                                            >
+                                                {shift.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Memo No
+                                </Label>
+                                <Input
+                                    value={
+                                        creditSalesData.products[0]?.memo_no ||
+                                        ''
+                                    }
+                                    onChange={(e) =>
+                                        updateCreditProduct(
+                                            0,
+                                            'memo_no',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="Enter memo number"
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Customer <span className="text-red-500">*</span>
+                                </Label>
+                                <SearchableSelect
+                                    options={customers.map((customer) => ({
+                                        value: customer.id.toString(),
+                                        label: customer.name,
+                                    }))}
+                                    value={
+                                        creditSalesData.products[0]
+                                            ?.customer_id || ''
+                                    }
+                                    onValueChange={(value) =>
+                                        updateCreditProduct(
+                                            0,
+                                            'customer_id',
+                                            value,
+                                        )
+                                    }
+                                    placeholder="Select customer"
+                                    searchPlaceholder="Search customers..."
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Vehicle <span className="text-red-500">*</span>
+                                </Label>
+                                <SearchableSelect
+                                    options={getCreditFilteredVehicles(
+                                        creditSalesData.products[0]
+                                            ?.customer_id,
+                                    ).map((vehicle) => ({
+                                        value: vehicle.id.toString(),
+                                        label: vehicle.vehicle_number,
+                                        subtitle: vehicle.customer_id
+                                            ? customers.find(
+                                                (c) =>
+                                                    c.id ===
+                                                    vehicle.customer_id,
+                                            )?.name
+                                            : undefined,
+                                    }))}
+                                    value={
+                                        creditSalesData.products[0]
+                                            ?.vehicle_id || ''
+                                    }
+                                    onValueChange={(value) =>
+                                        updateCreditProduct(
+                                            0,
+                                            'vehicle_id',
+                                            value,
+                                        )
+                                    }
+                                    placeholder="Select vehicle"
+                                    searchPlaceholder="Search vehicles..."
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-5 gap-4">
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Product
+                                </Label>
+                                <Select
+                                    value={
+                                        creditSalesData.products[0]
+                                            ?.product_id || ''
+                                    }
+                                    onValueChange={(value) =>
+                                        updateCreditProduct(
+                                            0,
+                                            'product_id',
+                                            value,
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select product" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {getCreditFilteredProducts(
+                                            creditSalesData.products[0]
+                                                ?.vehicle_id,
+                                        ).map((product) => (
+                                            <SelectItem
+                                                key={product.id}
+                                                value={product.id.toString()}
+                                            >
+                                                {product.product_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Sales Price
+                                </Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={
+                                        getCreditFilteredProducts(
+                                            creditSalesData.products[0]
+                                                ?.vehicle_id,
+                                        ).find(
+                                            (p) =>
+                                                p.id.toString() ===
+                                                creditSalesData.products[0]
+                                                    ?.product_id,
+                                        )?.sales_price || ''
+                                    }
+                                    readOnly
+                                    className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Quantity
+                                </Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={
+                                        creditSalesData.products[0]?.quantity ||
+                                        ''
+                                    }
+                                    onChange={(e) =>
+                                        updateCreditProduct(
+                                            0,
+                                            'quantity',
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Amount
+                                </Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={
+                                        creditSalesData.products[0]?.amount ||
+                                        ''
+                                    }
+                                    onChange={(e) =>
+                                        updateCreditProduct(
+                                            0,
+                                            'amount',
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Total Amount
+                                </Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={
+                                        creditSalesData.products[0]
+                                            ?.due_amount || ''
+                                    }
+                                    readOnly
+                                    className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-10">
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Remarks
+                                </Label>
+                                <Input
+                                    value={
+                                        creditSalesData.products[0]?.remarks ||
+                                        ''
+                                    }
+                                    onChange={(e) =>
+                                        updateCreditProduct(
+                                            0,
+                                            'remarks',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="Enter any remarks"
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div className="col-span-2 flex flex-col justify-end">
+                                <Button
+                                    type="button"
+                                    onClick={addCreditProduct}
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                    <Plus className="mr-1 h-4 w-4" />
+                                    Add to Cart
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <table className="w-full border border-gray-300 dark:border-gray-600">
+                                <thead className="bg-gray-100 dark:bg-gray-700">
+                                    <tr>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                            SL
+                                        </th>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                            Customer
+                                        </th>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                            Vehicle
+                                        </th>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                            Product Name
+                                        </th>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                            Quantity
+                                        </th>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                            Total
+                                        </th>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {creditSalesData.products
+                                        .slice(1)
+                                        .filter((p) => p.product_id)
+                                        .map((product, index) => {
+                                            const selectedProduct =
+                                                products.find(
+                                                    (p) =>
+                                                        p.id.toString() ===
+                                                        product.product_id,
+                                                );
+                                            const selectedCustomer =
+                                                customers.find(
+                                                    (c) =>
+                                                        c.id.toString() ===
+                                                        product.customer_id,
+                                                );
+                                            const selectedVehicle =
+                                                vehicles.find(
+                                                    (v) =>
+                                                        v.id.toString() ===
+                                                        product.vehicle_id,
+                                                );
+                                            const actualIndex = index + 1;
+                                            return (
+                                                <tr
+                                                    key={actualIndex}
+                                                    className="border-t dark:border-gray-600"
+                                                >
+                                                    <td className="p-2 text-sm dark:text-white">
+                                                        {index + 1}
+                                                    </td>
+                                                    <td className="p-2 text-sm dark:text-white">
+                                                        {selectedCustomer?.name ||
+                                                            '-'}
+                                                    </td>
+                                                    <td className="p-2 text-sm dark:text-white">
+                                                        {selectedVehicle?.vehicle_number ||
+                                                            '-'}
+                                                    </td>
+                                                    <td className="p-2 text-sm dark:text-white">
+                                                        {
+                                                            selectedProduct?.product_name
+                                                        }
+                                                    </td>
+                                                    <td className="p-2 text-sm dark:text-white">
+                                                        {product.quantity}
+                                                    </td>
+                                                    <td className="p-2 text-sm dark:text-white">
+                                                        {product.due_amount ||
+                                                            '0'}
+                                                    </td>
+                                                    <td className="p-2">
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const editProduct =
+                                                                        creditSalesData
+                                                                            .products[
+                                                                        actualIndex
+                                                                        ];
+                                                                    const newProducts =
+                                                                        creditSalesData.products.filter(
+                                                                            (
+                                                                                _,
+                                                                                i,
+                                                                            ) =>
+                                                                                i !==
+                                                                                actualIndex,
+                                                                        );
+                                                                    newProducts[0] =
+                                                                        editProduct;
+                                                                    setCreditSalesData(
+                                                                        (
+                                                                            prev,
+                                                                        ) => ({
+                                                                            ...prev,
+                                                                            products:
+                                                                                newProducts,
+                                                                        }),
+                                                                    );
+                                                                }}
+                                                                className="text-indigo-600 hover:text-indigo-800"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    removeCreditProduct(
+                                                                        actualIndex,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </FormModal>
             </div>

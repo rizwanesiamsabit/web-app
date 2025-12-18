@@ -46,7 +46,7 @@ class DispenserReadingController extends Controller
         });
         $otherProducts = Product::with(['unit', 'stock', 'activeRate', 'category'])
             ->where('status', 1)
-            ->whereHas('category', function($query) {
+            ->whereHas('category', function ($query) {
                 $query->where('code', '!=', '1001');
             })
             ->get()
@@ -55,7 +55,7 @@ class DispenserReadingController extends Controller
                 return $product;
             });
         $customers = Customer::where('status', true)->select('id', 'name')->get();
-        $vehicles = Vehicle::with('customer:id,name')->select('id', 'vehicle_number', 'customer_id')->get();
+        $vehicles = Vehicle::with(['customer:id,name', 'products:id,product_name'])->select('id', 'vehicle_number', 'customer_id')->get();
         $accounts = Account::with('group')->select('id', 'name', 'ac_number', 'group_id', 'group_code')->get();
         $groupedAccounts = $accounts->groupBy(function ($account) {
             return $account->group ? $account->group->name : 'Other';
@@ -179,15 +179,17 @@ class DispenserReadingController extends Controller
             ->get();
 
         return response()->json([
-            'getTotalSummeryReport' => [[
-                'total_credit_sales_amount' => $creditSales,
-                'total_bank_sale_amount' => $bankSales,
-                'total_cash_receive_amount' => $cashReceive,
-                'total_cash_payment_amount' => $cashPayment,
-                'total_office_payment_amount' => $officePayment,
-                'total_credit_sales_other_amount' => $creditSalesOther,
-                'total_bank_sales_other_amount' => $bankSalesOther,
-            ]],
+            'getTotalSummeryReport' => [
+                [
+                    'total_credit_sales_amount' => $creditSales,
+                    'total_bank_sale_amount' => $bankSales,
+                    'total_cash_receive_amount' => $cashReceive,
+                    'total_cash_payment_amount' => $cashPayment,
+                    'total_office_payment_amount' => $officePayment,
+                    'total_credit_sales_other_amount' => $creditSalesOther,
+                    'total_bank_sales_other_amount' => $bankSalesOther,
+                ]
+            ],
             'getCreditSalesDetailsReport' => $creditSalesDetails
         ]);
     }
