@@ -12,69 +12,71 @@ class VehicleSeeder extends Seeder
     public function run(): void
     {
         $customers = Customer::all();
-        $products = Product::all();
+        $oilProducts = Product::whereHas('category', function($query) {
+            $query->where('code', '1001');
+        })->pluck('id')->toArray();
+        
+        $otherProducts = Product::whereHas('category', function($query) {
+            $query->where('code', '1002');
+        })->pluck('id')->toArray();
 
-        $vehiclesData = [
-            [
-                'vehicle' => [
-                    'customer_id' => $customers->first()->id ?? 1,
-                    'vehicle_type' => 'Car',
-                    'vehicle_name' => 'Toyota Corolla',
-                    'vehicle_number' => 'DHK-1234',
-                    'reg_date' => '2020-01-15',
-                    'status' => true
-                ],
-                'products' => [$products->where('product_name', 'Petrol')->first()->id ?? 1]
-            ],
-            [
-                'vehicle' => [
-                    'customer_id' => $customers->skip(1)->first()->id ?? 2,
-                    'vehicle_type' => 'Truck',
-                    'vehicle_name' => 'Tata 407',
-                    'vehicle_number' => 'DHK-5678',
-                    'reg_date' => '2019-05-20',
-                    'status' => true
-                ],
-                'products' => [$products->where('product_name', 'Diesel')->first()->id ?? 4]
-            ],
-            [
-                'vehicle' => [
-                    'customer_id' => $customers->skip(2)->first()->id ?? 3,
-                    'vehicle_type' => 'Bus',
-                    'vehicle_name' => 'Ashok Leyland',
-                    'vehicle_number' => 'DHK-9012',
-                    'reg_date' => '2021-03-10',
-                    'status' => true
-                ],
-                'products' => [$products->where('product_name', 'CNG')->first()->id ?? 2]
-            ],
-            [
-                'vehicle' => [
-                    'customer_id' => $customers->skip(3)->first()->id ?? 4,
-                    'vehicle_type' => 'Motorcycle',
-                    'vehicle_name' => 'Honda CBR',
-                    'vehicle_number' => 'DHK-3456',
-                    'reg_date' => '2022-07-25',
-                    'status' => true
-                ],
-                'products' => [$products->where('product_name', 'Octane')->first()->id ?? 3]
-            ],
-            [
-                'vehicle' => [
-                    'customer_id' => $customers->skip(4)->first()->id ?? 5,
-                    'vehicle_type' => 'Pickup',
-                    'vehicle_name' => 'Mahindra Bolero',
-                    'vehicle_number' => 'DHK-7890',
-                    'reg_date' => '2020-11-30',
-                    'status' => true
-                ],
-                'products' => [$products->where('product_name', 'Diesel')->first()->id ?? 4]
-            ]
+        $vehicleTypes = ['Car', 'Truck', 'Bus', 'Motorcycle', 'Pickup', 'Van', 'SUV', 'Microbus'];
+        $vehicleNames = [
+            'Car' => ['Toyota Corolla', 'Honda Civic', 'Nissan Sunny', 'Mitsubishi Lancer'],
+            'Truck' => ['Tata 407', 'Ashok Leyland', 'Mahindra Bolero Pickup', 'Isuzu NPR'],
+            'Bus' => ['Ashok Leyland Bus', 'Tata Bus', 'Volvo Bus', 'Scania Bus'],
+            'Motorcycle' => ['Honda CBR', 'Yamaha R15', 'Suzuki Gixxer', 'Bajaj Pulsar'],
+            'Pickup' => ['Toyota Hilux', 'Ford Ranger', 'Isuzu D-Max', 'Mitsubishi L200'],
+            'Van' => ['Toyota Hiace', 'Nissan Urvan', 'Hyundai H1', 'Ford Transit'],
+            'SUV' => ['Toyota Prado', 'Honda CR-V', 'Nissan X-Trail', 'Mitsubishi Pajero'],
+            'Microbus' => ['Toyota Coaster', 'Nissan Civilian', 'Hyundai County', 'Isuzu Elf']
         ];
 
-        foreach ($vehiclesData as $data) {
-            $vehicle = Vehicle::create($data['vehicle']);
-            $vehicle->products()->attach($data['products']);
+        $vehicleCounter = 1;
+
+        foreach ($customers as $customer) {
+            // Each customer gets 5-8 vehicles
+            $vehicleCount = rand(5, 8);
+            
+            for ($i = 0; $i < $vehicleCount; $i++) {
+                $vehicleType = $vehicleTypes[array_rand($vehicleTypes)];
+                $vehicleName = $vehicleNames[$vehicleType][array_rand($vehicleNames[$vehicleType])];
+                
+                $vehicle = Vehicle::create([
+                    'customer_id' => $customer->id,
+                    'vehicle_type' => $vehicleType,
+                    'vehicle_name' => $vehicleName,
+                    'vehicle_number' => 'DHK-' . str_pad($vehicleCounter, 4, '0', STR_PAD_LEFT),
+                    'reg_date' => now()->subDays(rand(30, 1000)),
+                    'status' => true
+                ]);
+
+                // Each vehicle gets 2-4 products (mix of oil and other products)
+                $productCount = rand(2, 4);
+                $selectedProducts = [];
+                
+                // Always include at least 1 oil product
+                $selectedProducts[] = $oilProducts[array_rand($oilProducts)];
+                
+                // Add remaining products (mix of oil and others)
+                for ($j = 1; $j < $productCount; $j++) {
+                    $useOilProduct = rand(0, 1); // 50% chance
+                    if ($useOilProduct && count($oilProducts) > 0) {
+                        $productId = $oilProducts[array_rand($oilProducts)];
+                    } else if (count($otherProducts) > 0) {
+                        $productId = $otherProducts[array_rand($otherProducts)];
+                    } else {
+                        continue;
+                    }
+                    
+                    if (!in_array($productId, $selectedProducts)) {
+                        $selectedProducts[] = $productId;
+                    }
+                }
+
+                $vehicle->products()->attach($selectedProducts);
+                $vehicleCounter++;
+            }
         }
     }
 }
