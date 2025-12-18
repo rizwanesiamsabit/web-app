@@ -5,6 +5,7 @@ import { FormModal } from '@/components/ui/form-modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/ui/pagination';
+import { Combobox } from '@/components/ui/combobox';
 import {
     Select,
     SelectContent,
@@ -965,44 +966,34 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Customer <span className="text-red-500">*</span>
                                     </Label>
-                                    <Input
-                                        list="customers-list"
+                                    <Combobox
+                                        options={Array.from(new Set([
+                                            ...vehicles.filter(v => v.customer).map(v => v.customer!.name),
+                                            ...uniqueCustomers
+                                        ])).sort()}
                                         value={data.products[0]?.customer || ''}
-                                        onChange={(e) => {
-                                            updateProduct(0, 'customer', e.target.value);
-                                        }}
+                                        onValueChange={(value) => updateProduct(0, 'customer', value)}
                                         placeholder="Type customer name"
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
-                                    <datalist id="customers-list">
-                                        {Array.from(new Set([
-                                            ...vehicles.filter(v => v.customer).map(v => v.customer!.name),
-                                            ...uniqueCustomers
-                                        ])).sort().map((name) => (
-                                            <option key={name} value={name} />
-                                        ))}
-                                    </datalist>
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Vehicle <span className="text-red-500">*</span>
                                     </Label>
-                                    <Input
-                                        list="vehicles-list"
+                                    <Combobox
+                                        options={Array.from(new Set([
+                                            ...vehicles.map(v => v.vehicle_number),
+                                            ...uniqueVehicles
+                                        ])).sort()}
                                         value={data.products[0]?.vehicle_no || ''}
-                                        onChange={(e) => updateProduct(0, 'vehicle_no', e.target.value)}
-                                        onBlur={(e) => handleVehicleBlur(0, e.target.value)}
+                                        onValueChange={(value) => {
+                                            updateProduct(0, 'vehicle_no', value);
+                                            handleVehicleBlur(0, value);
+                                        }}
                                         placeholder="Type vehicle number"
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
-                                    <datalist id="vehicles-list">
-                                        {Array.from(new Set([
-                                            ...vehicles.map(v => v.vehicle_number),
-                                            ...uniqueVehicles
-                                        ])).sort().map((vehicleNo) => (
-                                            <option key={vehicleNo} value={vehicleNo} />
-                                        ))}
-                                    </datalist>
                                 </div>
                             </div>
 

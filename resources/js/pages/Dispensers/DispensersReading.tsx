@@ -4,6 +4,8 @@ import { FormModal } from '@/components/ui/form-modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { DatalistInput } from '@/components/ui/datalist-input';
+import { Combobox } from '@/components/ui/combobox';
 import {
     Select,
     SelectContent,
@@ -1624,19 +1626,24 @@ export default function DispenserReading({
                                     Customer{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
-                                <Input
-                                    list="bank-customers-list"
+                                <Combobox
+                                    options={Array.from(
+                                        new Set([
+                                            ...customers.map((c) => c.name),
+                                            ...uniqueCustomers,
+                                        ]),
+                                    ).sort()}
                                     value={
                                         bankSalesData.products[0]?.customer ||
                                         ''
                                     }
-                                    onChange={(e) => {
+                                    onValueChange={(value) => {
                                         const newProducts = [
                                             ...bankSalesData.products,
                                         ];
                                         newProducts[0] = {
                                             ...newProducts[0],
-                                            customer: e.target.value,
+                                            customer: value,
                                         };
                                         setBankSalesData((prev) => ({
                                             ...prev,
@@ -1646,94 +1653,58 @@ export default function DispenserReading({
                                     placeholder="Type customer name"
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
-                                <datalist id="bank-customers-list">
-                                    {Array.from(
-                                        new Set([
-                                            ...customers.map((c) => c.name),
-                                            ...uniqueCustomers,
-                                        ]),
-                                    )
-                                        .sort()
-                                        .map((name) => (
-                                            <option key={name} value={name} />
-                                        ))}
-                                </datalist>
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
                                     Vehicle{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
-                                <Input
-                                    list="bank-vehicles-list"
+                                <Combobox
+                                    options={Array.from(
+                                        new Set([
+                                            ...vehicles.map(
+                                                (v) => v.vehicle_number,
+                                            ),
+                                            ...uniqueVehicles,
+                                        ]),
+                                    ).sort()}
                                     value={
                                         bankSalesData.products[0]?.vehicle_no ||
                                         ''
                                     }
-                                    onChange={(e) => {
+                                    onValueChange={(value) => {
                                         const newProducts = [
                                             ...bankSalesData.products,
                                         ];
                                         newProducts[0] = {
                                             ...newProducts[0],
-                                            vehicle_no: e.target.value,
+                                            vehicle_no: value,
                                         };
                                         setBankSalesData((prev) => ({
                                             ...prev,
                                             products: newProducts,
                                         }));
-                                    }}
-                                    onBlur={(e) => {
+                                        
                                         const vehicle = vehicles.find(
-                                            (v) =>
-                                                v.vehicle_number ===
-                                                e.target.value,
+                                            (v) => v.vehicle_number === value,
                                         );
                                         if (vehicle) {
                                             const customer = customers.find(
-                                                (c) =>
-                                                    c.id ===
-                                                    vehicle.customer_id,
+                                                (c) => c.id === vehicle.customer_id,
                                             );
-                                            const newProducts = [
-                                                ...bankSalesData.products,
-                                            ];
-                                            newProducts[0].customer =
-                                                customer?.name || '';
+                                            newProducts[0].customer = customer?.name || '';
                                             if (vehicle.product_id) {
-                                                newProducts[0].product_id =
-                                                    vehicle.product_id.toString();
-                                                const selectedProduct =
-                                                    products.find(
-                                                        (p) =>
-                                                            p.id ===
-                                                            vehicle.product_id,
-                                                    );
-                                                if (
-                                                    selectedProduct &&
-                                                    selectedProduct.sales_price
-                                                ) {
-                                                    const quantity =
-                                                        parseFloat(
-                                                            newProducts[0]
-                                                                .quantity,
-                                                        ) || 0;
-                                                    const discount =
-                                                        parseFloat(
-                                                            newProducts[0]
-                                                                .discount,
-                                                        ) || 0;
-                                                    const amount =
-                                                        selectedProduct.sales_price *
-                                                        quantity;
-                                                    newProducts[0].amount =
-                                                        amount.toString();
-                                                    newProducts[0].paid_amount =
-                                                        (
-                                                            amount - discount
-                                                        ).toFixed(2);
-                                                    newProducts[0].due_amount =
-                                                        '0.00';
+                                                newProducts[0].product_id = vehicle.product_id.toString();
+                                                const selectedProduct = products.find(
+                                                    (p) => p.id === vehicle.product_id,
+                                                );
+                                                if (selectedProduct && selectedProduct.sales_price) {
+                                                    const quantity = parseFloat(newProducts[0].quantity) || 0;
+                                                    const discount = parseFloat(newProducts[0].discount) || 0;
+                                                    const amount = selectedProduct.sales_price * quantity;
+                                                    newProducts[0].amount = amount.toString();
+                                                    newProducts[0].paid_amount = (amount - discount).toFixed(2);
+                                                    newProducts[0].due_amount = '0.00';
                                                 }
                                             }
                                             setBankSalesData((prev) => ({
@@ -1745,23 +1716,6 @@ export default function DispenserReading({
                                     placeholder="Type vehicle number"
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
-                                <datalist id="bank-vehicles-list">
-                                    {Array.from(
-                                        new Set([
-                                            ...vehicles.map(
-                                                (v) => v.vehicle_number,
-                                            ),
-                                            ...uniqueVehicles,
-                                        ]),
-                                    )
-                                        .sort()
-                                        .map((vehicleNo) => (
-                                            <option
-                                                key={vehicleNo}
-                                                value={vehicleNo}
-                                            />
-                                        ))}
-                                </datalist>
                             </div>
                         </div>
 
