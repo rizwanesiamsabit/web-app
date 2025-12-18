@@ -917,7 +917,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                     className="max-w-[65vw]"
                 >
                     <div className="space-y-4">
-                            <div className="grid grid-cols-4 gap-4">
+                            <div className="grid grid-cols-5 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Sale Date <span className="text-red-500">*</span>
@@ -983,9 +983,6 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         ))}
                                     </datalist>
                                 </div>
-                            </div>
-
-                            <div className="grid grid-cols-5 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">
                                         Vehicle <span className="text-red-500">*</span>
@@ -1006,6 +1003,20 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                             <option key={vehicleNo} value={vehicleNo} />
                                         ))}
                                     </datalist>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-5 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium dark:text-gray-200">
+                                        Mobile Number
+                                    </Label>
+                                    <Input
+                                        value={data.products[0]?.mobile_number || ''}
+                                        onChange={(e) => updateProduct(0, 'mobile_number', e.target.value)}
+                                        placeholder="Enter mobile number"
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium dark:text-gray-200">Product</Label>

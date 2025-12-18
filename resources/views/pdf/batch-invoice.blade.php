@@ -199,7 +199,7 @@
                 <tr>
                     <td class="left">
                         <strong>Customer:</strong> {{ $customer }}<br>
-                        <strong>Mobile:</strong> N/A<br>
+                        <strong>Mobile:</strong> {{ $sales->first()->mobile_number ?? 'N/A' }}<br>
                         <strong>Shift:</strong> {{ $sales->first()->shift->name ?? 'N/A' }}<br>
                         <strong>Date:</strong> {{ \Carbon\Carbon::parse($sales->first()->sale_date)->format('d/m/Y') }}<br>
                     </td>

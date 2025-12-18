@@ -14,6 +14,7 @@ class Sale extends Model
         'shift_id',
         'transaction_id',
         'customer',
+        'mobile_number',
         'vehicle_no',
         'product_id',
         'category_code',

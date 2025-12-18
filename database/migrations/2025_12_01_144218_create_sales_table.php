@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('shift_id')->constrained('shifts');
             $table->foreignId('transaction_id')->nullable()->constrained('transactions');
             $table->string('customer')->nullable();
+            $table->string('mobile_number')->nullable();
             $table->string('vehicle_no')->nullable();
             $table->foreignId('product_id')->constrained('products');
             $table->string('category_code')->nullable();

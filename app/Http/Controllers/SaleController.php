@@ -110,6 +110,7 @@ class SaleController extends Controller
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.customer' => 'required|string',
+            'products.*.mobile_number' => 'nullable|string',
             'products.*.vehicle_no' => 'required|string',
             'products.*.memo_no' => 'nullable|string|max:255',
             'products.*.quantity' => 'required|numeric|min:0',
@@ -168,6 +169,7 @@ class SaleController extends Controller
                     'shift_id' => $request->shift_id,
                     'transaction_id' => $transaction ? $transaction->id : null,
                     'customer' => $productData['customer'],
+                    'mobile_number' => $productData['mobile_number'],
                     'vehicle_no' => $productData['vehicle_no'],
                     'product_id' => $productData['product_id'],
                     'category_code' => $categoryCode,
@@ -213,6 +215,7 @@ class SaleController extends Controller
         $request->validate([
             'sale_date' => 'required|date',
             'customer' => 'required|string',
+            'mobile_number' => 'nullable|string',
             'vehicle_no' => 'required|string',
             'product_id' => 'required|exists:products,id',
             'shift_id' => 'required|exists:shifts,id',
@@ -275,6 +278,7 @@ class SaleController extends Controller
             $sale->update([
                 'sale_date' => $request->sale_date,
                 'customer' => $request->customer,
+                'mobile_number' => $request->mobile_number,
                 'vehicle_no' => $request->vehicle_no,
                 'product_id' => $request->product_id,
                 'category_code' => $categoryCode,
