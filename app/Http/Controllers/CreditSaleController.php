@@ -103,11 +103,12 @@ class CreditSaleController extends Controller
                     continue;
                 }
 
-                $product = Product::find($productData['product_id']);
+                $product = Product::with('category')->find($productData['product_id']);
                 $amount = $productData['amount'];
                 $discount = $productData['discount'] ?? 0;
                 $totalAmount = $amount - $discount;
                 $dueAmount = $productData['due_amount'];
+                $categoryCode = $product->category ? $product->category->code : null;
 
                 CreditSale::create([
                     'sale_date' => $request->sale_date,
@@ -118,6 +119,7 @@ class CreditSaleController extends Controller
                     'customer_id' => $productData['customer_id'],
                     'vehicle_id' => $productData['vehicle_id'],
                     'product_id' => $productData['product_id'],
+                    'category_code' => $categoryCode,
                     'purchase_price' => $product->activeRate ? $product->activeRate->purchase_price : 0,
                     'quantity' => $productData['quantity'],
                     'amount' => $amount,
@@ -169,17 +171,19 @@ class CreditSaleController extends Controller
                 $oldStock->increment('available_stock', $creditSale->quantity);
             }
 
-            $product = Product::find($request->product_id);
+            $product = Product::with('category')->find($request->product_id);
             $amount = $request->amount;
             $discount = $request->discount ?? 0;
             $totalAmount = $amount - $discount;
             $dueAmount = $request->due_amount;
+            $categoryCode = $product->category ? $product->category->code : null;
 
             $creditSale->update([
                 'sale_date' => $request->sale_date,
                 'customer_id' => $request->customer_id,
                 'vehicle_id' => $request->vehicle_id,
                 'product_id' => $request->product_id,
+                'category_code' => $categoryCode,
                 'shift_id' => $request->shift_id,
                 'quantity' => $request->quantity,
                 'amount' => $amount,

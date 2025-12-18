@@ -16,6 +16,7 @@ class CreditSale extends Model
         'customer_id',
         'vehicle_id',
         'product_id',
+        'category_code',
         'purchase_price',
         'quantity',
         'amount',
@@ -62,5 +63,10 @@ class CreditSale extends Model
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_code', 'code');
     }
 }
