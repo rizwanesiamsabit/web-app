@@ -512,7 +512,8 @@ export default function DispenserReading({
             ) || 0;
         const cashSales = totalSales - creditSales;
         const cashReceive = parseFloat(data.cash_receive) || 0;
-        const totalCash = cashSales + cashReceive;
+        const cashSalesOther = parseFloat(data.cash_sales_other) || 0;
+        const totalCash = cashSales + cashSalesOther + cashReceive;
         const cashPayment = parseFloat(data.cash_payment) || 0;
         const officePayment =
             parseFloat(
