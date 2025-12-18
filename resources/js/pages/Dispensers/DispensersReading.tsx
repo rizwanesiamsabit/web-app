@@ -1375,10 +1375,16 @@ export default function DispenserReading({
                                                     Rate
                                                 </th>
                                                 <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
-                                                    Reading
+                                                    Quantity
                                                 </th>
                                                 <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
                                                     Total Sale
+                                                </th>
+                                                <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                                    Credit Sales
+                                                </th>
+                                                <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                                    Bank Sales
                                                 </th>
                                                 <th className="border border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200">
                                                     Cash Sales
@@ -1386,67 +1392,104 @@ export default function DispenserReading({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {Object.entries(
-                                                productWiseData,
-                                            ).map(
-                                                ([productId, productData]) => {
-                                                    const productInfo =
-                                                        dispenserReading.find(
-                                                            (d) =>
-                                                                d.product_id?.toString() ===
-                                                                productId,
-                                                        );
-                                                    const product =
-                                                        products?.find(
-                                                            (p) =>
-                                                                p.id.toString() ===
-                                                                productId,
-                                                        );
-                                                    const name =
-                                                        product?.product_name ??
-                                                        productInfo?.product
-                                                            ?.product_name ??
-                                                        'No Product Assigned';
-                                                    const rate =
-                                                        product?.sales_price ??
-                                                        productInfo?.product
-                                                            ?.sales_price ??
-                                                        0;
-                                                    const cashSales =
-                                                        productData.total_sale;
-                                                    return (
-                                                        <tr
-                                                            key={productId}
-                                                            className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                                                        >
-                                                            <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                                {productId}
-                                                            </td>
-                                                            <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                                {name}
-                                                            </td>
-                                                            <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                                {rate}
-                                                            </td>
-                                                            <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                                {productData.net_reading.toFixed(
-                                                                    2,
-                                                                )}
-                                                            </td>
-                                                            <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                                {productData.total_sale.toFixed(
-                                                                    2,
-                                                                )}
-                                                            </td>
-                                                            <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
-                                                                {cashSales.toFixed(
-                                                                    2,
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                },
-                                            )}
+                                            {/* Oil Products from Dispensers */}
+                                            {Object.entries(productWiseData).filter(([productId, productData]) => {
+                                                return productData.total_sale > 0 || productData.net_reading > 0;
+                                            }).map(([productId, productData]) => {
+                                                const productInfo = dispenserReading.find(
+                                                    (d) => d.product_id?.toString() === productId,
+                                                );
+                                                const product = products?.find(
+                                                    (p) => p.id.toString() === productId,
+                                                );
+                                                const name = product?.product_name ?? productInfo?.product?.product_name ?? 'No Product Assigned';
+                                                const productCode = product?.product_code ?? productId;
+                                                const rate = product?.sales_price ?? productInfo?.product?.sales_price ?? 0;
+                                                const creditSales = productData.credit_sales || 0;
+                                                const totalSale = productData.total_sale || 0;
+                                                
+                                                // Calculate proportional bank sales for this product
+                                                const totalAllOilSales = Object.values(productWiseData).reduce((sum, data) => sum + (data.total_sale || 0), 0);
+                                                const bankSalesTotal = parseFloat(data.bank_sales) || 0;
+                                                const proportion = totalAllOilSales > 0 ? totalSale / totalAllOilSales : 0;
+                                                const productBankSales = bankSalesTotal * proportion;
+                                                const cashSales = totalSale - creditSales - productBankSales;
+                                                
+                                                return (
+                                                    <tr key={productId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {productCode}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {name}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {rate}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {productData.net_reading.toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {totalSale.toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {creditSales.toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {productBankSales.toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {cashSales.toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            
+                                            {/* Other Products */}
+                                            {otherProductsSales.filter(sale => sale.sell_quantity > 0).map((sale, index) => {
+                                                const product = otherProducts.find(p => p.id === sale.product_id);
+                                                if (!product) return null;
+                                                
+                                                const totalSale = sale.total_sales || 0;
+                                                const creditSalesOther = parseFloat(data.credit_sales_other) || 0;
+                                                const bankSalesOther = parseFloat(data.bank_sales_other) || 0;
+                                                const totalOtherSales = otherProductsSales.reduce((sum, s) => sum + (s.total_sales || 0), 0);
+                                                
+                                                // Proportional distribution of credit and bank sales
+                                                const proportion = totalOtherSales > 0 ? totalSale / totalOtherSales : 0;
+                                                const productCreditSales = creditSalesOther * proportion;
+                                                const productBankSales = bankSalesOther * proportion;
+                                                const productCashSales = totalSale - productCreditSales - productBankSales;
+                                                
+                                                return (
+                                                    <tr key={`other-${product.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {product.product_code}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {product.product_name}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {(Number(product.sales_price) || 0).toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {sale.sell_quantity}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {totalSale.toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {productCreditSales.toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {productBankSales.toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                            {productCashSales.toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
