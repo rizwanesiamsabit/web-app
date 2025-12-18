@@ -39,6 +39,7 @@ class CategoryController extends Controller
             return [
                 'id' => $category->id,
                 'name' => $category->name,
+                'code' => $category->code,
                 'status' => (bool) $category->status,
                 'created_at' => $category->created_at->format('Y-m-d'),
             ];
@@ -54,11 +55,13 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:categories,code',
             'status' => 'boolean'
         ]);
 
         Category::create([
             'name' => $request->name,
+            'code' => $request->code,
             'status' => $request->status ?? true,
         ]);
 

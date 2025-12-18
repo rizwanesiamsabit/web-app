@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react';
 interface Category {
     id: number;
     name: string;
+    code: string;
     status: boolean;
     created_at: string;
 }
@@ -68,6 +69,7 @@ export default function Categories({ categories, filters }: CategoriesProps) {
     
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
+        code: '',
         status: true
     });
 
@@ -94,6 +96,7 @@ export default function Categories({ categories, filters }: CategoriesProps) {
         setEditingCategory(category);
         setData({
             name: category.name,
+            code: category.code,
             status: category.status
         });
     };
@@ -332,6 +335,7 @@ export default function Categories({ categories, filters }: CategoriesProps) {
                                                 {sortBy === 'name' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
+                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Code</th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Status</th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
                                     </tr>
@@ -348,6 +352,7 @@ export default function Categories({ categories, filters }: CategoriesProps) {
                                                 />
                                             </td>
                                             <td className="py-3 px-4 text-[13px] font-medium text-gray-900 dark:text-gray-100">{category.name}</td>
+                                            <td className="py-3 px-4 text-[13px] text-gray-600 dark:text-gray-400">{category.code}</td>
                                             <td className="py-3 px-4">
                                                 <span className={`px-2 py-1 text-[11px] rounded-full ${category.status ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
                                                     {category.status ? 'Active' : 'Inactive'}
@@ -376,7 +381,7 @@ export default function Categories({ categories, filters }: CategoriesProps) {
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={4} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={5} className="py-12 text-center text-gray-500 dark:text-gray-400">
                                                 <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 No categories found
                                             </td>
@@ -425,9 +430,20 @@ export default function Categories({ categories, filters }: CategoriesProps) {
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            placeholder="e.g., Electronics"
+                            placeholder="e.g., Oil, Lubricant"
                         />
                         {errors.name && <span className="text-red-500 text-sm">{errors.name}</span>}
+                    </div>
+                    <div>
+                        <Label htmlFor="code" className="dark:text-gray-200">Category Code</Label>
+                        <Input
+                            id="code"
+                            value={data.code}
+                            onChange={(e) => setData('code', e.target.value)}
+                            className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="e.g., OIL001"
+                        />
+                        {errors.code && <span className="text-red-500 text-sm">{errors.code}</span>}
                     </div>
                     <div>
                         <Label htmlFor="status" className="dark:text-gray-200">Status</Label>
@@ -460,6 +476,17 @@ export default function Categories({ categories, filters }: CategoriesProps) {
                             className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                         {errors.name && <span className="text-red-500 text-sm">{errors.name}</span>}
+                    </div>
+                    <div>
+                        <Label htmlFor="edit-code" className="dark:text-gray-200">Category Code</Label>
+                        <Input
+                            id="edit-code"
+                            value={data.code}
+                            onChange={(e) => setData('code', e.target.value)}
+                            className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            disabled
+                        />
+                        {errors.code && <span className="text-red-500 text-sm">{errors.code}</span>}
                     </div>
                     <div>
                         <Label htmlFor="edit-status" className="dark:text-gray-200">Status</Label>

@@ -12,9 +12,16 @@ class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create Category
-        $category = Category::create([
+        // Create Categories
+        $oilCategory = Category::create([
             'name' => 'Oil',
+            'code' => '1001',
+            'status' => true
+        ]);
+
+        $othersCategory = Category::create([
+            'name' => 'Others',
+            'code' => '1002',
             'status' => true
         ]);
 
@@ -27,7 +34,7 @@ class ProductSeeder extends Seeder
 
         $products = [
             [
-                'category_id' => $category->id,
+                'category_id' => $oilCategory->id,
                 'unit_id' => $unit->id,
                 'product_code' => 'PC01',
                 'product_name' => 'Petrol',
@@ -36,7 +43,7 @@ class ProductSeeder extends Seeder
                 'sales_price' => 75.00,
             ],
             [
-                'category_id' => $category->id,
+                'category_id' => $oilCategory->id,
                 'unit_id' => $unit->id,
                 'product_code' => 'PC02',
                 'product_name' => 'CNG',
@@ -45,7 +52,7 @@ class ProductSeeder extends Seeder
                 'sales_price' => 65.00,
             ],
             [
-                'category_id' => $category->id,
+                'category_id' => $oilCategory->id,
                 'unit_id' => $unit->id,
                 'product_code' => 'PC03',
                 'product_name' => 'Octane',
@@ -54,7 +61,7 @@ class ProductSeeder extends Seeder
                 'sales_price' => 122.00,
             ],
             [
-                'category_id' => $category->id,
+                'category_id' => $oilCategory->id,
                 'unit_id' => $unit->id,
                 'product_code' => 'PC04',
                 'product_name' => 'Diesel',
