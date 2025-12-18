@@ -1462,24 +1462,13 @@ export default function DispenserReading({
                                     <span className="text-red-500">*</span>
                                 </Label>
                                 <SearchableSelect
-                                    options={vehicles
-                                        .filter(
-                                            (v) =>
-                                                !creditSalesData.products[0]
-                                                    ?.customer_id ||
-                                                v.customer_id.toString() ===
-                                                    creditSalesData.products[0]
-                                                        ?.customer_id,
-                                        )
-                                        .map((vehicle) => ({
-                                            value: vehicle.id.toString(),
-                                            label: vehicle.vehicle_number,
-                                            subtitle: customers.find(
-                                                (c) =>
-                                                    c.id ===
-                                                    vehicle.customer_id,
-                                            )?.name,
-                                        }))}
+                                    options={vehicles.map((vehicle) => ({
+                                        value: vehicle.id.toString(),
+                                        label: vehicle.vehicle_number,
+                                        subtitle: customers.find(
+                                            (c) => c.id === vehicle.customer_id,
+                                        )?.name,
+                                    }))}
                                     value={
                                         creditSalesData.products[0]
                                             ?.vehicle_id || ''
