@@ -395,7 +395,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                 <Card className="shadow-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800">
                     <form onSubmit={handleSubmit}>
                         <CardHeader className="px-6 py-6 border-b border-gray-200 dark:border-gray-700">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-8">
                                 <div>
                                     <Label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Transaction Date <span className="text-red-500">*</span></Label>
                                     <Input type="date" value={data.transaction_date} onChange={(e) => handleDateChange(e.target.value)} className="w-full dark:border-gray-600 dark:bg-gray-700 dark:text-white" required />
@@ -404,8 +404,12 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     <Label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Shift <span className="text-red-500">*</span></Label>
                                     <SearchableSelect options={shiftOptions} value={data.shift_id} onValueChange={(value) => setData('shift_id', value)} placeholder={data.transaction_date ? "Select shift" : "Select date first"} className="w-full" />
                                 </div>
+                                <div></div>
+                                <div></div>
+                                <div></div>
+                                <div></div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
                                 <div>
                                     <Label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Credit Sales</Label>
                                     <div className="relative">
@@ -428,6 +432,30 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     <Label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Cash Sales</Label>
                                     <Input value={data.cash_sales} readOnly className="w-full bg-gray-50 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
                                 </div>
+                                <div>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Credit Sales(Other Products)</Label>
+                                    <div className="relative">
+                                        <Input value="0" readOnly className="w-full bg-gray-50 dark:border-gray-600 dark:bg-gray-600 dark:text-white pr-10" />
+                                        <Button type="button" variant="secondary" size="sm" className="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={() => { setCreditSalesData(prev => ({ ...prev, sale_date: data.transaction_date, shift_id: data.shift_id })); setIsCreditSalesOpen(true); }}>
+                                            <FileText className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Bank Sales(Other Products)</Label>
+                                    <div className="relative">
+                                        <Input value="0" readOnly className="w-full bg-gray-50 dark:border-gray-600 dark:bg-gray-600 dark:text-white pr-10" />
+                                        <Button type="button" variant="secondary" size="sm" className="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={() => { setBankSalesData(prev => ({ ...prev, sale_date: data.transaction_date, shift_id: data.shift_id })); setIsBankSalesOpen(true); }}>
+                                            <FileText className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Cash Sales(Other Products)</Label>
+                                    <Input value="0" readOnly className="w-full bg-gray-50 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                                 <div>
                                     <Label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Cash Receive</Label>
                                     <div className="relative">
@@ -830,7 +858,7 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                     className="max-w-[65vw] max-h-[90vh]"
                 >
                     <div className="space-y-4">
-                        <div className="grid grid-cols-4 gap-4">
+                        <div className="grid grid-cols-5 gap-4">
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Sale Date <span className="text-red-500">*</span></Label>
                                 <Input 
@@ -880,9 +908,6 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                     ))}
                                 </datalist>
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-5 gap-4">
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Vehicle <span className="text-red-500">*</span></Label>
                                 <Input
@@ -925,6 +950,22 @@ export default function DispenserReading({ dispenserReading = [], shifts = [], c
                                         <option key={vehicleNo} value={vehicleNo} />
                                     ))}
                                 </datalist>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-5 gap-4">
+                            <div>
+                                <Label className="text-sm font-medium dark:text-gray-200">Mobile Number</Label>
+                                <Input
+                                    value={bankSalesData.products[0]?.mobile_number || ''}
+                                    onChange={(e) => {
+                                        const newProducts = [...bankSalesData.products];
+                                        newProducts[0] = { ...newProducts[0], mobile_number: e.target.value };
+                                        setBankSalesData(prev => ({ ...prev, products: newProducts }));
+                                    }}
+                                    placeholder="Enter mobile number"
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">Product</Label>
