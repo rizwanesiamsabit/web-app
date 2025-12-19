@@ -34,23 +34,27 @@ interface ReceivedVoucher {
     id: number;
     voucher_type: string;
     date: string;
-    shift: { id: number; name: string };
+    shift?: { id: number; name: string };
     from_account: { id: number; name: string };
     to_account: { id: number; name: string };
-    from_account_id: number;
-    to_account_id: number;
     amount: number;
-    payment_type: string;
+    payment_method: string;
+    voucher_category?: { id: number; name: string };
+    payment_sub_type?: { id: number; name: string };
+    description?: string;
     remarks: string;
     created_at: string;
-    bank_type?: string;
-    cheque_no?: string;
-    cheque_date?: string;
-    bank_name?: string;
-    branch_name?: string;
-    account_no?: string;
-    mobile_bank?: string;
-    mobile_number?: string;
+}
+
+interface VoucherCategory {
+    id: number;
+    name: string;
+}
+
+interface PaymentSubType {
+    id: number;
+    name: string;
+    voucher_category_id: number;
 }
 
 interface Account {
@@ -88,10 +92,12 @@ interface ReceivedVoucherProps {
     accounts?: Account[];
     groupedAccounts?: Record<string, Account[]>;
     shifts?: Shift[];
+    voucherCategories?: VoucherCategory[];
+    paymentSubTypes?: PaymentSubType[];
     filters?: {
         search?: string;
         shift?: string;
-        payment_type?: string;
+        payment_method?: string;
         start_date?: string;
         end_date?: string;
         sort_by?: string;
@@ -113,6 +119,8 @@ export default function ReceivedVoucher({
     accounts = [],
     groupedAccounts = {},
     shifts = [],
+    voucherCategories = [],
+    paymentSubTypes = [],
     filters = {},
 }: ReceivedVoucherProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -124,8 +132,8 @@ export default function ReceivedVoucher({
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters?.search || '');
 
-    const [paymentType, setPaymentType] = useState(
-        filters?.payment_type || 'all',
+    const [paymentMethod, setPaymentMethod] = useState(
+        filters?.payment_method || 'all',
     );
     const [startDate, setStartDate] = useState(filters?.start_date || '');
     const [endDate, setEndDate] = useState(filters?.end_date || '');
@@ -136,30 +144,31 @@ export default function ReceivedVoucher({
     const { data, setData, post, put, processing, errors, reset } = useForm({
         date: '',
         shift_id: '',
+        voucher_category_id: '',
+        payment_sub_type_id: '',
         from_account_id: '',
         to_account_id: '',
-
         amount: '',
-        payment_type: 'Cash',
+        payment_method: 'Cash',
         bank_type: '',
+        bank_name: '',
         cheque_no: '',
         cheque_date: '',
-        bank_name: '',
-        branch_name: '',
         account_no: '',
+        branch_name: '',
         mobile_bank: '',
         mobile_number: '',
-        mobile_transaction_id: '',
+        description: '',
         remarks: '',
     });
 
     const getFilteredAccounts = () => {
         const groupName =
-            data.payment_type === 'Cash'
+            data.payment_method === 'Cash'
                 ? 'Cash in hand'
-                : data.payment_type === 'Bank'
+                : data.payment_method === 'Bank'
                   ? 'Bank Account'
-                  : data.payment_type === 'Mobile Bank'
+                  : data.payment_method === 'Mobile Bank'
                     ? 'Mobile Bank'
                     : 'Other';
         return groupedAccounts[groupName] || [];
@@ -189,20 +198,21 @@ export default function ReceivedVoucher({
         setData({
             date: voucher.date?.split('T')[0] || '',
             shift_id: voucher.shift?.id?.toString() || '',
-            from_account_id: voucher.from_account_id?.toString() || '',
-            to_account_id: voucher.to_account_id?.toString() || '',
-
+            voucher_category_id: voucher.voucher_category?.id?.toString() || '',
+            payment_sub_type_id: voucher.payment_sub_type?.id?.toString() || '',
+            from_account_id: voucher.from_account?.id?.toString() || '',
+            to_account_id: voucher.to_account?.id?.toString() || '',
             amount: voucher.amount?.toString() || '',
-            payment_type: voucher.payment_type || 'Cash',
-            bank_type: voucher.bank_type || '',
-            cheque_no: voucher.cheque_no || '',
-            cheque_date: voucher.cheque_date || '',
-            bank_name: voucher.bank_name || '',
-            branch_name: voucher.branch_name || '',
-            account_no: voucher.account_no || '',
-            mobile_bank: voucher.mobile_bank || '',
-            mobile_number: voucher.mobile_number || '',
-            mobile_transaction_id: '',
+            payment_method: voucher.payment_method || 'Cash',
+            description: voucher.description || '',
+            bank_type: '',
+            bank_name: '',
+            cheque_no: '',
+            cheque_date: '',
+            account_no: '',
+            branch_name: '',
+            mobile_bank: '',
+            mobile_number: '',
             remarks: voucher.remarks || '',
         });
     };
@@ -238,7 +248,7 @@ export default function ReceivedVoucher({
             '/vouchers/received',
             {
                 search: search || undefined,
-                payment_type: paymentType === 'all' ? undefined : paymentType,
+                payment_method: paymentMethod === 'all' ? undefined : paymentMethod,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
                 sort_by: sortBy,
@@ -252,7 +262,7 @@ export default function ReceivedVoucher({
     const clearFilters = () => {
         setSearch('');
 
-        setPaymentType('all');
+        setPaymentMethod('all');
         setStartDate('');
         setEndDate('');
         router.get(
@@ -275,7 +285,7 @@ export default function ReceivedVoucher({
             '/vouchers/received',
             {
                 search: search || undefined,
-                payment_type: paymentType === 'all' ? undefined : paymentType,
+                payment_method: paymentMethod === 'all' ? undefined : paymentMethod,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
                 sort_by: column,
@@ -291,7 +301,7 @@ export default function ReceivedVoucher({
             '/vouchers/received',
             {
                 search: search || undefined,
-                payment_type: paymentType === 'all' ? undefined : paymentType,
+                payment_method: paymentMethod === 'all' ? undefined : paymentMethod,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
                 sort_by: sortBy,
@@ -360,8 +370,8 @@ export default function ReceivedVoucher({
                                 const params = new URLSearchParams();
                                 if (search) params.append('search', search);
 
-                                if (paymentType !== 'all')
-                                    params.append('payment_type', paymentType);
+                                if (paymentMethod !== 'all')
+                                    params.append('payment_method', paymentMethod);
                                 if (startDate)
                                     params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
@@ -405,12 +415,12 @@ export default function ReceivedVoucher({
 
                             <div>
                                 <Label className="dark:text-gray-200">
-                                    Payment Type
+                                    Payment Method
                                 </Label>
                                 <Select
-                                    value={paymentType}
+                                    value={paymentMethod}
                                     onValueChange={(value) => {
-                                        setPaymentType(value);
+                                        setPaymentMethod(value);
                                         applyFilters();
                                     }}
                                 >
@@ -562,7 +572,7 @@ export default function ReceivedVoucher({
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-200">
-                                                        {voucher.payment_type}
+                                                        {voucher.payment_method}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
@@ -641,6 +651,7 @@ export default function ReceivedVoucher({
                     onSubmit={handleSubmit}
                     processing={processing}
                     submitText={editingVoucher ? 'Update' : 'Create'}
+                    className="max-w-2xl"
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -677,6 +688,7 @@ export default function ReceivedVoucher({
                                 onValueChange={(value) =>
                                     setData('shift_id', value)
                                 }
+                                disabled={!data.date}
                             >
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                     <SelectValue placeholder="Choose shift" />
@@ -699,21 +711,63 @@ export default function ReceivedVoucher({
                             )}
                         </div>
                     </div>
+                    <div>
+                        <Label className="dark:text-gray-200">Category</Label>
+                        <div className="mt-2 flex flex-wrap gap-4">
+                            {voucherCategories.map((category) => (
+                                <label key={category.id} className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        name="voucher_category_id"
+                                        value={category.id.toString()}
+                                        checked={data.voucher_category_id === category.id.toString()}
+                                        onChange={(e) => {
+                                            setData('voucher_category_id', e.target.value);
+                                            setData('payment_sub_type_id', '');
+                                        }}
+                                        className="rounded border-gray-300 dark:border-gray-600"
+                                    />
+                                    <span className="text-sm dark:text-gray-300">{category.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                        {errors.voucher_category_id && <span className="text-sm text-red-500">{errors.voucher_category_id}</span>}
+                    </div>
+                    <div>
+                        <Label htmlFor="payment_sub_type_id" className="dark:text-gray-200">Payment Sub Type</Label>
+                        <Select 
+                            value={data.payment_sub_type_id} 
+                            onValueChange={(value) => setData('payment_sub_type_id', value)}
+                            disabled={!data.voucher_category_id}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Choose sub type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {paymentSubTypes.filter(subType => 
+                                    subType.voucher_category_id.toString() === data.voucher_category_id
+                                ).map((subType) => (
+                                    <SelectItem key={subType.id} value={subType.id.toString()}>
+                                        {subType.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.payment_sub_type_id && <span className="text-sm text-red-500">{errors.payment_sub_type_id}</span>}
+                    </div>
 
                     <div>
                         <Label
-                            htmlFor="payment_type"
+                            htmlFor="payment_method"
                             className="dark:text-gray-200"
                         >
-                            Payment Type
+                            Payment Method
                         </Label>
                         <Select
-                            value={data.payment_type}
+                            value={data.payment_method}
                             onValueChange={(value) => {
-                                setData('payment_type', value);
-                                if (!editingVoucher) {
-                                    setData('from_account_id', ''); // Reset account only in create mode
-                                }
+                                setData('payment_method', value);
+                                setData('from_account_id', '');
                             }}
                         >
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
@@ -727,9 +781,9 @@ export default function ReceivedVoucher({
                                 </SelectItem>
                             </SelectContent>
                         </Select>
-                        {errors.payment_type && (
+                        {errors.payment_method && (
                             <span className="text-sm text-red-500">
-                                {errors.payment_type}
+                                {errors.payment_method}
                             </span>
                         )}
                     </div>
@@ -803,7 +857,7 @@ export default function ReceivedVoucher({
                         </div>
                     </div>
 
-                    {data.payment_type === 'Bank' && (
+                    {data.payment_method === 'Bank' && (
                         <div className="space-y-4 border-t pt-4">
                             <h4 className="font-medium dark:text-white">
                                 Bank Payment Details
@@ -901,7 +955,7 @@ export default function ReceivedVoucher({
                         </div>
                     )}
 
-                    {data.payment_type === 'Mobile Bank' && (
+                    {data.payment_method === 'Mobile Bank' && (
                         <div className="space-y-4 border-t pt-4">
                             <h4 className="font-medium dark:text-white">
                                 Mobile Bank Details
@@ -977,6 +1031,17 @@ export default function ReceivedVoucher({
                                 {errors.amount}
                             </span>
                         )}
+                    </div>
+
+                    <div>
+                        <Label htmlFor="description" className="dark:text-gray-200">Description</Label>
+                        <Input
+                            id="description"
+                            placeholder="Enter description (optional)"
+                            value={data.description}
+                            onChange={(e) => setData('description', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
                     </div>
 
                     <div>

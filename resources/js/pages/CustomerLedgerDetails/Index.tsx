@@ -176,7 +176,7 @@ export default function CustomerLedgerDetails({ ledgers = [], filters = {} }: Cu
                                                 <tr className="border-b dark:border-gray-700">
                                                     <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">SL</th>
                                                     <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Date</th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Invoice/Transaction ID</th>
+                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Invoice no</th>
                                                     <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Debit</th>
                                                     <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Credit</th>
                                                     <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">

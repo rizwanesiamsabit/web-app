@@ -7,7 +7,10 @@ use App\Models\Account;
 use App\Models\Shift;
 use App\Models\Transaction;
 use App\Models\CompanySetting;
+use App\Models\VoucherCategory;
+use App\Models\PaymentSubType;
 use App\Helpers\TransactionHelper;
+use App\Helpers\VoucherHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -73,12 +76,16 @@ class ReceivedVoucherController extends Controller
             ->groupBy(function ($account) {
                 return $account->group ? $account->group->name : 'Other';
             });
+        $voucherCategories = VoucherCategory::where('status', true)->get();
+        $paymentSubTypes = PaymentSubType::with('voucherCategory')->where('status', true)->get();
 
         return Inertia::render('Vouchers/ReceivedVoucher', [
             'vouchers' => $vouchers,
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
             'shifts' => Shift::select('id', 'name')->where('status', '=', true)->get(),
+            'voucherCategories' => $voucherCategories,
+            'paymentSubTypes' => $paymentSubTypes,
             'filters' => $request->only(['search', 'shift', 'payment_method', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }
@@ -87,27 +94,29 @@ class ReceivedVoucherController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
-            'shift_id' => 'required|exists:shifts,id',
+            'voucher_category_id' => 'required|exists:voucher_categories,id',
+            'payment_sub_type_id' => 'required|exists:payment_sub_types,id',
             'from_account_id' => 'required|exists:accounts,id',
             'to_account_id' => 'required|exists:accounts,id',
             'amount' => 'required|numeric|min:0',
-            'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
-            'bank_name' => 'required_if:payment_type,Bank',
-            'mobile_bank' => 'required_if:payment_type,Mobile Bank',
+            'payment_method' => 'required|in:Cash,Bank,Mobile Bank',
+            'description' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request) {
-            $fromAccount = Account::findOrFail($request->from_account_id);
-            $toAccount = Account::findOrFail($request->to_account_id);
-
-            $creditTransaction = Transaction::create([
+            $fromAccount = Account::find($request->from_account_id);
+            $toAccount = Account::find($request->to_account_id);
+            $fromAccount->increment('total_amount', $request->amount);
+            $toAccount->decrement('total_amount', $request->amount);
+            
+            $transaction = Transaction::create([
                 'transaction_id' => TransactionHelper::generateTransactionId(),
                 'ac_number' => $fromAccount->ac_number,
                 'transaction_type' => 'Cr',
                 'amount' => $request->amount,
-                'description' => 'Payment received from ' . $toAccount->name,
-                'payment_type' => strtolower($request->payment_type),
+                'description' => $request->description ?? 'Payment received from ' . $toAccount->name,
+                'payment_type' => strtolower($request->payment_method),
                 'bank_name' => $request->bank_name,
                 'branch_name' => $request->branch_name,
                 'account_number' => $request->account_no,
@@ -119,39 +128,22 @@ class ReceivedVoucherController extends Controller
                 'transaction_date' => $request->date,
                 'transaction_time' => now()->format('H:i:s'),
             ]);
-
-            $debitTransaction = Transaction::create([
-                'transaction_id' => TransactionHelper::generateTransactionId(),
-                'ac_number' => $toAccount->ac_number,
-                'transaction_type' => 'Dr',
-                'amount' => $request->amount,
-                'description' => 'Payment sent to ' . $fromAccount->name,
-                'payment_type' => strtolower($request->payment_type),
-                'bank_name' => $request->bank_name,
-                'branch_name' => $request->branch_name,
-                'account_number' => $request->account_no,
-                'cheque_type' => $request->bank_type,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'mobile_bank_name' => $request->mobile_bank,
-                'mobile_number' => $request->mobile_number,
-                'transaction_date' => $request->date,
-                'transaction_time' => now()->format('H:i:s'),
-            ]);
-
+            
             Voucher::create([
-                'voucher_type' => 'Received',
+                'voucher_no' => VoucherHelper::generateVoucherNo(),
+                'voucher_type_id' => 2, // Receipt voucher type ID
+                'voucher_category_id' => $request->voucher_category_id,
+                'payment_sub_type_id' => $request->payment_sub_type_id,
                 'date' => $request->date,
                 'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
-                'from_transaction_id' => $creditTransaction->id,
-                'to_transaction_id' => $debitTransaction->id,
+                'transaction_id' => $transaction->id,
+                'amount' => $request->amount,
+                'payment_method' => $request->payment_method,
+                'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
-
-            $toAccount->decrement('total_amount', $request->amount);
-            $fromAccount->increment('total_amount', $request->amount);
         });
 
         return redirect()->back()->with('success', 'Received voucher created successfully.');
@@ -161,70 +153,48 @@ class ReceivedVoucherController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
-            'shift_id' => 'required|exists:shifts,id',
+            'voucher_category_id' => 'required|exists:voucher_categories,id',
+            'payment_sub_type_id' => 'required|exists:payment_sub_types,id',
             'from_account_id' => 'required|exists:accounts,id',
             'to_account_id' => 'required|exists:accounts,id',
             'amount' => 'required|numeric|min:0',
-            'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
-            'bank_name' => 'required_if:payment_type,Bank',
-            'mobile_bank' => 'required_if:payment_type,Mobile Bank',
+            'payment_method' => 'required|in:Cash,Bank,Mobile Bank',
+            'description' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $voucher) {
+            $oldFromAccount = Account::find($voucher->from_account_id);
+            $oldToAccount = Account::find($voucher->to_account_id);
+            $oldAmount = $voucher->amount;
+            $oldFromAccount->decrement('total_amount', $oldAmount);
+            $oldToAccount->increment('total_amount', $oldAmount);
+            
+            $newFromAccount = Account::find($request->from_account_id);
+            $newToAccount = Account::find($request->to_account_id);
+            $newFromAccount->increment('total_amount', $request->amount);
+            $newToAccount->decrement('total_amount', $request->amount);
+            
             $voucher->update([
+                'voucher_category_id' => $request->voucher_category_id,
+                'payment_sub_type_id' => $request->payment_sub_type_id,
                 'date' => $request->date,
                 'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
+                'amount' => $request->amount,
+                'payment_method' => $request->payment_method,
+                'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
-
-            $fromAccount = Account::findOrFail($request->from_account_id);
-            $toAccount = Account::findOrFail($request->to_account_id);
-
-            $voucher->fromTransaction->update([
-                'ac_number' => $fromAccount->ac_number,
+            
+            $voucher->transaction->update([
+                'ac_number' => $newFromAccount->ac_number,
                 'amount' => $request->amount,
-                'description' => 'Payment received from ' . $toAccount->name,
-                'payment_type' => strtolower($request->payment_type),
-                'bank_name' => $request->bank_name,
-                'branch_name' => $request->branch_name,
-                'account_number' => $request->account_no,
-                'cheque_type' => $request->bank_type,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'mobile_bank_name' => $request->mobile_bank,
-                'mobile_number' => $request->mobile_number,
+                'description' => $request->description ?? 'Payment received from ' . $newToAccount->name,
+                'payment_type' => strtolower($request->payment_method),
                 'transaction_date' => $request->date,
             ]);
-
-            $voucher->toTransaction->update([
-                'ac_number' => $toAccount->ac_number,
-                'amount' => $request->amount,
-                'description' => 'Payment sent to ' . $fromAccount->name,
-                'payment_type' => strtolower($request->payment_type),
-                'bank_name' => $request->bank_name,
-                'branch_name' => $request->branch_name,
-                'account_number' => $request->account_no,
-                'cheque_type' => $request->bank_type,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'mobile_bank_name' => $request->mobile_bank,
-                'mobile_number' => $request->mobile_number,
-                'transaction_date' => $request->date,
-            ]);
-
-            $oldAmount = $voucher->toTransaction->amount;
-            
-            $oldFromAccount = $fromAccount->id === $voucher->from_account_id ? $fromAccount : Account::findOrFail($voucher->from_account_id);
-            $oldToAccount = $toAccount->id === $voucher->to_account_id ? $toAccount : Account::findOrFail($voucher->to_account_id);
-            
-            $oldToAccount->increment('total_amount', $oldAmount);
-            $oldFromAccount->decrement('total_amount', $oldAmount);
-            
-            $toAccount->decrement('total_amount', $request->amount);
-            $fromAccount->increment('total_amount', $request->amount);
         });
 
         return redirect()->back()->with('success', 'Received voucher updated successfully.');
@@ -233,24 +203,13 @@ class ReceivedVoucherController extends Controller
     public function destroy(Voucher $voucher)
     {
         DB::transaction(function () use ($voucher) {
-            $fromAccount = Account::findOrFail($voucher->from_account_id);
-            $toAccount = Account::findOrFail($voucher->to_account_id);
-            $amount = $voucher->toTransaction?->amount ?? 0;
-            
-            $toAccount->increment('total_amount', $amount);
+            $fromAccount = Account::find($voucher->from_account_id);
+            $toAccount = Account::find($voucher->to_account_id);
+            $amount = $voucher->amount;
             $fromAccount->decrement('total_amount', $amount);
-            
-            $fromTransactionId = $voucher->from_transaction_id;
-            $toTransactionId = $voucher->to_transaction_id;
-            
+            $toAccount->increment('total_amount', $amount);
+            $voucher->transaction?->delete();
             $voucher->delete();
-            
-            if ($fromTransactionId) {
-                Transaction::where('id', $fromTransactionId)->delete();
-            }
-            if ($toTransactionId) {
-                Transaction::where('id', $toTransactionId)->delete();
-            }
         });
 
         return redirect()->back()->with('success', 'Received voucher deleted successfully.');
@@ -264,27 +223,15 @@ class ReceivedVoucherController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $vouchers = Voucher::whereIn('id', $request->ids)
-                ->with(['fromTransaction', 'toTransaction', 'fromAccount', 'toAccount'])
-                ->get();
-            
+            $vouchers = Voucher::whereIn('id', $request->ids)->get();
             foreach ($vouchers as $voucher) {
-                $amount = $voucher->toTransaction?->amount ?? 0;
-                
-                $voucher->toAccount->increment('total_amount', $amount);
-                $voucher->fromAccount->decrement('total_amount', $amount);
-                
-                $fromTransactionId = $voucher->from_transaction_id;
-                $toTransactionId = $voucher->to_transaction_id;
-                
+                $fromAccount = Account::find($voucher->from_account_id);
+                $toAccount = Account::find($voucher->to_account_id);
+                $amount = $voucher->amount;
+                $fromAccount->decrement('total_amount', $amount);
+                $toAccount->increment('total_amount', $amount);
+                $voucher->transaction?->delete();
                 $voucher->delete();
-                
-                if ($fromTransactionId) {
-                    Transaction::where('id', $fromTransactionId)->delete();
-                }
-                if ($toTransactionId) {
-                    Transaction::where('id', $toTransactionId)->delete();
-                }
             }
         });
 

@@ -83,4 +83,10 @@ class Voucher extends Model
     {
         return Transaction::where('transaction_id', $this->transaction_id)->get();
     }
+
+    // Get single transaction relationship
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'transaction_id', 'transaction_id');
+    }
 }

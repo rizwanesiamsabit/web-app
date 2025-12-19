@@ -51,16 +51,11 @@ class CustomerController extends Controller
             // Calculate total paid for this customer
             $totalPaid = 0;
             if ($customer->account) {
-                $payments = Voucher::whereHas('voucherType', function($q) {
+                $totalPaid = Voucher::whereHas('voucherType', function($q) {
                         $q->where('name', 'Receipt');
                     })
                     ->where('to_account_id', $customer->account->id)
-                    ->with('toTransaction:id,amount')
-                    ->get();
-
-                $totalPaid = $payments->sum(function ($voucher) {
-                    return $voucher->toTransaction->amount ?? 0;
-                });
+                    ->sum('amount');
             }
 
             // Calculate current due/advanced (Total Sales - Total Paid)
@@ -209,7 +204,6 @@ class CustomerController extends Controller
                     $q->where('name', 'Receipt');
                 })
                 ->where('to_account_id', $customer->account->id)
-                ->with(['fromTransaction:id,amount', 'toTransaction:id,amount'])
                 ->orderBy('date', 'desc')
                 ->limit(5)
                 ->get()
@@ -217,7 +211,7 @@ class CustomerController extends Controller
                     return [
                         'id' => $voucher->id,
                         'date' => $voucher->date,
-                        'amount' => $voucher->toTransaction->amount ?? 0,
+                        'amount' => $voucher->amount,
                         'remarks' => $voucher->remarks,
                     ];
                 });
@@ -253,18 +247,17 @@ class CustomerController extends Controller
         $totalPaid = 0;
         $paymentCount = 0;
         if ($customer->account) {
-            $payments = Voucher::whereHas('voucherType', function($q) {
+            $totalPaid = Voucher::whereHas('voucherType', function($q) {
                     $q->where('name', 'Receipt');
                 })
                 ->where('to_account_id', $customer->account->id)
-                ->with('toTransaction:id,amount')
-                ->get();
+                ->sum('amount');
 
-            $totalPaid = $payments->sum(function ($voucher) {
-                return $voucher->toTransaction->amount ?? 0;
-            });
-
-            $paymentCount = $payments->count();
+            $paymentCount = Voucher::whereHas('voucherType', function($q) {
+                    $q->where('name', 'Receipt');
+                })
+                ->where('to_account_id', $customer->account->id)
+                ->count();
         }
 
         // Calculate current due/advanced (Total Sales - Total Paid)
@@ -330,7 +323,6 @@ class CustomerController extends Controller
                     $q->where('name', 'Receipt');
                 })
                 ->where('to_account_id', $customer->account->id)
-                ->with('toTransaction:id,amount')
                 ->orderBy('date', 'desc')
                 ->get()
                 ->map(function ($voucher) {
@@ -340,7 +332,7 @@ class CustomerController extends Controller
                         'type' => 'Payment',
                         'description' => 'Payment Received - ' . ($voucher->remarks ?? 'N/A'),
                         'debit' => 0,
-                        'credit' => $voucher->toTransaction->amount ?? 0,
+                        'credit' => $voucher->amount,
                         'voucher_no' => $voucher->voucher_no,
                     ];
                 });
@@ -384,8 +376,7 @@ class CustomerController extends Controller
             $query = Voucher::whereHas('voucherType', function($q) {
                     $q->where('name', 'Receipt');
                 })
-                ->where('to_account_id', $customer->account->id)
-                ->with('toTransaction:id,amount');
+                ->where('to_account_id', $customer->account->id);
 
             // Apply date range filter if provided
             if ($request->start_date) {
@@ -402,7 +393,7 @@ class CustomerController extends Controller
                     return [
                         'id' => $voucher->id,
                         'date' => $voucher->date,
-                        'amount' => $voucher->toTransaction->amount ?? 0,
+                        'amount' => $voucher->amount,
                         'remarks' => $voucher->remarks,
                     ];
                 });
@@ -531,16 +522,11 @@ class CustomerController extends Controller
             // Calculate total paid for this customer
             $totalPaid = 0;
             if ($customer->account) {
-                $payments = Voucher::whereHas('voucherType', function($q) {
+                $totalPaid = Voucher::whereHas('voucherType', function($q) {
                         $q->where('name', 'Receipt');
                     })
                     ->where('to_account_id', $customer->account->id)
-                    ->with('toTransaction:id,amount')
-                    ->get();
-
-                $totalPaid = $payments->sum(function ($voucher) {
-                    return $voucher->toTransaction->amount ?? 0;
-                });
+                    ->sum('amount');
             }
 
             // Calculate current due/advanced (Total Sales - Total Paid)
@@ -592,8 +578,7 @@ class CustomerController extends Controller
         $query = Voucher::whereHas('voucherType', function($q) {
                 $q->where('name', 'Receipt');
             })
-            ->where('to_account_id', $customer->account->id)
-            ->with('toTransaction:id,amount,payment_type');
+            ->where('to_account_id', $customer->account->id);
 
         if ($request->start_date) {
             $query->whereDate('date', '>=', $request->start_date);
@@ -608,8 +593,8 @@ class CustomerController extends Controller
                 return [
                     'id' => $voucher->id,
                     'date' => $voucher->date,
-                    'amount' => $voucher->toTransaction->amount ?? 0,
-                    'payment_type' => $voucher->toTransaction->payment_type ?? null,
+                    'amount' => $voucher->amount,
+                    'payment_type' => $voucher->payment_method,
                     'remarks' => $voucher->remarks,
                 ];
             });

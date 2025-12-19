@@ -39,7 +39,6 @@ class CustomerLedgerDetailsController extends Controller
 
         $debitTransactions = DB::table('vouchers')
             ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
             ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
             ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
@@ -52,10 +51,10 @@ class CustomerLedgerDetailsController extends Controller
                 'accounts.ac_number',
                 'vouchers.date as date',
                 'shifts.name as shift',
-                'transactions.transaction_id',
-                'transactions.amount as debit',
+                'vouchers.voucher_no as transaction_id',
+                'vouchers.amount as debit',
                 DB::raw('0 as credit'),
-                DB::raw('transactions.amount as balance'),
+                DB::raw('vouchers.amount as balance'),
                 'vouchers.remarks'
             );
 
@@ -117,7 +116,6 @@ class CustomerLedgerDetailsController extends Controller
 
         $debitTransactions = DB::table('vouchers')
             ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
             ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
             ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
@@ -130,10 +128,10 @@ class CustomerLedgerDetailsController extends Controller
                 'accounts.ac_number',
                 'vouchers.date as date',
                 'shifts.name as shift',
-                'transactions.transaction_id',
-                'transactions.amount as debit',
+                'vouchers.voucher_no as transaction_id',
+                'vouchers.amount as debit',
                 DB::raw('0 as credit'),
-                DB::raw('transactions.amount as balance'),
+                DB::raw('vouchers.amount as balance'),
                 'vouchers.remarks'
             );
 
