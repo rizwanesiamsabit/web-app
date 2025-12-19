@@ -38,11 +38,11 @@ class CustomerLedgerDetailsController extends Controller
             );
 
         $debitTransactions = DB::table('vouchers')
-            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
             ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
             ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
-            ->where('voucher_types.name', 'Receipt')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Receipt')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->where('customers.id', $customer)
             ->select(
@@ -52,9 +52,9 @@ class CustomerLedgerDetailsController extends Controller
                 'vouchers.date as date',
                 'shifts.name as shift',
                 'vouchers.voucher_no as transaction_id',
-                'vouchers.amount as debit',
+                'transactions.amount as debit',
                 DB::raw('0 as credit'),
-                DB::raw('vouchers.amount as balance'),
+                DB::raw('transactions.amount as balance'),
                 'vouchers.remarks'
             );
 
@@ -115,11 +115,11 @@ class CustomerLedgerDetailsController extends Controller
             );
 
         $debitTransactions = DB::table('vouchers')
-            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
             ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
             ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
-            ->where('voucher_types.name', 'Receipt')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Receipt')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->where('customers.id', $customer)
             ->select(
@@ -129,9 +129,9 @@ class CustomerLedgerDetailsController extends Controller
                 'vouchers.date as date',
                 'shifts.name as shift',
                 'vouchers.voucher_no as transaction_id',
-                'vouchers.amount as debit',
+                'transactions.amount as debit',
                 DB::raw('0 as credit'),
-                DB::raw('vouchers.amount as balance'),
+                DB::raw('transactions.amount as balance'),
                 'vouchers.remarks'
             );
 

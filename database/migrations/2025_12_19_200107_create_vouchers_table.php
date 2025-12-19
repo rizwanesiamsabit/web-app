@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('payment_sub_type_id')->constrained('payment_sub_types');
             $table->foreignId('from_account_id')->constrained('accounts');
             $table->foreignId('to_account_id')->constrained('accounts');
-            $table->string('transaction_id');
+            $table->foreignId('transaction_id')->constrained('transactions');
             $table->text('description')->nullable();
             $table->text('remarks')->nullable();
 

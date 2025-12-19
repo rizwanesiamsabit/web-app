@@ -38,11 +38,10 @@ class SupplierController extends Controller
         $suppliers = $query->paginate($perPage)->withQueryString()->through(function ($supplier) {
             $totalPurchases = $supplier->purchases()->sum('net_total_amount');
             $purchasePaid = $supplier->purchases()->sum('paid_amount');
-            $voucherPayments = \App\Models\Voucher::whereHas('voucherType', function($q) {
-                    $q->where('name', 'Payment');
-                })
-                ->where('to_account_id', $supplier->account_id)
-                ->sum('amount');
+            $voucherPayments = \App\Models\Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->where('vouchers.voucher_type', 'Payment')
+                ->where('vouchers.to_account_id', $supplier->account_id)
+                ->sum('transactions.amount');
             $totalPaid = $purchasePaid + $voucherPayments;
             $totalDue = $totalPurchases - $totalPaid;
             
@@ -160,12 +159,12 @@ class SupplierController extends Controller
             ->get(['id', 'purchase_date as date', 'net_total_amount as total_amount', 'paid_amount', 'due_amount', 'invoice_no', 'status']);
 
         // Get recent payments (from vouchers)
-        $recentPayments = \App\Models\Voucher::whereHas('voucherType', function($q) {
-                $q->where('name', 'Payment');
-            })
-            ->where('to_account_id', $supplier->account_id)
-            ->latest('date')
+        $recentPayments = \App\Models\Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Payment')
+            ->where('vouchers.to_account_id', $supplier->account_id)
+            ->latest('vouchers.date')
             ->take(5)
+            ->select('vouchers.*', 'transactions.amount')
             ->get()
             ->map(function($voucher) {
                 return [
@@ -182,15 +181,12 @@ class SupplierController extends Controller
         
         // Total paid = purchase paid_amount + voucher payments
         $purchasePaid = $supplier->purchases()->sum('paid_amount');
-        $voucherPayments = \App\Models\Voucher::whereHas('voucherType', function($q) {
-                $q->where('name', 'Payment');
-            })
-            ->where('to_account_id', $supplier->account_id)
-            ->sum('amount');
+        $voucherPayments = \App\Models\Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Payment')
+            ->where('vouchers.to_account_id', $supplier->account_id)
+            ->sum('transactions.amount');
         $totalPaid = $purchasePaid + $voucherPayments;
-        $paymentCount = \App\Models\Voucher::whereHas('voucherType', function($q) {
-                $q->where('name', 'Payment');
-            })
+        $paymentCount = \App\Models\Voucher::where('voucher_type', 'Payment')
             ->where('to_account_id', $supplier->account_id)
             ->count();
         $currentDue = $totalPurchases - $totalPaid;
@@ -262,11 +258,11 @@ class SupplierController extends Controller
         // Get all payments for this supplier
         $payments = [];
         if ($supplier->account) {
-            $payments = Voucher::whereHas('voucherType', function($q) {
-                    $q->where('name', 'Payment');
-                })
-                ->where('to_account_id', $supplier->account->id)
-                ->orderBy('date', 'desc')
+            $payments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->where('vouchers.voucher_type', 'Payment')
+                ->where('vouchers.to_account_id', $supplier->account->id)
+                ->orderBy('vouchers.date', 'desc')
+                ->select('vouchers.*', 'transactions.amount')
                 ->get()
                 ->map(function ($voucher) {
                     return [
@@ -295,11 +291,10 @@ class SupplierController extends Controller
         // Calculate current balance same as details page
         $totalPurchases = $supplier->purchases()->sum('net_total_amount');
         $purchasePaid = $supplier->purchases()->sum('paid_amount');
-        $voucherPayments = Voucher::whereHas('voucherType', function($q) {
-                $q->where('name', 'Payment');
-            })
-            ->where('to_account_id', $supplier->account_id)
-            ->sum('amount');
+        $voucherPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Payment')
+            ->where('vouchers.to_account_id', $supplier->account_id)
+            ->sum('transactions.amount');
         $totalPaid = $purchasePaid + $voucherPayments;
         $currentBalance = $totalPurchases - $totalPaid;
 
@@ -328,19 +323,19 @@ class SupplierController extends Controller
         // Get recent payments with pagination and date filter
         $recentPayments = collect([]);
         if ($supplier->account) {
-            $query = Voucher::whereHas('voucherType', function($q) {
-                    $q->where('name', 'Payment');
-                })
-                ->where('to_account_id', $supplier->account->id);
+            $query = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->where('vouchers.voucher_type', 'Payment')
+                ->where('vouchers.to_account_id', $supplier->account->id)
+                ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type');
             
             if ($request->start_date) {
-                $query->whereDate('date', '>=', $request->start_date);
+                $query->whereDate('vouchers.date', '>=', $request->start_date);
             }
             if ($request->end_date) {
-                $query->whereDate('date', '<=', $request->end_date);
+                $query->whereDate('vouchers.date', '<=', $request->end_date);
             }
             
-            $recentPayments = $query->orderBy('date', 'desc')
+            $recentPayments = $query->orderBy('vouchers.date', 'desc')
                 ->paginate(10)
                 ->withQueryString()
                 ->through(function ($voucher) {
@@ -348,7 +343,7 @@ class SupplierController extends Controller
                         'id' => $voucher->id,
                         'date' => $voucher->date,
                         'amount' => $voucher->amount,
-                        'payment_type' => $voucher->payment_method ?? null,
+                        'payment_type' => $voucher->payment_type,
                         'remarks' => $voucher->remarks,
                     ];
                 });
@@ -431,26 +426,26 @@ class SupplierController extends Controller
     {
         $supplier->load('account');
         
-        $query = Voucher::whereHas('voucherType', function($q) {
-                $q->where('name', 'Payment');
-            })
-            ->where('to_account_id', $supplier->account->id);
+        $query = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Payment')
+            ->where('vouchers.to_account_id', $supplier->account->id)
+            ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type');
         
         if ($request->start_date) {
-            $query->whereDate('date', '>=', $request->start_date);
+            $query->whereDate('vouchers.date', '>=', $request->start_date);
         }
         if ($request->end_date) {
-            $query->whereDate('date', '<=', $request->end_date);
+            $query->whereDate('vouchers.date', '<=', $request->end_date);
         }
         
-        $payments = $query->orderBy('date', 'desc')
+        $payments = $query->orderBy('vouchers.date', 'desc')
             ->get()
             ->map(function ($voucher) {
                 return [
                     'id' => $voucher->id,
                     'date' => $voucher->date,
                     'amount' => $voucher->amount,
-                    'payment_type' => $voucher->payment_method ?? null,
+                    'payment_type' => $voucher->payment_type,
                     'remarks' => $voucher->remarks,
                 ];
             });

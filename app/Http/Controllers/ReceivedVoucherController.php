@@ -44,7 +44,9 @@ class ReceivedVoucherController extends Controller
         }
 
         if ($request->payment_method && $request->payment_method !== 'all' && in_array($request->payment_method, ['Cash', 'Bank', 'Mobile Bank'])) {
-            $query->where('payment_method', $request->payment_method);
+            $query->whereHas('transaction', function($q) use ($request) {
+                $q->where('payment_type', strtolower($request->payment_method));
+            });
         }
 
         if ($request->start_date && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->start_date)) {
@@ -252,7 +254,9 @@ class ReceivedVoucherController extends Controller
         }
 
         if ($request->payment_method && $request->payment_method !== 'all' && in_array($request->payment_method, ['Cash', 'Bank', 'Mobile Bank'])) {
-            $query->where('payment_method', $request->payment_method);
+            $query->whereHas('transaction', function($q) use ($request) {
+                $q->where('payment_type', strtolower($request->payment_method));
+            });
         }
 
         if ($request->start_date && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->start_date)) {

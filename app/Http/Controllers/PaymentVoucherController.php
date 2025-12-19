@@ -34,7 +34,9 @@ class PaymentVoucherController extends Controller
             });
         }
         if ($request->payment_method && $request->payment_method !== 'all') {
-            $query->where('payment_method', $request->payment_method);
+            $query->whereHas('transaction', function($q) use ($request) {
+                $q->where('payment_type', strtolower($request->payment_method));
+            });
         }
         if ($request->start_date) {
             $query->where('date', '>=', $request->start_date);
@@ -152,7 +154,7 @@ class PaymentVoucherController extends Controller
         DB::transaction(function () use ($request, $voucher) {
             $oldFromAccount = Account::find($voucher->from_account_id);
             $oldToAccount = Account::find($voucher->to_account_id);
-            $oldAmount = $voucher->amount;
+            $oldAmount = $voucher->transaction->amount;
             $oldFromAccount->increment('total_amount', $oldAmount);
             $oldToAccount->decrement('total_amount', $oldAmount);
 
@@ -191,7 +193,7 @@ class PaymentVoucherController extends Controller
         DB::transaction(function () use ($voucher) {
             $fromAccount = Account::find($voucher->from_account_id);
             $toAccount = Account::find($voucher->to_account_id);
-            $amount = $voucher->amount;
+            $amount = $voucher->transaction->amount;
             $fromAccount->increment('total_amount', $amount);
             $toAccount->decrement('total_amount', $amount);
             $voucher->transaction?->delete();
@@ -213,7 +215,7 @@ class PaymentVoucherController extends Controller
             foreach ($vouchers as $voucher) {
                 $fromAccount = Account::find($voucher->from_account_id);
                 $toAccount = Account::find($voucher->to_account_id);
-                $amount = $voucher->amount;
+                $amount = $voucher->transaction->amount;
                 $fromAccount->increment('total_amount', $amount);
                 $toAccount->decrement('total_amount', $amount);
                 $voucher->transaction?->delete();
@@ -241,7 +243,9 @@ class PaymentVoucherController extends Controller
         }
 
         if ($request->payment_method && $request->payment_method !== 'all') {
-            $query->where('payment_method', $request->payment_method);
+            $query->whereHas('transaction', function($q) use ($request) {
+                $q->where('payment_type', strtolower($request->payment_method));
+            });
         }
 
         if ($request->start_date) {

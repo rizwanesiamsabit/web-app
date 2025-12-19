@@ -51,11 +51,10 @@ class CustomerController extends Controller
             // Calculate total paid for this customer
             $totalPaid = 0;
             if ($customer->account) {
-                $totalPaid = Voucher::whereHas('voucherType', function($q) {
-                        $q->where('name', 'Receipt');
-                    })
-                    ->where('to_account_id', $customer->account->id)
-                    ->sum('amount');
+                $totalPaid = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                    ->where('vouchers.voucher_type', 'Receipt')
+                    ->where('vouchers.to_account_id', $customer->account->id)
+                    ->sum('transactions.amount');
             }
 
             // Calculate current due/advanced (Total Sales - Total Paid)
@@ -123,7 +122,6 @@ class CustomerController extends Controller
             'previous_due' => 'nullable|numeric|min:0',
             'address' => 'nullable|string',
             'status' => 'boolean',
-            // Vehicle validation
             'product_ids' => 'nullable|array',
             'product_ids.*' => 'exists:products,id',
             'vehicle_type' => 'nullable|string|max:150',
@@ -132,14 +130,11 @@ class CustomerController extends Controller
             'reg_date' => 'nullable|date'
         ]);
 
-        // Create account first
         $account = Account::create([
             'name' => $request->name,
             'ac_number' => AccountHelper::generateAccountNumber(),
             'group_id' => 7,
             'group_code' => '100020001',
-            'due_amount' => 0,
-            'paid_amount' => 0,
             'status' => $request->status ?? true,
         ]);
 
@@ -160,7 +155,6 @@ class CustomerController extends Controller
             'status' => $request->status ?? true,
         ]);
 
-        // Create vehicle if vehicle data provided
         if ($request->product_ids || $request->vehicle_type || $request->vehicle_name || $request->vehicle_number) {
             $vehicle = Vehicle::create([
                 'customer_id' => $customer->id,
@@ -200,12 +194,12 @@ class CustomerController extends Controller
 
         $recentPayments = [];
         if ($customer->account) {
-            $recentPayments = Voucher::whereHas('voucherType', function($q) {
-                    $q->where('name', 'Receipt');
-                })
-                ->where('to_account_id', $customer->account->id)
-                ->orderBy('date', 'desc')
+            $recentPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->where('vouchers.voucher_type', 'Receipt')
+                ->where('vouchers.to_account_id', $customer->account->id)
+                ->orderBy('vouchers.date', 'desc')
                 ->limit(5)
+                ->select('vouchers.*', 'transactions.amount')
                 ->get()
                 ->map(function ($voucher) {
                     return [
@@ -217,7 +211,6 @@ class CustomerController extends Controller
                 });
         }
 
-        // Get recent credit sales for this customer
         $recentSales = CreditSale::where('customer_id', $customer->id)
             ->where('type', 'regular')
             ->with('vehicle:id,vehicle_number')
@@ -236,31 +229,25 @@ class CustomerController extends Controller
                 ];
             });
 
-        // Calculate total sales for this customer
         $totalSales = CreditSale::where('customer_id', $customer->id)
             ->sum('total_amount');
 
         $salesCount = CreditSale::where('customer_id', $customer->id)
             ->count();
 
-        // Calculate total paid for this customer
         $totalPaid = 0;
         $paymentCount = 0;
         if ($customer->account) {
-            $totalPaid = Voucher::whereHas('voucherType', function($q) {
-                    $q->where('name', 'Receipt');
-                })
-                ->where('to_account_id', $customer->account->id)
-                ->sum('amount');
+            $totalPaid = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->where('vouchers.voucher_type', 'Receipt')
+                ->where('vouchers.to_account_id', $customer->account->id)
+                ->sum('transactions.amount');
 
-            $paymentCount = Voucher::whereHas('voucherType', function($q) {
-                    $q->where('name', 'Receipt');
-                })
+            $paymentCount = Voucher::where('voucher_type', 'Receipt')
                 ->where('to_account_id', $customer->account->id)
                 ->count();
         }
 
-        // Calculate current due/advanced (Total Sales - Total Paid)
         $currentDue = $totalSales - $totalPaid;
 
         return Inertia::render('Customers/CustomerDetails', [
@@ -299,7 +286,6 @@ class CustomerController extends Controller
 
         $year = $request->get('year', date('Y'));
 
-        // Get all sales for this customer
         $sales = CreditSale::where('customer_id', $customer->id)
             ->with('vehicle:id,vehicle_number')
             ->orderBy('sale_date', 'desc')
@@ -316,14 +302,13 @@ class CustomerController extends Controller
                 ];
             });
 
-        // Get all payments for this customer
         $payments = [];
         if ($customer->account) {
-            $payments = Voucher::whereHas('voucherType', function($q) {
-                    $q->where('name', 'Receipt');
-                })
-                ->where('to_account_id', $customer->account->id)
-                ->orderBy('date', 'desc')
+            $payments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->where('vouchers.voucher_type', 'Receipt')
+                ->where('vouchers.to_account_id', $customer->account->id)
+                ->orderBy('vouchers.date', 'desc')
+                ->select('vouchers.*', 'transactions.amount')
                 ->get()
                 ->map(function ($voucher) {
                     return [
@@ -338,10 +323,8 @@ class CustomerController extends Controller
                 });
         }
 
-        // Merge and sort transactions by date
         $transactions = collect($sales)->merge($payments)->sortByDesc('date')->values();
 
-        // Calculate running balance
         $balance = 0;
         $transactions = $transactions->map(function ($transaction) use (&$balance) {
             $balance += $transaction['debit'] - $transaction['credit'];
@@ -349,7 +332,6 @@ class CustomerController extends Controller
             return $transaction;
         });
 
-        // Calculate monthly sales for selected year
         $monthlySales = CreditSale::where('customer_id', $customer->id)
             ->whereYear('sale_date', $year)
             ->selectRaw('YEAR(sale_date) as year, MONTH(sale_date) as month, SUM(total_amount) as total')
@@ -363,30 +345,27 @@ class CustomerController extends Controller
                 ];
             });
 
-        // Get available years
         $availableYears = CreditSale::where('customer_id', $customer->id)
             ->selectRaw('DISTINCT YEAR(sale_date) as year')
             ->orderBy('year', 'desc')
             ->pluck('year')
             ->toArray();
 
-        // Get recent payments from Voucher model with pagination and date filter
         $recentPayments = collect([]);
         if ($customer->account) {
-            $query = Voucher::whereHas('voucherType', function($q) {
-                    $q->where('name', 'Receipt');
-                })
-                ->where('to_account_id', $customer->account->id);
+            $query = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->where('vouchers.voucher_type', 'Receipt')
+                ->where('vouchers.to_account_id', $customer->account->id)
+                ->select('vouchers.*', 'transactions.amount');
 
-            // Apply date range filter if provided
             if ($request->start_date) {
-                $query->whereDate('date', '>=', $request->start_date);
+                $query->whereDate('vouchers.date', '>=', $request->start_date);
             }
             if ($request->end_date) {
-                $query->whereDate('date', '<=', $request->end_date);
+                $query->whereDate('vouchers.date', '<=', $request->end_date);
             }
 
-            $recentPayments = $query->orderBy('date', 'desc')
+            $recentPayments = $query->orderBy('vouchers.date', 'desc')
                 ->paginate(10)
                 ->withQueryString()
                 ->through(function ($voucher) {
@@ -436,7 +415,6 @@ class CustomerController extends Controller
             'status' => 'boolean'
         ]);
 
-        // Update associated account if exists
         if ($customer->account) {
             $customer->account->update([
                 'name' => $request->name,
@@ -497,7 +475,6 @@ class CustomerController extends Controller
         $query = Customer::select('id', 'account_id', 'code', 'name', 'mobile', 'email', 'status', 'created_at')
             ->with('account:id,name,ac_number');
 
-        // Apply same filters as index method
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
@@ -516,20 +493,16 @@ class CustomerController extends Controller
         $query->orderBy($sortBy, $sortOrder);
 
         $customers = $query->get()->map(function ($customer) {
-            // Calculate total sales for this customer
             $totalSales = CreditSale::where('customer_id', $customer->id)->sum('total_amount');
 
-            // Calculate total paid for this customer
             $totalPaid = 0;
             if ($customer->account) {
-                $totalPaid = Voucher::whereHas('voucherType', function($q) {
-                        $q->where('name', 'Receipt');
-                    })
-                    ->where('to_account_id', $customer->account->id)
-                    ->sum('amount');
+                $totalPaid = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                    ->where('vouchers.voucher_type', 'Receipt')
+                    ->where('vouchers.to_account_id', $customer->account->id)
+                    ->sum('transactions.amount');
             }
 
-            // Calculate current due/advanced (Total Sales - Total Paid)
             $currentDue = $totalSales - $totalPaid;
 
             $customer->total_sales = $totalSales;
@@ -575,26 +548,26 @@ class CustomerController extends Controller
     {
         $customer->load('account');
 
-        $query = Voucher::whereHas('voucherType', function($q) {
-                $q->where('name', 'Receipt');
-            })
-            ->where('to_account_id', $customer->account->id);
+        $query = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Receipt')
+            ->where('vouchers.to_account_id', $customer->account->id)
+            ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type');
 
         if ($request->start_date) {
-            $query->whereDate('date', '>=', $request->start_date);
+            $query->whereDate('vouchers.date', '>=', $request->start_date);
         }
         if ($request->end_date) {
-            $query->whereDate('date', '<=', $request->end_date);
+            $query->whereDate('vouchers.date', '<=', $request->end_date);
         }
 
-        $payments = $query->orderBy('date', 'desc')
+        $payments = $query->orderBy('vouchers.date', 'desc')
             ->get()
             ->map(function ($voucher) {
                 return [
                     'id' => $voucher->id,
                     'date' => $voucher->date,
                     'amount' => $voucher->amount,
-                    'payment_type' => $voucher->payment_method,
+                    'payment_type' => $voucher->payment_type,
                     'remarks' => $voucher->remarks,
                 ];
             });
