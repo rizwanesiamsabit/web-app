@@ -34,10 +34,11 @@ class CustomerLedgerSummaryController extends Controller
         }
 
         $debitQuery = DB::table('vouchers')
-            ->join('transactions', 'vouchers.to_transaction_id', '=', 'transactions.id')
+            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
             ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
-            ->where('vouchers.voucher_type', 'Received')
+            ->where('voucher_types.name', 'Receipt')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->select(
                 'customers.id as customer_id',
@@ -99,10 +100,11 @@ class CustomerLedgerSummaryController extends Controller
         }
 
         $debitQuery = DB::table('vouchers')
-            ->join('transactions', 'vouchers.to_transaction_id', '=', 'transactions.id')
+            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
             ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
-            ->where('vouchers.voucher_type', 'Received')
+            ->where('voucher_types.name', 'Receipt')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->select(
                 'customers.id as customer_id',

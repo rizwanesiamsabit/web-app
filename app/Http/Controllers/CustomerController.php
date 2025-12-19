@@ -51,7 +51,9 @@ class CustomerController extends Controller
             // Calculate total paid for this customer
             $totalPaid = 0;
             if ($customer->account) {
-                $payments = Voucher::where('voucher_type', 'Received')
+                $payments = Voucher::whereHas('voucherType', function($q) {
+                        $q->where('name', 'Receipt');
+                    })
                     ->where('to_account_id', $customer->account->id)
                     ->with('toTransaction:id,amount')
                     ->get();
@@ -203,7 +205,9 @@ class CustomerController extends Controller
 
         $recentPayments = [];
         if ($customer->account) {
-            $recentPayments = Voucher::where('voucher_type', 'Received')
+            $recentPayments = Voucher::whereHas('voucherType', function($q) {
+                    $q->where('name', 'Receipt');
+                })
                 ->where('to_account_id', $customer->account->id)
                 ->with(['fromTransaction:id,amount', 'toTransaction:id,amount'])
                 ->orderBy('date', 'desc')
@@ -249,7 +253,9 @@ class CustomerController extends Controller
         $totalPaid = 0;
         $paymentCount = 0;
         if ($customer->account) {
-            $payments = Voucher::where('voucher_type', 'Received')
+            $payments = Voucher::whereHas('voucherType', function($q) {
+                    $q->where('name', 'Receipt');
+                })
                 ->where('to_account_id', $customer->account->id)
                 ->with('toTransaction:id,amount')
                 ->get();
@@ -320,7 +326,9 @@ class CustomerController extends Controller
         // Get all payments for this customer
         $payments = [];
         if ($customer->account) {
-            $payments = Voucher::where('voucher_type', 'Received')
+            $payments = Voucher::whereHas('voucherType', function($q) {
+                    $q->where('name', 'Receipt');
+                })
                 ->where('to_account_id', $customer->account->id)
                 ->with('toTransaction:id,amount')
                 ->orderBy('date', 'desc')
@@ -373,7 +381,9 @@ class CustomerController extends Controller
         // Get recent payments from Voucher model with pagination and date filter
         $recentPayments = collect([]);
         if ($customer->account) {
-            $query = Voucher::where('voucher_type', 'Received')
+            $query = Voucher::whereHas('voucherType', function($q) {
+                    $q->where('name', 'Receipt');
+                })
                 ->where('to_account_id', $customer->account->id)
                 ->with('toTransaction:id,amount');
 
@@ -521,7 +531,9 @@ class CustomerController extends Controller
             // Calculate total paid for this customer
             $totalPaid = 0;
             if ($customer->account) {
-                $payments = Voucher::where('voucher_type', 'Received')
+                $payments = Voucher::whereHas('voucherType', function($q) {
+                        $q->where('name', 'Receipt');
+                    })
                     ->where('to_account_id', $customer->account->id)
                     ->with('toTransaction:id,amount')
                     ->get();
@@ -577,7 +589,9 @@ class CustomerController extends Controller
     {
         $customer->load('account');
 
-        $query = Voucher::where('voucher_type', 'Received')
+        $query = Voucher::whereHas('voucherType', function($q) {
+                $q->where('name', 'Receipt');
+            })
             ->where('to_account_id', $customer->account->id)
             ->with('toTransaction:id,amount,payment_type');
 
