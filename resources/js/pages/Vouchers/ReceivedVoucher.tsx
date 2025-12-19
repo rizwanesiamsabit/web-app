@@ -37,8 +37,7 @@ interface ReceivedVoucher {
     shift?: { id: number; name: string };
     from_account: { id: number; name: string };
     to_account: { id: number; name: string };
-    amount: number;
-    payment_method: string;
+    transaction?: { amount: number; payment_type: string };
     voucher_category?: { id: number; name: string };
     payment_sub_type?: { id: number; name: string };
     description?: string;
@@ -202,8 +201,9 @@ export default function ReceivedVoucher({
             payment_sub_type_id: voucher.payment_sub_type?.id?.toString() || '',
             from_account_id: voucher.from_account?.id?.toString() || '',
             to_account_id: voucher.to_account?.id?.toString() || '',
-            amount: voucher.amount?.toString() || '',
-            payment_method: voucher.payment_method || 'Cash',
+            amount: voucher.transaction?.amount?.toString() || '',
+            payment_method: voucher.transaction?.payment_type ? 
+                voucher.transaction.payment_type.charAt(0).toUpperCase() + voucher.transaction.payment_type.slice(1) : 'Cash',
             description: voucher.description || '',
             bank_type: '',
             bank_name: '',
@@ -516,9 +516,11 @@ export default function ReceivedVoucher({
                                                     ))}
                                             </div>
                                         </th>
-
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Received From
+                                            Shift
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            From Account
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             To Account
@@ -527,7 +529,13 @@ export default function ReceivedVoucher({
                                             Amount
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Payment Type
+                                            Category
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Sub Type
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Payment Method
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
@@ -560,7 +568,9 @@ export default function ReceivedVoucher({
                                                         voucher.date,
                                                     ).toLocaleDateString()}
                                                 </td>
-
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {voucher.shift?.name || 'N/A'}
+                                                </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {voucher.from_account.name}
                                                 </td>
@@ -568,11 +578,17 @@ export default function ReceivedVoucher({
                                                     {voucher.to_account.name}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {voucher.amount.toLocaleString()}
+                                                    {voucher.transaction?.amount ? Number(voucher.transaction.amount).toLocaleString() : 'N/A'}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {voucher.voucher_category?.name || 'N/A'}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {voucher.payment_sub_type?.name || 'N/A'}
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-200">
-                                                        {voucher.payment_method}
+                                                        {voucher.transaction?.payment_type || 'N/A'}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
@@ -608,7 +624,7 @@ export default function ReceivedVoucher({
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={8}
+                                                colSpan={9}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Receipt className="mx-auto mb-4 h-12 w-12 text-gray-400" />

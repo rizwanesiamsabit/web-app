@@ -34,15 +34,14 @@ class CustomerLedgerSummaryController extends Controller
         }
 
         $debitQuery = DB::table('vouchers')
-            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
             ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
-            ->where('voucher_types.name', 'Receipt')
+            ->join('voucher_categories', 'vouchers.voucher_category_id', '=', 'voucher_categories.id')
+            ->where('voucher_categories.name', 'Customer')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->select(
                 'customers.id as customer_id',
-                DB::raw('SUM(transactions.amount) as debit')
+                DB::raw('SUM(vouchers.amount) as debit')
             )
             ->groupBy('customers.id');
 
@@ -100,15 +99,14 @@ class CustomerLedgerSummaryController extends Controller
         }
 
         $debitQuery = DB::table('vouchers')
-            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
             ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
-            ->where('voucher_types.name', 'Receipt')
+            ->join('voucher_categories', 'vouchers.voucher_category_id', '=', 'voucher_categories.id')
+            ->where('voucher_categories.name', 'Customer')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->select(
                 'customers.id as customer_id',
-                DB::raw('SUM(transactions.amount) as debit')
+                DB::raw('SUM(vouchers.amount) as debit')
             )
             ->groupBy('customers.id');
 

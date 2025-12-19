@@ -26,7 +26,6 @@ class CustomerSummaryBillController extends Controller
                 $join->on('products.id', '=', 'product_rates.product_id')
                      ->where('product_rates.status', true);
             })
-            ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
             ->whereBetween('credit_sales.sale_date', [$startDate, $endDate]);
 
         if ($customerId) {
@@ -39,7 +38,7 @@ class CustomerSummaryBillController extends Controller
             'credit_sales.sale_date',
             'vehicles.vehicle_number',
             'credit_sales.invoice_no',
-            DB::raw('COALESCE(transactions.transaction_id, "-") as transaction_id'),
+            'credit_sales.invoice_no as transaction_id',
             'products.product_name',
             'units.name as unit_name',
             'product_rates.sales_price as price',
@@ -81,7 +80,6 @@ class CustomerSummaryBillController extends Controller
                 $join->on('products.id', '=', 'product_rates.product_id')
                      ->where('product_rates.status', true);
             })
-            ->leftJoin('transactions', 'credit_sales.transaction_id', '=', 'transactions.id')
             ->whereBetween('credit_sales.sale_date', [$startDate, $endDate]);
 
         if ($customerId) {
@@ -94,7 +92,7 @@ class CustomerSummaryBillController extends Controller
             'credit_sales.sale_date',
             'vehicles.vehicle_number',
             'credit_sales.invoice_no',
-            DB::raw('COALESCE(transactions.transaction_id, "-") as transaction_id'),
+            'credit_sales.invoice_no as transaction_id',
             'products.product_name',
             'units.name as unit_name',
             'product_rates.sales_price as price',

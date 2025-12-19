@@ -20,10 +20,8 @@ class ReceivedVoucherController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'voucherType', 'voucherCategory', 'paymentSubType'])
-            ->whereHas('voucherType', function ($q) {
-                $q->where('name', 'Receipt');
-            });
+        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'voucherCategory', 'paymentSubType', 'transaction'])
+            ->where('voucher_type', 'Receipt');
 
         if ($request->search && is_string($request->search)) {
             $searchTerm = trim($request->search);
@@ -131,7 +129,7 @@ class ReceivedVoucherController extends Controller
             
             Voucher::create([
                 'voucher_no' => VoucherHelper::generateVoucherNo(),
-                'voucher_type_id' => 2, // Receipt voucher type ID
+                'voucher_type' => 'Receipt',
                 'voucher_category_id' => $request->voucher_category_id,
                 'payment_sub_type_id' => $request->payment_sub_type_id,
                 'date' => $request->date,
@@ -139,8 +137,6 @@ class ReceivedVoucherController extends Controller
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
                 'transaction_id' => $transaction->id,
-                'amount' => $request->amount,
-                'payment_method' => $request->payment_method,
                 'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
@@ -166,7 +162,7 @@ class ReceivedVoucherController extends Controller
         DB::transaction(function () use ($request, $voucher) {
             $oldFromAccount = Account::find($voucher->from_account_id);
             $oldToAccount = Account::find($voucher->to_account_id);
-            $oldAmount = $voucher->amount;
+            $oldAmount = $voucher->transaction->amount;
             $oldFromAccount->decrement('total_amount', $oldAmount);
             $oldToAccount->increment('total_amount', $oldAmount);
             
@@ -182,8 +178,6 @@ class ReceivedVoucherController extends Controller
                 'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
-                'amount' => $request->amount,
-                'payment_method' => $request->payment_method,
                 'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
@@ -205,7 +199,7 @@ class ReceivedVoucherController extends Controller
         DB::transaction(function () use ($voucher) {
             $fromAccount = Account::find($voucher->from_account_id);
             $toAccount = Account::find($voucher->to_account_id);
-            $amount = $voucher->amount;
+            $amount = $voucher->transaction->amount;
             $fromAccount->decrement('total_amount', $amount);
             $toAccount->increment('total_amount', $amount);
             $voucher->transaction?->delete();
@@ -227,7 +221,7 @@ class ReceivedVoucherController extends Controller
             foreach ($vouchers as $voucher) {
                 $fromAccount = Account::find($voucher->from_account_id);
                 $toAccount = Account::find($voucher->to_account_id);
-                $amount = $voucher->amount;
+                $amount = $voucher->transaction->amount;
                 $fromAccount->decrement('total_amount', $amount);
                 $toAccount->increment('total_amount', $amount);
                 $voucher->transaction?->delete();
@@ -240,10 +234,8 @@ class ReceivedVoucherController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'voucherType'])
-            ->whereHas('voucherType', function ($q) {
-                $q->where('name', 'Receipt');
-            });
+        $query = Voucher::with(['shift', 'fromAccount', 'toAccount'])
+            ->where('voucher_type', 'Receipt');
 
         if ($request->search && is_string($request->search)) {
             $searchTerm = trim($request->search);

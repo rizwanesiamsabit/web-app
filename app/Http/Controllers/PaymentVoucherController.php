@@ -20,10 +20,8 @@ class PaymentVoucherController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Voucher::with(['fromAccount', 'toAccount', 'shift', 'voucherType', 'voucherCategory', 'paymentSubType'])
-            ->whereHas('voucherType', function ($q) {
-                $q->where('name', 'Payment');
-            });
+        $query = Voucher::with(['fromAccount', 'toAccount', 'shift', 'voucherCategory', 'paymentSubType', 'transaction'])
+            ->where('voucher_type', 'Payment');
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -121,7 +119,7 @@ class PaymentVoucherController extends Controller
 
             Voucher::create([
                 'voucher_no' => VoucherHelper::generateVoucherNo(),
-                'voucher_type_id' => 1,
+                'voucher_type' => 'Payment',
                 'voucher_category_id' => $request->voucher_category_id,
                 'payment_sub_type_id' => $request->payment_sub_type_id,
                 'date' => $request->date,
@@ -129,8 +127,6 @@ class PaymentVoucherController extends Controller
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
                 'transaction_id' => $transaction->id,
-                'amount' => $request->amount,
-                'payment_method' => $request->payment_method,
                 'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
@@ -230,10 +226,8 @@ class PaymentVoucherController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $query = Voucher::with(['fromAccount', 'toAccount', 'shift', 'voucherType'])
-            ->whereHas('voucherType', function ($q) {
-                $q->where('name', 'Payment');
-            });
+        $query = Voucher::with(['fromAccount', 'toAccount', 'shift'])
+            ->where('voucher_type', 'Payment');
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {

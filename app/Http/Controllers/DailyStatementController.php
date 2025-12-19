@@ -144,10 +144,9 @@ class DailyStatementController extends Controller
 
         // 5. Cash Received Summary
         $cashReceived = DB::table('vouchers')
-            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
-            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
-            ->where('voucher_types.name', 'Receipt')
+            ->join('accounts', 'vouchers.from_account_id', '=', 'accounts.id')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Receipt')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->when($shiftId, function($query) use ($shiftId) {
                 return $query->where('vouchers.shift_id', $shiftId);
@@ -161,10 +160,9 @@ class DailyStatementController extends Controller
 
         // 6. Cash Payment Summary
         $cashPayment = DB::table('vouchers')
-            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
-            ->join('accounts', 'vouchers.from_account_id', '=', 'accounts.id')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
-            ->where('voucher_types.name', 'Payment')
+            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Payment')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->when($shiftId, function($query) use ($shiftId) {
                 return $query->where('vouchers.shift_id', $shiftId);
@@ -316,10 +314,9 @@ class DailyStatementController extends Controller
             ->get();
 
         $cashReceived = DB::table('vouchers')
-            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
-            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
-            ->where('voucher_types.name', 'Receipt')
+            ->join('accounts', 'vouchers.from_account_id', '=', 'accounts.id')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Receipt')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->when($shiftId, function($query) use ($shiftId) {
                 return $query->where('vouchers.shift_id', $shiftId);
@@ -332,10 +329,9 @@ class DailyStatementController extends Controller
             ->get();
 
         $cashPayment = DB::table('vouchers')
-            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
-            ->join('accounts', 'vouchers.from_account_id', '=', 'accounts.id')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.transaction_id')
-            ->where('voucher_types.name', 'Payment')
+            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->where('vouchers.voucher_type', 'Payment')
             ->whereBetween('vouchers.date', [$startDate, $endDate])
             ->when($shiftId, function($query) use ($shiftId) {
                 return $query->where('vouchers.shift_id', $shiftId);

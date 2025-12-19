@@ -10,33 +10,21 @@ class Voucher extends Model
         'date',
         'voucher_no',
         'shift_id',
-        'voucher_type_id',
+        'voucher_type',
         'voucher_category_id',
         'payment_sub_type_id',
-        'payment_method',
-        // 'reference_id', // REMOVED
-        // 'reference_type', // REMOVED  
-        // 'purchase_id', // REMOVED
-        // 'sale_id', // REMOVED
         'from_account_id',
         'to_account_id',
         'transaction_id',
-        'amount',
         'description',
         'remarks'
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'amount' => 'decimal:2'
+        'date' => 'date'
     ];
 
     // Relationships
-    public function voucherType()
-    {
-        return $this->belongsTo(VoucherType::class);
-    }
-
     public function voucherCategory()
     {
         return $this->belongsTo(VoucherCategory::class);
@@ -87,6 +75,6 @@ class Voucher extends Model
     // Get single transaction relationship
     public function transaction()
     {
-        return $this->belongsTo(Transaction::class, 'transaction_id', 'transaction_id');
+        return $this->belongsTo(Transaction::class, 'transaction_id', 'id');
     }
 }

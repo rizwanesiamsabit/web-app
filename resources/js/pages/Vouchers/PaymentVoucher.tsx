@@ -36,8 +36,7 @@ interface PaymentVoucher {
     from_account: { id: number; name: string };
     to_account: { id: number; name: string };
     shift?: { id: number; name: string };
-    amount: number;
-    payment_method: string;
+    transaction?: { amount: number; payment_type: string };
     voucher_category?: { id: number; name: string };
     payment_sub_type?: { id: number; name: string };
     description?: string;
@@ -180,8 +179,9 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
             shift_id: voucher.shift?.id?.toString() || '',
             from_account_id: voucher.from_account?.id?.toString() || '',
             to_account_id: voucher.to_account?.id?.toString() || '',
-            amount: voucher.amount?.toString() || '',
-            payment_method: voucher.payment_method || 'Cash',
+            amount: voucher.transaction?.amount?.toString() || '',
+            payment_method: voucher.transaction?.payment_type ? 
+                voucher.transaction.payment_type.charAt(0).toUpperCase() + voucher.transaction.payment_type.slice(1) : 'Cash',
             voucher_category_id: voucher.voucher_category?.id?.toString() || '',
             payment_sub_type_id: voucher.payment_sub_type?.id?.toString() || '',
             description: voucher.description || '',
@@ -481,12 +481,12 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.shift?.name || 'N/A'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.from_account?.name || 'N/A'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.to_account?.name || 'N/A'}</td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.amount?.toLocaleString() || '0'}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{voucher.transaction?.amount ? Number(voucher.transaction.amount).toLocaleString() : '0'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.voucher_category?.name || 'N/A'}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{voucher.payment_sub_type?.name || 'N/A'}</td>
                                                 <td className="p-4">
                                                     <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                                        {voucher.payment_method}
+                                                        {voucher.transaction?.payment_type || 'N/A'}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
