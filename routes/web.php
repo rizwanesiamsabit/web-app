@@ -39,6 +39,7 @@ use App\Http\Controllers\StockController;
 use App\Http\Controllers\PurchaseReportController;
 use App\Http\Controllers\CustomerSalesReportController;
 use App\Http\Controllers\PaymentSubTypeController;
+use App\Http\Controllers\GeneralLedgerController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -320,6 +321,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Customer Sales Reports routes
     Route::get('customer-wise-sales-reports', [CustomerSalesReportController::class, 'index'])->name('customer-sales-reports.index');
     Route::get('customer-wise-sales-reports/download-pdf', [CustomerSalesReportController::class, 'downloadPdf'])->name('customer-sales-reports.download.pdf');
+    
+    // General Ledger routes
+    Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');
+    Route::get('general-ledger/download-pdf', [GeneralLedgerController::class, 'downloadPdf'])->name('general-ledger.download.pdf');
     
     // Payment Sub Type routes
     Route::get('payment-sub-types', [PaymentSubTypeController::class, 'index'])->name('payment-sub-types.index');

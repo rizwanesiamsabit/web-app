@@ -137,7 +137,7 @@ const mainNavItems = [
             { title: 'Accounts', href: '/accounts', icon: Database },
             {
                 title: 'General Ledger',
-                href: '#',
+                href: '/general-ledger',
                 icon: BarChart3,
             },
             {
