@@ -142,22 +142,12 @@ const mainNavItems = [
             },
             {
                 title: 'Cash Book Ledger',
-                href: '#',
+                href: '/cash-book-ledger',
                 icon: BarChart3,
             },
             {
                 title: 'Bank Book Ledger',
-                href: '#',
-                icon: BarChart3,
-            },
-            {
-                title: 'Total Customer Receivable List',
-                href: '#',
-                icon: BarChart3,
-            },
-            {
-                title: 'Total Supplier Payable List',
-                href: '#',
+                href: '/bank-book-ledger',
                 icon: BarChart3,
             },
             // {

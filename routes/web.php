@@ -40,6 +40,8 @@ use App\Http\Controllers\PurchaseReportController;
 use App\Http\Controllers\CustomerSalesReportController;
 use App\Http\Controllers\PaymentSubTypeController;
 use App\Http\Controllers\GeneralLedgerController;
+use App\Http\Controllers\CashBookLedgerController;
+use App\Http\Controllers\BankBookLedgerController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -321,6 +323,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Customer Sales Reports routes
     Route::get('customer-wise-sales-reports', [CustomerSalesReportController::class, 'index'])->name('customer-sales-reports.index');
     Route::get('customer-wise-sales-reports/download-pdf', [CustomerSalesReportController::class, 'downloadPdf'])->name('customer-sales-reports.download.pdf');
+    
+    // Bank Book Ledger routes
+    Route::get('bank-book-ledger', [BankBookLedgerController::class, 'index'])->name('bank-book-ledger.index');
+    Route::get('bank-book-ledger/download-pdf', [BankBookLedgerController::class, 'downloadPdf'])->name('bank-book-ledger.download.pdf');
+    
+    // Cash Book Ledger routes
+    Route::get('cash-book-ledger', [CashBookLedgerController::class, 'index'])->name('cash-book-ledger.index');
+    Route::get('cash-book-ledger/download-pdf', [CashBookLedgerController::class, 'downloadPdf'])->name('cash-book-ledger.download.pdf');
     
     // General Ledger routes
     Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');
