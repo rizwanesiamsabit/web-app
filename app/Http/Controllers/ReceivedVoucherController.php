@@ -17,8 +17,10 @@ class ReceivedVoucherController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'fromTransaction', 'toTransaction'])
-            ->where('voucher_type', 'Received');
+        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'voucherType', 'voucherCategory', 'paymentSubType'])
+            ->whereHas('voucherType', function ($q) {
+                $q->where('name', 'Receipt');
+            });
 
         if ($request->search && is_string($request->search)) {
             $searchTerm = trim($request->search);
@@ -40,10 +42,8 @@ class ReceivedVoucherController extends Controller
             });
         }
 
-        if ($request->payment_type && $request->payment_type !== 'all' && in_array($request->payment_type, ['Cash', 'Bank', 'Mobile Bank', 'cash', 'bank', 'mobile bank'])) {
-            $query->whereHas('fromTransaction', function($q) use ($request) {
-                $q->where('payment_type', strtolower($request->payment_type));
-            });
+        if ($request->payment_method && $request->payment_method !== 'all' && in_array($request->payment_method, ['Cash', 'Bank', 'Mobile Bank'])) {
+            $query->where('payment_method', $request->payment_method);
         }
 
         if ($request->start_date && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->start_date)) {
@@ -62,21 +62,7 @@ class ReceivedVoucherController extends Controller
         $vouchers = $query->paginate($request->per_page ?? 10);
 
         $vouchers->getCollection()->transform(function ($voucher) {
-            $paymentType = $voucher->fromTransaction->payment_type ?? 'cash';
-            $voucher->payment_type = $paymentType === 'mobile bank' ? 'Mobile Bank' : ucfirst($paymentType);
-            $voucher->amount = $voucher->toTransaction->amount ?? 0;
-            
-            if ($voucher->fromTransaction) {
-                $voucher->bank_name = $voucher->fromTransaction->bank_name;
-                $voucher->branch_name = $voucher->fromTransaction->branch_name;
-                $voucher->account_no = $voucher->fromTransaction->account_number;
-                $voucher->bank_type = $voucher->fromTransaction->cheque_type;
-                $voucher->cheque_no = $voucher->fromTransaction->cheque_no;
-                $voucher->cheque_date = $voucher->fromTransaction->cheque_date;
-                $voucher->mobile_bank = $voucher->fromTransaction->mobile_bank_name;
-                $voucher->mobile_number = $voucher->fromTransaction->mobile_number;
-            }
-            
+            $voucher->payment_type = $voucher->payment_method;
             return $voucher;
         });
 
@@ -93,7 +79,7 @@ class ReceivedVoucherController extends Controller
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
             'shifts' => Shift::select('id', 'name')->where('status', '=', true)->get(),
-            'filters' => $request->only(['search', 'shift', 'payment_type', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
+            'filters' => $request->only(['search', 'shift', 'payment_method', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }
 
@@ -307,8 +293,10 @@ class ReceivedVoucherController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'fromTransaction', 'toTransaction'])
-            ->where('voucher_type', 'Received');
+        $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'voucherType'])
+            ->whereHas('voucherType', function ($q) {
+                $q->where('name', 'Receipt');
+            });
 
         if ($request->search && is_string($request->search)) {
             $searchTerm = trim($request->search);
@@ -324,10 +312,8 @@ class ReceivedVoucherController extends Controller
             }
         }
 
-        if ($request->payment_type && $request->payment_type !== 'all' && in_array($request->payment_type, ['Cash', 'Bank', 'Mobile Bank', 'cash', 'bank', 'mobile bank'])) {
-            $query->whereHas('fromTransaction', function($q) use ($request) {
-                $q->where('payment_type', strtolower($request->payment_type));
-            });
+        if ($request->payment_method && $request->payment_method !== 'all' && in_array($request->payment_method, ['Cash', 'Bank', 'Mobile Bank'])) {
+            $query->where('payment_method', $request->payment_method);
         }
 
         if ($request->start_date && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->start_date)) {

@@ -38,6 +38,7 @@ use App\Http\Controllers\ProductRateController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\PurchaseReportController;
 use App\Http\Controllers\CustomerSalesReportController;
+use App\Http\Controllers\PaymentSubTypeController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -319,6 +320,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Customer Sales Reports routes
     Route::get('customer-wise-sales-reports', [CustomerSalesReportController::class, 'index'])->name('customer-sales-reports.index');
     Route::get('customer-wise-sales-reports/download-pdf', [CustomerSalesReportController::class, 'downloadPdf'])->name('customer-sales-reports.download.pdf');
+    
+    // Payment Sub Type routes
+    Route::get('payment-sub-types', [PaymentSubTypeController::class, 'index'])->name('payment-sub-types.index');
+    Route::get('payment-sub-types/{paymentSubType}/edit', [PaymentSubTypeController::class, 'edit'])->name('payment-sub-types.edit');
+    Route::post('payment-sub-types', [PaymentSubTypeController::class, 'store'])->name('payment-sub-types.store');
+    Route::put('payment-sub-types/{paymentSubType}', [PaymentSubTypeController::class, 'update'])->name('payment-sub-types.update');
+    Route::delete('payment-sub-types/{paymentSubType}', [PaymentSubTypeController::class, 'destroy'])->name('payment-sub-types.destroy');
+    Route::delete('payment-sub-types/bulk/delete', [PaymentSubTypeController::class, 'bulkDelete'])->name('payment-sub-types.bulk.delete');
+    Route::get('payment-sub-types/download-pdf', [PaymentSubTypeController::class, 'downloadPdf'])->name('payment-sub-types.download.pdf');
 });
 
 require __DIR__.'/settings.php';

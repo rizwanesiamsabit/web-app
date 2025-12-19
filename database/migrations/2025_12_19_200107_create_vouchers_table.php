@@ -24,11 +24,11 @@ return new class extends Migration
             // Payment Method
             $table->enum('payment_method', ['Cash', 'Bank', 'Mobile Bank']);
             
-            // Reference Links
-            $table->unsignedBigInteger('reference_id')->nullable(); // Employee/Supplier/Customer ID
-            $table->string('reference_type')->nullable(); // 'employee', 'supplier', 'customer'
-            $table->foreignId('purchase_id')->nullable()->constrained('purchases'); // Purchase link
-            $table->foreignId('sale_id')->nullable()->constrained('sales'); // Sale link
+            // Reference Links - REMOVED (handled by payment_sub_type)
+            // $table->unsignedBigInteger('reference_id')->nullable();
+            // $table->string('reference_type')->nullable();
+            // $table->foreignId('purchase_id')->nullable()->constrained('purchases');
+            // $table->foreignId('sale_id')->nullable()->constrained('sales');
             
             // Account & Transaction
             $table->foreignId('from_account_id')->constrained('accounts');

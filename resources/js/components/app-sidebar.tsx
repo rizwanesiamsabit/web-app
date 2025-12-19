@@ -48,6 +48,7 @@ const mainNavItems = [
                 icon: Building,
             },
             { title: 'Shift', href: '/shifts', icon: Clock },
+            { title: 'Payment Sub Types', href: '/payment-sub-types', icon: CreditCard },
         ],
     },
     {

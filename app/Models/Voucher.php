@@ -14,10 +14,10 @@ class Voucher extends Model
         'voucher_category_id',
         'payment_sub_type_id',
         'payment_method',
-        'reference_id',
-        'reference_type',
-        'purchase_id',
-        'sale_id',
+        // 'reference_id', // REMOVED
+        // 'reference_type', // REMOVED  
+        // 'purchase_id', // REMOVED
+        // 'sale_id', // REMOVED
         'from_account_id',
         'to_account_id',
         'transaction_id',
@@ -62,21 +62,21 @@ class Voucher extends Model
         return $this->belongsTo(Account::class, 'to_account_id');
     }
 
-    public function purchase()
-    {
-        return $this->belongsTo(Purchase::class);
-    }
+    // REMOVED - handled by payment_sub_type
+    // public function purchase()
+    // {
+    //     return $this->belongsTo(Purchase::class);
+    // }
 
-    public function sale()
-    {
-        return $this->belongsTo(Sale::class);
-    }
+    // public function sale()
+    // {
+    //     return $this->belongsTo(Sale::class);
+    // }
 
-    // Polymorphic relationship for reference
-    public function reference()
-    {
-        return $this->morphTo('reference', 'reference_type', 'reference_id');
-    }
+    // public function reference()
+    // {
+    //     return $this->morphTo('reference', 'reference_type', 'reference_id');
+    // }
 
     // Get transactions by transaction_id
     public function transactions()

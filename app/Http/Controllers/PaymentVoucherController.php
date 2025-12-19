@@ -17,8 +17,10 @@ class PaymentVoucherController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Voucher::with(['fromAccount', 'toAccount', 'fromTransaction', 'toTransaction', 'shift'])
-            ->where('voucher_type', 'Payment');
+        $query = Voucher::with(['fromAccount', 'toAccount', 'shift', 'voucherType', 'voucherCategory', 'paymentSubType'])
+            ->whereHas('voucherType', function ($q) {
+                $q->where('name', 'Payment');
+            });
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -30,10 +32,8 @@ class PaymentVoucherController extends Controller
                     });
             });
         }
-        if ($request->payment_type && $request->payment_type !== 'all') {
-            $query->whereHas('fromTransaction', function ($q) use ($request) {
-                $q->where('payment_type', $request->payment_type);
-            });
+        if ($request->payment_method && $request->payment_method !== 'all') {
+            $query->where('payment_method', $request->payment_method);
         }
         if ($request->start_date) {
             $query->where('date', '>=', $request->start_date);
@@ -48,8 +48,7 @@ class PaymentVoucherController extends Controller
         $vouchers = $query->paginate($request->per_page ?? 10);
 
         $vouchers->getCollection()->transform(function ($voucher) {
-            $voucher->payment_type = $voucher->fromTransaction->payment_type ?? 'N/A';
-            $voucher->amount = $voucher->fromTransaction->amount ?? 0;
+            $voucher->payment_type = $voucher->payment_method;
             $voucher->from_account = $voucher->fromAccount;
             $voucher->to_account = $voucher->toAccount;
             $voucher->shift = $voucher->shift;
@@ -70,7 +69,7 @@ class PaymentVoucherController extends Controller
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
             'shifts' => $shifts,
-            'filters' => $request->only(['search', 'payment_type', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
+            'filters' => $request->only(['search', 'payment_method', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }
 
@@ -230,8 +229,10 @@ class PaymentVoucherController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $query = Voucher::with(['fromAccount', 'toAccount', 'fromTransaction', 'toTransaction', 'shift'])
-            ->where('voucher_type', 'Payment');
+        $query = Voucher::with(['fromAccount', 'toAccount', 'shift', 'voucherType'])
+            ->whereHas('voucherType', function ($q) {
+                $q->where('name', 'Payment');
+            });
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -244,10 +245,8 @@ class PaymentVoucherController extends Controller
             });
         }
 
-        if ($request->payment_type && $request->payment_type !== 'all') {
-            $query->whereHas('fromTransaction', function ($q) use ($request) {
-                $q->where('payment_type', $request->payment_type);
-            });
+        if ($request->payment_method && $request->payment_method !== 'all') {
+            $query->where('payment_method', $request->payment_method);
         }
 
         if ($request->start_date) {
