@@ -17,7 +17,7 @@ interface Employee {
     };
 }
 
-interface SalaryPayment {
+interface Payment {
     id: number;
     voucher_no: string;
     date: string;
@@ -27,7 +27,7 @@ interface SalaryPayment {
     description?: string;
 }
 
-interface AdvancePayment {
+interface Receipt {
     id: number;
     voucher_no: string;
     date: string;
@@ -37,8 +37,8 @@ interface AdvancePayment {
     description?: string;
 }
 
-interface PaginatedSalaryPayments {
-    data: SalaryPayment[];
+interface PaginatedPayments {
+    data: Payment[];
     current_page: number;
     last_page: number;
     per_page: number;
@@ -49,12 +49,12 @@ interface PaginatedSalaryPayments {
 
 interface EmployeeStatementProps {
     employee: Employee;
-    salaryPayments: PaginatedSalaryPayments;
-    advancePayments: AdvancePayment[];
+    payments: PaginatedPayments;
+    receipts: Receipt[];
     currentBalance: number;
 }
 
-export default function EmployeeStatement({ employee, salaryPayments, advancePayments, currentBalance }: EmployeeStatementProps) {
+export default function EmployeeStatement({ employee, payments, receipts, currentBalance }: EmployeeStatementProps) {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
@@ -185,7 +185,7 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardHeader>
                             <div className="flex justify-between items-center">
-                                <CardTitle className="dark:text-white">Salary Summary</CardTitle>
+                                <CardTitle className="dark:text-white">Payment Summary</CardTitle>
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -193,7 +193,7 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                                         const params = new URLSearchParams();
                                         if (startDate) params.append('start_date', startDate);
                                         if (endDate) params.append('end_date', endDate);
-                                        window.location.href = `/employees/${employee.id}/salary-pdf?${params.toString()}`;
+                                        window.location.href = `/employees/${employee.id}/payments-pdf?${params.toString()}`;
                                     }}
                                 >
                                     <Download className="h-4 w-4 mr-2" />
@@ -215,8 +215,8 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {salaryPayments && salaryPayments.data && salaryPayments.data.length > 0 ? (
-                                            salaryPayments.data.map((payment, index) => (
+                                        {payments && payments.data && payments.data.length > 0 ? (
+                                            payments.data.map((payment, index) => (
                                                 <tr key={payment.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
                                                     <td className="p-4 text-[13px] dark:text-white">{index + 1}</td>
                                                     <td className="p-4 text-[13px] dark:text-white">{payment.voucher_no}</td>
@@ -237,7 +237,7 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                                         ) : (
                                             <tr>
                                                 <td colSpan={6} className="p-8 text-center text-gray-500 dark:text-gray-400">
-                                                    No salary payments found
+                                                    No payments found
                                                 </td>
                                             </tr>
                                         )}
@@ -246,25 +246,25 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                             </div>
                             
                             {/* Pagination */}
-                            {salaryPayments && salaryPayments.last_page > 1 && (
+                            {payments && payments.last_page > 1 && (
                                 <div className="flex justify-between items-center mt-4 px-4 pb-4">
                                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                                        Showing {salaryPayments.from || 0} to {salaryPayments.to || 0} of {salaryPayments.total} results
+                                        Showing {payments.from || 0} to {payments.to || 0} of {payments.total} results
                                     </div>
                                     <div className="flex gap-1">
                                         <Button 
                                             variant="outline" 
                                             size="sm" 
                                             className="h-8 px-2"
-                                            disabled={salaryPayments.current_page === 1}
-                                            onClick={() => router.get(`/employees/${employee.id}/statement`, { page: salaryPayments.current_page - 1 })}
+                                            disabled={payments.current_page === 1}
+                                            onClick={() => router.get(`/employees/${employee.id}/statement`, { page: payments.current_page - 1 })}
                                         >
                                             Previous
                                         </Button>
-                                        {Array.from({ length: salaryPayments.last_page }, (_, i) => i + 1).map((page) => (
+                                        {Array.from({ length: payments.last_page }, (_, i) => i + 1).map((page) => (
                                             <Button 
                                                 key={page}
-                                                variant={page === salaryPayments.current_page ? "default" : "outline"} 
+                                                variant={page === payments.current_page ? "default" : "outline"} 
                                                 size="sm" 
                                                 className="h-8 px-3"
                                                 onClick={() => router.get(`/employees/${employee.id}/statement`, { page })}
@@ -276,8 +276,8 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                                             variant="outline" 
                                             size="sm" 
                                             className="h-8 px-2"
-                                            disabled={salaryPayments.current_page === salaryPayments.last_page}
-                                            onClick={() => router.get(`/employees/${employee.id}/statement`, { page: salaryPayments.current_page + 1 })}
+                                            disabled={payments.current_page === payments.last_page}
+                                            onClick={() => router.get(`/employees/${employee.id}/statement`, { page: payments.current_page + 1 })}
                                         >
                                             Next
                                         </Button>
@@ -290,7 +290,7 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardHeader>
                             <div className="flex justify-between items-center">
-                                <CardTitle className="dark:text-white">Advance Summary</CardTitle>
+                                <CardTitle className="dark:text-white">Receipt Summary</CardTitle>
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -298,7 +298,7 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                                         const params = new URLSearchParams();
                                         if (startDate) params.append('start_date', startDate);
                                         if (endDate) params.append('end_date', endDate);
-                                        window.location.href = `/employees/${employee.id}/advance-pdf?${params.toString()}`;
+                                        window.location.href = `/employees/${employee.id}/receipts-pdf?${params.toString()}`;
                                     }}
                                 >
                                     <Download className="h-4 w-4 mr-2" />
@@ -320,29 +320,29 @@ export default function EmployeeStatement({ employee, salaryPayments, advancePay
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {advancePayments && advancePayments.length > 0 ? (
-                                            advancePayments.map((payment, index) => (
-                                                <tr key={payment.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                        {receipts && receipts.length > 0 ? (
+                                            receipts.map((receipt, index) => (
+                                                <tr key={receipt.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
                                                     <td className="p-4 text-[13px] dark:text-white">{index + 1}</td>
-                                                    <td className="p-4 text-[13px] dark:text-white">{payment.voucher_no}</td>
+                                                    <td className="p-4 text-[13px] dark:text-white">{receipt.voucher_no}</td>
                                                     <td className="p-4 text-[13px] dark:text-white">
-                                                        {new Date(payment.date).toLocaleDateString('en-GB')}
+                                                        {new Date(receipt.date).toLocaleDateString('en-GB')}
                                                     </td>
                                                     <td className="p-4 text-[13px] dark:text-white font-semibold">
-                                                        {payment.amount.toLocaleString()}
+                                                        {receipt.amount.toLocaleString()}
                                                     </td>
                                                     <td className="p-4 text-[13px] dark:text-gray-300">
-                                                        {payment.payment_type || 'N/A'}
+                                                        {receipt.payment_type || 'N/A'}
                                                     </td>
                                                     <td className="p-4 text-[13px] dark:text-gray-300">
-                                                        {payment.sub_type || 'N/A'}
+                                                        {receipt.sub_type || 'N/A'}
                                                     </td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
                                                 <td colSpan={6} className="p-8 text-center text-gray-500 dark:text-gray-400">
-                                                    No advance payments found
+                                                    No receipts found
                                                 </td>
                                             </tr>
                                         )}

@@ -407,15 +407,14 @@ class EmployeeController extends Controller
     {
         $employee->load('account:id,name,ac_number');
 
-        // Get all salary payments for this employee
-        $salaryPayments = [];
+        // Get all payments TO employee (company pays employee)
+        $payments = [];
         if ($employee->account) {
             $query = DB::table('vouchers')
                 ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
                 ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
                 ->where('vouchers.to_account_id', $employee->account->id)
                 ->where('vouchers.voucher_type', 'Payment')
-                ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014'])
                 ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type', 'payment_sub_types.name as sub_type_name');
             
             if ($request->start_date) {
@@ -425,7 +424,7 @@ class EmployeeController extends Controller
                 $query->whereDate('vouchers.date', '<=', $request->end_date);
             }
             
-            $salaryPayments = $query->orderBy('vouchers.date', 'desc')
+            $payments = $query->orderBy('vouchers.date', 'desc')
                 ->paginate(10)
                 ->withQueryString()
                 ->through(function ($voucher) {
@@ -441,15 +440,14 @@ class EmployeeController extends Controller
                 });
         }
 
-        // Get all advance payments for this employee
-        $advancePayments = [];
+        // Get all receipts FROM employee (employee pays company)
+        $receipts = [];
         if ($employee->account) {
             $query = DB::table('vouchers')
                 ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
                 ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
-                ->where('vouchers.to_account_id', $employee->account->id)
-                ->where('vouchers.voucher_type', 'Payment')
-                ->whereIn('payment_sub_types.code', ['1002', '1003'])
+                ->where('vouchers.from_account_id', $employee->account->id)
+                ->where('vouchers.voucher_type', 'Receipt')
                 ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type', 'payment_sub_types.name as sub_type_name');
             
             if ($request->start_date) {
@@ -459,7 +457,7 @@ class EmployeeController extends Controller
                 $query->whereDate('vouchers.date', '<=', $request->end_date);
             }
             
-            $advancePayments = $query->orderBy('vouchers.date', 'desc')
+            $receipts = $query->orderBy('vouchers.date', 'desc')
                 ->get()
                 ->map(function ($voucher) {
                     return [
@@ -474,44 +472,20 @@ class EmployeeController extends Controller
                 });
         }
 
-        // Calculate current balance same as details page
-        $totalPaidSalary = DB::table('vouchers')
+        // Calculate current balance
+        $totalPayments = DB::table('vouchers')
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
-            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
             ->where('vouchers.to_account_id', $employee->account_id)
             ->where('vouchers.voucher_type', 'Payment')
-            ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014'])
             ->sum('transactions.amount');
             
-        $totalAdvanced = DB::table('vouchers')
+        $totalReceipts = DB::table('vouchers')
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
-            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
-            ->where('vouchers.to_account_id', $employee->account_id)
-            ->where('vouchers.voucher_type', 'Payment')
-            ->whereIn('payment_sub_types.code', ['1002', '1003'])
-            ->sum('transactions.amount');
-            
-        $totalAdvancedReturns = DB::table('vouchers')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
-            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
             ->where('vouchers.from_account_id', $employee->account_id)
             ->where('vouchers.voucher_type', 'Receipt')
-            ->whereIn('payment_sub_types.code', ['1002', '1003', '1008'])
             ->sum('transactions.amount');
             
-        $netAdvanced = $totalAdvanced - $totalAdvancedReturns;
-        
-        $monthsWorked = 0;
-        if ($employee->created_at) {
-            $createdDate = new \DateTime($employee->created_at);
-            $currentDate = new \DateTime();
-            $interval = $createdDate->diff($currentDate);
-            $monthsWorked = ($interval->y * 12) + $interval->m;
-        }
-        
-        $expectedSalary = ($employee->salary ?? 0) * $monthsWorked;
-        $salaryDue = $expectedSalary - $totalPaidSalary;
-        $currentBalance = $salaryDue - $netAdvanced;
+        $currentBalance = $totalPayments - $totalReceipts;
 
         return Inertia::render('Employee/EmployeeStatement', [
             'employee' => [
@@ -521,13 +495,13 @@ class EmployeeController extends Controller
                 'present_address' => $employee->present_address,
                 'account' => $employee->account,
             ],
-            'salaryPayments' => $salaryPayments,
-            'advancePayments' => $advancePayments,
+            'payments' => $payments,
+            'receipts' => $receipts,
             'currentBalance' => $currentBalance,
         ]);
     }
 
-    public function downloadSalaryPdf(Request $request, Employee $employee)
+    public function downloadPaymentsPdf(Request $request, Employee $employee)
     {
         $employee->load('account');
         
@@ -536,7 +510,6 @@ class EmployeeController extends Controller
             ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
             ->where('vouchers.to_account_id', $employee->account->id)
             ->where('vouchers.voucher_type', 'Payment')
-            ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014'])
             ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type', 'payment_sub_types.name as sub_type_name');
         
         if ($request->start_date) {
@@ -546,7 +519,7 @@ class EmployeeController extends Controller
             $query->whereDate('vouchers.date', '<=', $request->end_date);
         }
         
-        $salaryPayments = $query->orderBy('vouchers.date', 'desc')
+        $payments = $query->orderBy('vouchers.date', 'desc')
             ->get()
             ->map(function ($voucher) {
                 return [
@@ -561,20 +534,19 @@ class EmployeeController extends Controller
 
         $companySetting = CompanySetting::first();
 
-        $pdf = Pdf::loadView('pdf.employee-salary', compact('employee', 'salaryPayments', 'companySetting'));
-        return $pdf->stream('employee-salary.pdf');
+        $pdf = Pdf::loadView('pdf.employee-payments', compact('employee', 'payments', 'companySetting'));
+        return $pdf->stream('employee-payments.pdf');
     }
 
-    public function downloadAdvancePdf(Request $request, Employee $employee)
+    public function downloadReceiptsPdf(Request $request, Employee $employee)
     {
         $employee->load('account');
         
         $query = DB::table('vouchers')
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
-            ->where('vouchers.to_account_id', $employee->account->id)
-            ->where('vouchers.voucher_type', 'Payment')
-            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->where('vouchers.from_account_id', $employee->account->id)
+            ->where('vouchers.voucher_type', 'Receipt')
             ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type', 'payment_sub_types.name as sub_type_name');
         
         if ($request->start_date) {
@@ -584,7 +556,7 @@ class EmployeeController extends Controller
             $query->whereDate('vouchers.date', '<=', $request->end_date);
         }
         
-        $advancePayments = $query->orderBy('vouchers.date', 'desc')
+        $receipts = $query->orderBy('vouchers.date', 'desc')
             ->get()
             ->map(function ($voucher) {
                 return [
@@ -599,8 +571,8 @@ class EmployeeController extends Controller
 
         $companySetting = CompanySetting::first();
 
-        $pdf = Pdf::loadView('pdf.employee-advance', compact('employee', 'advancePayments', 'companySetting'));
-        return $pdf->stream('employee-advance.pdf');
+        $pdf = Pdf::loadView('pdf.employee-receipts', compact('employee', 'receipts', 'companySetting'));
+        return $pdf->stream('employee-receipts.pdf');
     }
 
     public function downloadPdf()

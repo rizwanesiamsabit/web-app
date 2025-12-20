@@ -214,8 +214,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
     Route::get('employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
     Route::get('employees/{employee}/statement', [EmployeeController::class, 'statement'])->name('employees.statement');
-    Route::get('employees/{employee}/salary-pdf', [EmployeeController::class, 'downloadSalaryPdf'])->name('employees.salary.pdf');
-    Route::get('employees/{employee}/advance-pdf', [EmployeeController::class, 'downloadAdvancePdf'])->name('employees.advance.pdf');
+    Route::get('employees/{employee}/payments-pdf', [EmployeeController::class, 'downloadPaymentsPdf'])->name('employees.payments.pdf');
+    Route::get('employees/{employee}/receipts-pdf', [EmployeeController::class, 'downloadReceiptsPdf'])->name('employees.receipts.pdf');
     Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
     Route::put('employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
@@ -224,15 +224,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Supplier routes
     Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::get('suppliers/download-pdf', [SupplierController::class, 'downloadPdf'])->name('suppliers.download.pdf');
     Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+    Route::delete('suppliers/bulk/delete', [SupplierController::class, 'bulkDelete'])->name('suppliers.bulk.delete');
     Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
     Route::get('suppliers/{supplier}/statement', [SupplierController::class, 'statement'])->name('suppliers.statement');
     Route::get('suppliers/{supplier}/purchases-pdf', [SupplierController::class, 'downloadPurchasesPdf'])->name('suppliers.purchases.pdf');
     Route::get('suppliers/{supplier}/payments-pdf', [SupplierController::class, 'downloadPaymentsPdf'])->name('suppliers.payments.pdf');
     Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
     Route::delete('suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
-    Route::delete('suppliers/bulk/delete', [SupplierController::class, 'bulkDelete'])->name('suppliers.bulk.delete');
-    Route::get('suppliers/download-pdf', [SupplierController::class, 'downloadPdf'])->name('suppliers.download.pdf');
     
     // Payment Voucher routes
     Route::get('vouchers/payment', [PaymentVoucherController::class, 'index'])->name('vouchers.payment.index');
