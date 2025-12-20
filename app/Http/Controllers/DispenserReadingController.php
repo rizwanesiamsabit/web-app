@@ -11,6 +11,8 @@ use App\Models\Vehicle;
 use App\Models\Customer;
 use App\Models\IsShiftClose;
 use App\Models\DailyReading;
+use App\Models\VoucherCategory;
+use App\Models\PaymentSubType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -93,6 +95,8 @@ class DispenserReadingController extends Controller
 
         $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
         $employees = Employee::select('id', 'employee_name')->get();
+        $voucherCategories = VoucherCategory::where('status', true)->get();
+        $paymentSubTypes = PaymentSubType::with('voucherCategory')->where('status', true)->get();
 
         return Inertia::render('Dispensers/DispensersReading', [
             'dispenserReading' => $dispenserReading,
@@ -107,6 +111,8 @@ class DispenserReadingController extends Controller
             'employees' => $employees,
             'uniqueCustomers' => $uniqueCustomers,
             'uniqueVehicles' => $uniqueVehicles,
+            'voucherCategories' => $voucherCategories,
+            'paymentSubTypes' => $paymentSubTypes,
         ]);
     }
 

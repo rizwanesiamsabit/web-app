@@ -106,6 +106,17 @@ interface Employee {
     employee_name: string;
 }
 
+interface VoucherCategory {
+    id: number;
+    name: string;
+}
+
+interface PaymentSubType {
+    id: number;
+    name: string;
+    voucher_category_id: number;
+}
+
 interface DispenserReadingProps {
     dispenserReading: DispenserReading[];
     shifts: Shift[];
@@ -119,6 +130,8 @@ interface DispenserReadingProps {
     employees?: Employee[];
     uniqueCustomers?: string[];
     uniqueVehicles?: string[];
+    voucherCategories?: VoucherCategory[];
+    paymentSubTypes?: PaymentSubType[];
 }
 
 export default function DispenserReading({
@@ -134,6 +147,8 @@ export default function DispenserReading({
     employees = [],
     uniqueCustomers = [],
     uniqueVehicles = [],
+    voucherCategories = [],
+    paymentSubTypes = [],
 }: DispenserReadingProps) {
     const [productWiseData, setProductWiseData] = useState<ProductWiseData>({});
     const [totalSalesSum, setTotalSalesSum] = useState(0);
@@ -193,10 +208,12 @@ export default function DispenserReading({
     const [cashReceiveData, setCashReceiveData] = useState({
         date: '',
         shift_id: '',
+        voucher_category_id: '',
+        payment_sub_type_id: '',
         from_account_id: '',
         to_account_id: '',
         amount: '',
-        payment_type: 'Cash',
+        payment_method: 'Cash',
         bank_type: '',
         cheque_no: '',
         cheque_date: '',
@@ -205,6 +222,7 @@ export default function DispenserReading({
         account_no: '',
         mobile_bank: '',
         mobile_number: '',
+        description: '',
         remarks: '',
     });
     const [cashReceiveProcessing, setCashReceiveProcessing] = useState(false);
@@ -2533,10 +2551,12 @@ export default function DispenserReading({
                         setCashReceiveData({
                             date: '',
                             shift_id: '',
+                            voucher_category_id: '',
+                            payment_sub_type_id: '',
                             from_account_id: '',
                             to_account_id: '',
                             amount: '',
-                            payment_type: 'Cash',
+                            payment_method: 'Cash',
                             bank_type: '',
                             cheque_no: '',
                             cheque_date: '',
@@ -2545,6 +2565,7 @@ export default function DispenserReading({
                             account_no: '',
                             mobile_bank: '',
                             mobile_number: '',
+                            description: '',
                             remarks: '',
                         });
                     }}
@@ -2558,10 +2579,12 @@ export default function DispenserReading({
                                 setCashReceiveData({
                                     date: '',
                                     shift_id: '',
+                                    voucher_category_id: '',
+                                    payment_sub_type_id: '',
                                     from_account_id: '',
                                     to_account_id: '',
                                     amount: '',
-                                    payment_type: 'Cash',
+                                    payment_method: 'Cash',
                                     bank_type: '',
                                     cheque_no: '',
                                     cheque_date: '',
@@ -2570,6 +2593,7 @@ export default function DispenserReading({
                                     account_no: '',
                                     mobile_bank: '',
                                     mobile_number: '',
+                                    description: '',
                                     remarks: '',
                                 });
                                 setCashReceiveProcessing(false);
@@ -2640,19 +2664,65 @@ export default function DispenserReading({
                         </div>
                     </div>
                     <div>
+                        <Label className="dark:text-gray-200">Category</Label>
+                        <div className="mt-2 flex flex-wrap gap-4">
+                            {voucherCategories.map((category) => (
+                                <label key={category.id} className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        name="voucher_category_id"
+                                        value={category.id.toString()}
+                                        checked={cashReceiveData.voucher_category_id === category.id.toString()}
+                                        onChange={(e) => {
+                                            setCashReceiveData((prev) => ({
+                                                ...prev,
+                                                voucher_category_id: e.target.value,
+                                                payment_sub_type_id: '',
+                                            }));
+                                        }}
+                                        className="rounded border-gray-300 dark:border-gray-600"
+                                    />
+                                    <span className="text-sm dark:text-gray-300">{category.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="payment_sub_type_id" className="dark:text-gray-200">Payment Sub Type</Label>
+                        <Select 
+                            value={cashReceiveData.payment_sub_type_id} 
+                            onValueChange={(value) => setCashReceiveData((prev) => ({ ...prev, payment_sub_type_id: value }))}
+                            disabled={!cashReceiveData.voucher_category_id}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Choose sub type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {paymentSubTypes.filter(subType => 
+                                    subType.voucher_category_id.toString() === cashReceiveData.voucher_category_id
+                                ).map((subType) => (
+                                    <SelectItem key={subType.id} value={subType.id.toString()}>
+                                        {subType.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
                         <Label
-                            htmlFor="payment_type"
+                            htmlFor="payment_method"
                             className="dark:text-gray-200"
                         >
-                            Payment Type
+                            Payment Method
                         </Label>
                         <Select
-                            value={cashReceiveData.payment_type}
+                            value={cashReceiveData.payment_method}
                             onValueChange={(value) =>
                                 setCashReceiveData((prev) => ({
                                     ...prev,
-                                    payment_type: value,
+                                    payment_method: value,
                                     from_account_id: '',
+                                    to_account_id: '',
                                 }))
                             }
                         >
@@ -2671,22 +2741,22 @@ export default function DispenserReading({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label
-                                htmlFor="to_account_id"
+                                htmlFor="from_account_id"
                                 className="dark:text-gray-200"
                             >
                                 Received From
                             </Label>
                             <Select
-                                value={cashReceiveData.to_account_id}
+                                value={cashReceiveData.from_account_id}
                                 onValueChange={(value) =>
                                     setCashReceiveData((prev) => ({
                                         ...prev,
-                                        to_account_id: value,
+                                        from_account_id: value,
                                     }))
                                 }
                             >
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Choose received from account" />
+                                    <SelectValue placeholder="Choose source account" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {accounts.map((account) => (
@@ -2702,17 +2772,17 @@ export default function DispenserReading({
                         </div>
                         <div>
                             <Label
-                                htmlFor="from_account_id"
+                                htmlFor="to_account_id"
                                 className="dark:text-gray-200"
                             >
-                                To Account
+                                Received To
                             </Label>
                             <Select
-                                value={cashReceiveData.from_account_id}
+                                value={cashReceiveData.to_account_id}
                                 onValueChange={(value) =>
                                     setCashReceiveData((prev) => ({
                                         ...prev,
-                                        from_account_id: value,
+                                        to_account_id: value,
                                     }))
                                 }
                             >
@@ -2720,16 +2790,16 @@ export default function DispenserReading({
                                     <SelectValue placeholder="Choose destination account" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {(cashReceiveData.payment_type === 'Cash'
+                                    {(cashReceiveData.payment_method === 'Cash'
                                         ? groupedAccounts['Cash in hand'] ||
                                         groupedAccounts['Cash'] ||
                                         []
-                                        : cashReceiveData.payment_type ===
+                                        : cashReceiveData.payment_method ===
                                             'Bank'
                                             ? groupedAccounts['Bank Account'] ||
                                             groupedAccounts['Bank'] ||
                                             []
-                                            : cashReceiveData.payment_type ===
+                                            : cashReceiveData.payment_method ===
                                                 'Mobile Bank'
                                                 ? groupedAccounts['Mobile Bank'] ||
                                                 []
@@ -2746,7 +2816,7 @@ export default function DispenserReading({
                             </Select>
                         </div>
                     </div>
-                    {cashReceiveData.payment_type === 'Bank' && (
+                    {cashReceiveData.payment_method === 'Bank' && (
                         <div className="space-y-4 border-t pt-4">
                             <h4 className="font-medium dark:text-white">
                                 Bank Payment Details
@@ -2849,7 +2919,7 @@ export default function DispenserReading({
                             )}
                         </div>
                     )}
-                    {cashReceiveData.payment_type === 'Mobile Bank' && (
+                    {cashReceiveData.payment_method === 'Mobile Bank' && (
                         <div className="space-y-4 border-t pt-4">
                             <h4 className="font-medium dark:text-white">
                                 Mobile Bank Details
@@ -2923,6 +2993,21 @@ export default function DispenserReading({
                                 setCashReceiveData((prev) => ({
                                     ...prev,
                                     amount: e.target.value,
+                                }))
+                            }
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="description" className="dark:text-gray-200">Description</Label>
+                        <Input
+                            id="description"
+                            placeholder="Enter description (optional)"
+                            value={cashReceiveData.description}
+                            onChange={(e) =>
+                                setCashReceiveData((prev) => ({
+                                    ...prev,
+                                    description: e.target.value,
                                 }))
                             }
                             className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
