@@ -42,9 +42,12 @@ interface Customer {
 
 interface RecentPayment {
     id: number;
+    voucher_no: string;
     date: string;
     amount: number;
-    remarks?: string;
+    type: string;
+    sub_type: string;
+    status: string;
 }
 
 interface RecentSale {
@@ -337,35 +340,39 @@ export default function CustomerDetails({ customer, recentPayments, recentSales,
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b dark:border-gray-700">
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">SL</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Voucher No</th>
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Date</th>
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Amount</th>
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Type</th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {recentPayments && recentPayments.length > 0 ? (
-                                            recentPayments.map((payment) => (
+                                            recentPayments.map((payment, index) => (
                                                 <tr key={payment.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                    <td className="p-4 text-[13px] dark:text-white">{index + 1}</td>
+                                                    <td className="p-4 text-[13px] dark:text-white">{payment.voucher_no}</td>
                                                     <td className="p-4 text-[13px] dark:text-white">
                                                         {new Date(payment.date).toLocaleDateString('en-GB')}
                                                     </td>
                                                     <td className="p-4 text-[13px] dark:text-white font-semibold">
                                                         {payment.amount.toLocaleString()}
                                                     </td>
-                                                    <td className="p-4 text-[13px] dark:text-gray-300">
-                                                        Received
-                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">{payment.sub_type}</td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">{payment.type}</td>
                                                     <td className="p-4">
                                                         <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                                            Completed
+                                                            {payment.status}
                                                         </span>
                                                     </td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan={4} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                                <td colSpan={7} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                     No recent payments found
                                                 </td>
                                             </tr>

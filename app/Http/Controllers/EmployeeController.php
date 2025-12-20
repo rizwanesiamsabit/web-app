@@ -403,6 +403,206 @@ class EmployeeController extends Controller
         return redirect()->back()->with('success', 'Selected employees deleted successfully.');
     }
 
+    public function statement(Request $request, Employee $employee)
+    {
+        $employee->load('account:id,name,ac_number');
+
+        // Get all salary payments for this employee
+        $salaryPayments = [];
+        if ($employee->account) {
+            $query = DB::table('vouchers')
+                ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+                ->where('vouchers.to_account_id', $employee->account->id)
+                ->where('vouchers.voucher_type', 'Payment')
+                ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014'])
+                ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type', 'payment_sub_types.name as sub_type_name');
+            
+            if ($request->start_date) {
+                $query->whereDate('vouchers.date', '>=', $request->start_date);
+            }
+            if ($request->end_date) {
+                $query->whereDate('vouchers.date', '<=', $request->end_date);
+            }
+            
+            $salaryPayments = $query->orderBy('vouchers.date', 'desc')
+                ->paginate(10)
+                ->withQueryString()
+                ->through(function ($voucher) {
+                    return [
+                        'id' => $voucher->id,
+                        'voucher_no' => $voucher->voucher_no,
+                        'date' => $voucher->date,
+                        'amount' => $voucher->amount,
+                        'payment_type' => $voucher->payment_type,
+                        'sub_type' => $voucher->sub_type_name,
+                        'description' => $voucher->description,
+                    ];
+                });
+        }
+
+        // Get all advance payments for this employee
+        $advancePayments = [];
+        if ($employee->account) {
+            $query = DB::table('vouchers')
+                ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+                ->where('vouchers.to_account_id', $employee->account->id)
+                ->where('vouchers.voucher_type', 'Payment')
+                ->whereIn('payment_sub_types.code', ['1002', '1003'])
+                ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type', 'payment_sub_types.name as sub_type_name');
+            
+            if ($request->start_date) {
+                $query->whereDate('vouchers.date', '>=', $request->start_date);
+            }
+            if ($request->end_date) {
+                $query->whereDate('vouchers.date', '<=', $request->end_date);
+            }
+            
+            $advancePayments = $query->orderBy('vouchers.date', 'desc')
+                ->get()
+                ->map(function ($voucher) {
+                    return [
+                        'id' => $voucher->id,
+                        'voucher_no' => $voucher->voucher_no,
+                        'date' => $voucher->date,
+                        'amount' => $voucher->amount,
+                        'payment_type' => $voucher->payment_type,
+                        'sub_type' => $voucher->sub_type_name,
+                        'description' => $voucher->description,
+                    ];
+                });
+        }
+
+        // Calculate current balance same as details page
+        $totalPaidSalary = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014'])
+            ->sum('transactions.amount');
+            
+        $totalAdvanced = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->sum('transactions.amount');
+            
+        $totalAdvancedReturns = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.from_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Receipt')
+            ->whereIn('payment_sub_types.code', ['1002', '1003', '1008'])
+            ->sum('transactions.amount');
+            
+        $netAdvanced = $totalAdvanced - $totalAdvancedReturns;
+        
+        $monthsWorked = 0;
+        if ($employee->created_at) {
+            $createdDate = new \DateTime($employee->created_at);
+            $currentDate = new \DateTime();
+            $interval = $createdDate->diff($currentDate);
+            $monthsWorked = ($interval->y * 12) + $interval->m;
+        }
+        
+        $expectedSalary = ($employee->salary ?? 0) * $monthsWorked;
+        $salaryDue = $expectedSalary - $totalPaidSalary;
+        $currentBalance = $salaryDue - $netAdvanced;
+
+        return Inertia::render('Employee/EmployeeStatement', [
+            'employee' => [
+                'id' => $employee->id,
+                'employee_name' => $employee->employee_name,
+                'mobile' => $employee->mobile,
+                'present_address' => $employee->present_address,
+                'account' => $employee->account,
+            ],
+            'salaryPayments' => $salaryPayments,
+            'advancePayments' => $advancePayments,
+            'currentBalance' => $currentBalance,
+        ]);
+    }
+
+    public function downloadSalaryPdf(Request $request, Employee $employee)
+    {
+        $employee->load('account');
+        
+        $query = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account->id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014'])
+            ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type', 'payment_sub_types.name as sub_type_name');
+        
+        if ($request->start_date) {
+            $query->whereDate('vouchers.date', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $query->whereDate('vouchers.date', '<=', $request->end_date);
+        }
+        
+        $salaryPayments = $query->orderBy('vouchers.date', 'desc')
+            ->get()
+            ->map(function ($voucher) {
+                return [
+                    'voucher_no' => $voucher->voucher_no,
+                    'date' => $voucher->date,
+                    'amount' => $voucher->amount,
+                    'payment_type' => $voucher->payment_type,
+                    'sub_type' => $voucher->sub_type_name,
+                    'description' => $voucher->description,
+                ];
+            });
+
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.employee-salary', compact('employee', 'salaryPayments', 'companySetting'));
+        return $pdf->stream('employee-salary.pdf');
+    }
+
+    public function downloadAdvancePdf(Request $request, Employee $employee)
+    {
+        $employee->load('account');
+        
+        $query = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account->id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type', 'payment_sub_types.name as sub_type_name');
+        
+        if ($request->start_date) {
+            $query->whereDate('vouchers.date', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $query->whereDate('vouchers.date', '<=', $request->end_date);
+        }
+        
+        $advancePayments = $query->orderBy('vouchers.date', 'desc')
+            ->get()
+            ->map(function ($voucher) {
+                return [
+                    'voucher_no' => $voucher->voucher_no,
+                    'date' => $voucher->date,
+                    'amount' => $voucher->amount,
+                    'payment_type' => $voucher->payment_type,
+                    'sub_type' => $voucher->sub_type_name,
+                    'description' => $voucher->description,
+                ];
+            });
+
+        $companySetting = CompanySetting::first();
+
+        $pdf = Pdf::loadView('pdf.employee-advance', compact('employee', 'advancePayments', 'companySetting'));
+        return $pdf->stream('employee-advance.pdf');
+    }
+
     public function downloadPdf()
     {
         $employees = Employee::with('empType', 'department', 'designation')->get();

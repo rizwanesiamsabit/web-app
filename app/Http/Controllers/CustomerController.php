@@ -53,7 +53,7 @@ class CustomerController extends Controller
             if ($customer->account) {
                 $totalPaid = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
                     ->where('vouchers.voucher_type', 'Receipt')
-                    ->where('vouchers.to_account_id', $customer->account->id)
+                    ->where('vouchers.from_account_id', $customer->account->id)
                     ->sum('transactions.amount');
             }
 
@@ -195,20 +195,22 @@ class CustomerController extends Controller
         $recentPayments = [];
         if ($customer->account) {
             $recentPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
                 ->where('vouchers.voucher_type', 'Receipt')
-                ->where('vouchers.to_account_id', $customer->account->id)
+                ->where('vouchers.from_account_id', $customer->account->id)
+                ->select(
+                    'vouchers.id',
+                    'vouchers.voucher_no',
+                    'vouchers.date',
+                    'transactions.amount',
+                    'transactions.payment_type as type',
+                    'payment_sub_types.name as sub_type',
+                    'vouchers.description',
+                    \DB::raw("'Received' as status")
+                )
                 ->orderBy('vouchers.date', 'desc')
                 ->limit(5)
-                ->select('vouchers.*', 'transactions.amount')
-                ->get()
-                ->map(function ($voucher) {
-                    return [
-                        'id' => $voucher->id,
-                        'date' => $voucher->date,
-                        'amount' => $voucher->amount,
-                        'remarks' => $voucher->remarks,
-                    ];
-                });
+                ->get();
         }
 
         $recentSales = CreditSale::where('customer_id', $customer->id)
@@ -240,11 +242,11 @@ class CustomerController extends Controller
         if ($customer->account) {
             $totalPaid = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
                 ->where('vouchers.voucher_type', 'Receipt')
-                ->where('vouchers.to_account_id', $customer->account->id)
+                ->where('vouchers.from_account_id', $customer->account->id)
                 ->sum('transactions.amount');
 
             $paymentCount = Voucher::where('voucher_type', 'Receipt')
-                ->where('to_account_id', $customer->account->id)
+                ->where('from_account_id', $customer->account->id)
                 ->count();
         }
 
@@ -306,7 +308,7 @@ class CustomerController extends Controller
         if ($customer->account) {
             $payments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
                 ->where('vouchers.voucher_type', 'Receipt')
-                ->where('vouchers.to_account_id', $customer->account->id)
+                ->where('vouchers.from_account_id', $customer->account->id)
                 ->orderBy('vouchers.date', 'desc')
                 ->select('vouchers.*', 'transactions.amount')
                 ->get()
@@ -355,7 +357,7 @@ class CustomerController extends Controller
         if ($customer->account) {
             $query = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
                 ->where('vouchers.voucher_type', 'Receipt')
-                ->where('vouchers.to_account_id', $customer->account->id)
+                ->where('vouchers.from_account_id', $customer->account->id)
                 ->select('vouchers.*', 'transactions.amount');
 
             if ($request->start_date) {
@@ -499,7 +501,7 @@ class CustomerController extends Controller
             if ($customer->account) {
                 $totalPaid = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
                     ->where('vouchers.voucher_type', 'Receipt')
-                    ->where('vouchers.to_account_id', $customer->account->id)
+                    ->where('vouchers.from_account_id', $customer->account->id)
                     ->sum('transactions.amount');
             }
 
@@ -550,7 +552,7 @@ class CustomerController extends Controller
 
         $query = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->where('vouchers.voucher_type', 'Receipt')
-            ->where('vouchers.to_account_id', $customer->account->id)
+            ->where('vouchers.from_account_id', $customer->account->id)
             ->select('vouchers.*', 'transactions.amount', 'transactions.payment_type');
 
         if ($request->start_date) {

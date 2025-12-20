@@ -93,17 +93,21 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface RecentSalaryPayment {
     id: number;
+    voucher_no: string;
     date: string;
     amount: number;
     type: string;
+    sub_type: string;
     status: string;
 }
 
 interface RecentAdvancedPayment {
     id: number;
+    voucher_no: string;
     date: string;
     amount: number;
     type: string;
+    sub_type: string;
     status: string;
 }
 
@@ -178,6 +182,13 @@ export default function ShowEmployee({
                         </p>
                     </div>
                     <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => router.get(`/employees/${employee.id}/statement`)}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Statement
+                        </Button>
                         <Button
                             onClick={() => router.get(`/employees/${employee.id}/edit`)}
                         >

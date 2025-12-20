@@ -34,7 +34,7 @@ class CustomerLedgerSummaryController extends Controller
         }
 
         $debitQuery = DB::table('vouchers')
-            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
+            ->join('accounts', 'vouchers.from_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
             ->join('voucher_categories', 'vouchers.voucher_category_id', '=', 'voucher_categories.id')
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
@@ -100,7 +100,7 @@ class CustomerLedgerSummaryController extends Controller
         }
 
         $debitQuery = DB::table('vouchers')
-            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
+            ->join('accounts', 'vouchers.from_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
             ->join('voucher_categories', 'vouchers.voucher_category_id', '=', 'voucher_categories.id')
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')

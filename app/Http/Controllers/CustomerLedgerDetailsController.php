@@ -38,7 +38,7 @@ class CustomerLedgerDetailsController extends Controller
             );
 
         $debitTransactions = DB::table('vouchers')
-            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
+            ->join('accounts', 'vouchers.from_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
             ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
@@ -115,7 +115,7 @@ class CustomerLedgerDetailsController extends Controller
             );
 
         $debitTransactions = DB::table('vouchers')
-            ->join('accounts', 'vouchers.to_account_id', '=', 'accounts.id')
+            ->join('accounts', 'vouchers.from_account_id', '=', 'accounts.id')
             ->join('customers', 'accounts.id', '=', 'customers.account_id')
             ->join('shifts', 'vouchers.shift_id', '=', 'shifts.id')
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
