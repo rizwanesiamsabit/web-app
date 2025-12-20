@@ -89,6 +89,7 @@ interface PaymentVoucherProps {
     accounts: Account[];
     groupedAccounts: Record<string, Account[]>;
     shifts: Shift[];
+    closedShifts: Array<{close_date: string; shift_id: number}>;
     voucherCategories: VoucherCategory[];
     paymentSubTypes: PaymentSubType[];
     filters: {
@@ -102,7 +103,7 @@ interface PaymentVoucherProps {
     };
 }
 
-export default function PaymentVoucher({ vouchers, accounts = [], groupedAccounts = {}, shifts = [], voucherCategories = [], paymentSubTypes = [], filters }: PaymentVoucherProps) {
+export default function PaymentVoucher({ vouchers, accounts = [], groupedAccounts = {}, shifts = [], closedShifts = [], voucherCategories = [], paymentSubTypes = [], filters }: PaymentVoucherProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState<PaymentVoucher | null>(null);
     const [deletingVoucher, setDeletingVoucher] = useState<PaymentVoucher | null>(null);
@@ -150,6 +151,17 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
             subType.voucher_category_id.toString() === data.voucher_category_id
         );
     }, [paymentSubTypes, data.voucher_category_id]);
+
+    const getAvailableShifts = useCallback(() => {
+        if (!data.date) return [];
+        
+        const selectedDate = data.date;
+        const closedShiftIds = closedShifts
+            .filter(cs => cs.close_date === selectedDate)
+            .map(cs => cs.shift_id);
+        
+        return shifts.filter(shift => !closedShiftIds.includes(shift.id));
+    }, [data.date, shifts, closedShifts]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -574,7 +586,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                                     <SelectValue placeholder="Choose shift" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {shifts.map((shift) => (
+                                    {getAvailableShifts().map((shift) => (
                                         <SelectItem key={shift.id} value={shift.id.toString()}>
                                             {shift.name}
                                         </SelectItem>
@@ -861,7 +873,7 @@ export default function PaymentVoucher({ vouchers, accounts = [], groupedAccount
                                     <SelectValue placeholder="Choose shift" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {shifts.map((shift) => (
+                                    {getAvailableShifts().map((shift) => (
                                         <SelectItem key={shift.id} value={shift.id.toString()}>
                                             {shift.name}
                                         </SelectItem>

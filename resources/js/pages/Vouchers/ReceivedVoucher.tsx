@@ -28,7 +28,7 @@ import {
     Trash2,
     X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface ReceivedVoucher {
     id: number;
@@ -91,6 +91,7 @@ interface ReceivedVoucherProps {
     accounts?: Account[];
     groupedAccounts?: Record<string, Account[]>;
     shifts?: Shift[];
+    closedShifts?: Array<{close_date: string; shift_id: number}>;
     voucherCategories?: VoucherCategory[];
     paymentSubTypes?: PaymentSubType[];
     filters?: {
@@ -117,7 +118,7 @@ export default function ReceivedVoucher({
     },
     accounts = [],
     groupedAccounts = {},
-    shifts = [],
+    shifts = [], closedShifts = [],
     voucherCategories = [],
     paymentSubTypes = [],
     filters = {},
@@ -172,6 +173,17 @@ export default function ReceivedVoucher({
                     : 'Other';
         return groupedAccounts[groupName] || [];
     };
+
+    const getAvailableShifts = useCallback(() => {
+        if (!data.date) return [];
+        
+        const selectedDate = data.date;
+        const closedShiftIds = closedShifts
+            .filter(cs => cs.close_date === selectedDate)
+            .map(cs => cs.shift_id);
+        
+        return shifts.filter(shift => !closedShiftIds.includes(shift.id));
+    }, [data.date, shifts, closedShifts]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -710,7 +722,7 @@ export default function ReceivedVoucher({
                                     <SelectValue placeholder="Choose shift" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {shifts.map((shift) => (
+                                    {getAvailableShifts().map((shift) => (
                                         <SelectItem
                                             key={shift.id}
                                             value={shift.id.toString()}
@@ -1094,3 +1106,4 @@ export default function ReceivedVoucher({
         </AppLayout>
     );
 }
+

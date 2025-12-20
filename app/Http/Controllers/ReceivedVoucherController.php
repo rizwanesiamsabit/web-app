@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Models\CompanySetting;
 use App\Models\VoucherCategory;
 use App\Models\PaymentSubType;
+use App\Models\IsShiftClose;
 use App\Helpers\TransactionHelper;
 use App\Helpers\VoucherHelper;
 use Illuminate\Http\Request;
@@ -76,6 +77,13 @@ class ReceivedVoucherController extends Controller
             ->groupBy(function ($account) {
                 return $account->group ? $account->group->name : 'Other';
             });
+        $shifts = Shift::select('id', 'name')->where('status', '=', true)->get();
+        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get()->map(function($item) {
+            return [
+                'close_date' => $item->close_date->format('Y-m-d'),
+                'shift_id' => $item->shift_id
+            ];
+        });
         $voucherCategories = VoucherCategory::where('status', true)->get();
         $paymentSubTypes = PaymentSubType::with('voucherCategory')->where('status', true)->get();
 
@@ -83,7 +91,8 @@ class ReceivedVoucherController extends Controller
             'vouchers' => $vouchers,
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
-            'shifts' => Shift::select('id', 'name')->where('status', '=', true)->get(),
+            'shifts' => $shifts,
+            'closedShifts' => $closedShifts,
             'voucherCategories' => $voucherCategories,
             'paymentSubTypes' => $paymentSubTypes,
             'filters' => $request->only(['search', 'shift', 'payment_method', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
