@@ -124,80 +124,85 @@ class DispenserReadingController extends Controller
 
     public function getShiftClosingData($date, $shiftId)
     {
-        // Oil category (1001) sales
-        $creditSales = DB::table('credit_sales')
-            ->where('sale_date', $date)
-            ->where('shift_id', $shiftId)
-            ->where('category_code', '1001')
-            ->sum('total_amount');
+        try {
+            // Oil category (1001) sales
+            $creditSales = DB::table('credit_sales')
+                ->where('sale_date', $date)
+                ->where('shift_id', $shiftId)
+                ->where('category_code', '1001')
+                ->sum('total_amount');
 
-        $bankSales = DB::table('sales')
-            ->join('transactions', 'sales.transaction_id', '=', 'transactions.id')
-            ->where('sale_date', $date)
-            ->where('shift_id', $shiftId)
-            ->where('sales.category_code', '1001')
-            ->whereIn('transactions.payment_type', ['bank', 'mobile bank'])
-            ->sum('sales.total_amount');
+            $bankSales = DB::table('sales')
+                ->join('transactions', 'sales.transaction_id', '=', 'transactions.id')
+                ->where('sale_date', $date)
+                ->where('shift_id', $shiftId)
+                ->where('sales.category_code', '1001')
+                ->whereIn('transactions.payment_type', ['bank', 'mobile bank'])
+                ->sum('sales.total_amount');
 
-        // Other products (not 1001) sales
-        $creditSalesOther = DB::table('credit_sales')
-            ->where('sale_date', $date)
-            ->where('shift_id', $shiftId)
-            ->where('category_code', '!=', '1001')
-            ->sum('total_amount');
+            // Other products (not 1001) sales
+            $creditSalesOther = DB::table('credit_sales')
+                ->where('sale_date', $date)
+                ->where('shift_id', $shiftId)
+                ->where('category_code', '!=', '1001')
+                ->sum('total_amount');
 
-        $bankSalesOther = DB::table('sales')
-            ->join('transactions', 'sales.transaction_id', '=', 'transactions.id')
-            ->where('sale_date', $date)
-            ->where('shift_id', $shiftId)
-            ->where('sales.category_code', '!=', '1001')
-            ->whereIn('transactions.payment_type', ['bank', 'mobile bank'])
-            ->sum('sales.total_amount');
+            $bankSalesOther = DB::table('sales')
+                ->join('transactions', 'sales.transaction_id', '=', 'transactions.id')
+                ->where('sale_date', $date)
+                ->where('shift_id', $shiftId)
+                ->where('sales.category_code', '!=', '1001')
+                ->whereIn('transactions.payment_type', ['bank', 'mobile bank'])
+                ->sum('sales.total_amount');
 
-        $cashReceive = DB::table('vouchers')
-            ->where('date', $date)
-            ->where('shift_id', $shiftId)
-            ->where('voucher_type', 'Received')
-            ->join('transactions', 'vouchers.to_transaction_id', '=', 'transactions.id')
-            ->sum('transactions.amount');
+            $cashReceive = DB::table('vouchers')
+                ->where('date', $date)
+                ->where('shift_id', $shiftId)
+                ->where('voucher_type', 'Receipt')
+                ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->sum('transactions.amount');
 
-        $cashPayment = DB::table('vouchers')
-            ->where('date', $date)
-            ->where('shift_id', $shiftId)
-            ->where('voucher_type', 'Payment')
-            ->join('transactions', 'vouchers.from_transaction_id', '=', 'transactions.id')
-            ->sum('transactions.amount');
+            $cashPayment = DB::table('vouchers')
+                ->where('date', $date)
+                ->where('shift_id', $shiftId)
+                ->where('voucher_type', 'Payment')
+                ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->sum('transactions.amount');
 
-        $officePayment = DB::table('office_payments')
-            ->where('date', $date)
-            ->where('shift_id', $shiftId)
-            ->join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
-            ->sum('transactions.amount');
+            $officePayment = DB::table('office_payments')
+                ->where('date', $date)
+                ->where('shift_id', $shiftId)
+                ->join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+                ->sum('transactions.amount');
 
-        $creditSalesDetails = DB::table('credit_sales')
-            ->where('sale_date', $date)
-            ->where('shift_id', $shiftId)
-            ->select(
-                'product_id',
-                DB::raw('SUM(total_amount) as product_wise_credit_sales')
-            )
-            ->groupBy('product_id')
-            ->get();
+            $creditSalesDetails = DB::table('credit_sales')
+                ->where('sale_date', $date)
+                ->where('shift_id', $shiftId)
+                ->select(
+                    'product_id',
+                    DB::raw('SUM(total_amount) as product_wise_credit_sales')
+                )
+                ->groupBy('product_id')
+                ->get();
 
-        return response()->json([
-            'getTotalSummeryReport' => [
-                [
-                    'total_credit_sales_amount' => $creditSales,
-                    'total_bank_sale_amount' => $bankSales,
-                    'total_cash_receive_amount' => $cashReceive,
-                    'total_cash_payment_amount' => $cashPayment,
-                    'total_office_payment_amount' => $officePayment,
-                    'total_credit_sales_other_amount' => $creditSalesOther,
-                    'total_bank_sales_other_amount' => $bankSalesOther,
-                ]
-            ],
-            'getCreditSalesDetailsReport' => $creditSalesDetails
-        ]);
+            return response()->json([
+                'getTotalSummeryReport' => [
+                    [
+                        'total_credit_sales_amount' => $creditSales,
+                        'total_bank_sale_amount' => $bankSales,
+                        'total_cash_receive_amount' => $cashReceive,
+                        'total_cash_payment_amount' => $cashPayment,
+                        'total_office_payment_amount' => $officePayment,
+                        'total_credit_sales_other_amount' => $creditSalesOther,
+                        'total_bank_sales_other_amount' => $bankSalesOther,
+                    ]
+                ],
+                'getCreditSalesDetailsReport' => $creditSalesDetails
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Shift closing data error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function store(Request $request)
