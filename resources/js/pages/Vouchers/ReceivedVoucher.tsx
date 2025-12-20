@@ -784,6 +784,7 @@ export default function ReceivedVoucher({
                             onValueChange={(value) => {
                                 setData('payment_method', value);
                                 setData('from_account_id', '');
+                            setData('to_account_id', '');
                             }}
                         >
                             <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
@@ -807,19 +808,19 @@ export default function ReceivedVoucher({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label
-                                htmlFor="to_account_id"
+                                htmlFor="from_account_id"
                                 className="dark:text-gray-200"
                             >
-                                Received From
+                                From Account (Payer)
                             </Label>
                             <Select
-                                value={data.to_account_id}
+                                value={data.from_account_id}
                                 onValueChange={(value) =>
-                                    setData('to_account_id', value)
+                                    setData('from_account_id', value)
                                 }
                             >
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Choose received from account" />
+                                    <SelectValue placeholder="Choose payer account" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {accounts.map((account) => (
@@ -832,27 +833,27 @@ export default function ReceivedVoucher({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.to_account_id && (
+                            {errors.from_account_id && (
                                 <span className="text-sm text-red-500">
-                                    {errors.to_account_id}
+                                    {errors.from_account_id}
                                 </span>
                             )}
                         </div>
                         <div>
                             <Label
-                                htmlFor="from_account_id"
+                                htmlFor="to_account_id"
                                 className="dark:text-gray-200"
                             >
-                                To Account
+                                To Account (Receiver)
                             </Label>
                             <Select
-                                value={data.from_account_id}
+                                value={data.to_account_id}
                                 onValueChange={(value) =>
-                                    setData('from_account_id', value)
+                                    setData('to_account_id', value)
                                 }
                             >
                                 <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Choose destination account" />
+                                    <SelectValue placeholder="Choose receiver account" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {getFilteredAccounts().map((account) => (
@@ -865,9 +866,9 @@ export default function ReceivedVoucher({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.from_account_id && (
+                            {errors.to_account_id && (
                                 <span className="text-sm text-red-500">
-                                    {errors.from_account_id}
+                                    {errors.to_account_id}
                                 </span>
                             )}
                         </div>

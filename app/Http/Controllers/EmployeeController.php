@@ -253,14 +253,14 @@ class EmployeeController extends Controller
             ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
             ->where('vouchers.from_account_id', $employee->account_id)
             ->where('vouchers.voucher_type', 'Receipt')
-            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->whereIn('payment_sub_types.code', ['1002', '1003', '1008']) // Salary Advance, Personal Loan, Advance Return
             ->sum('transactions.amount');
             
         $advancedReturnCount = DB::table('vouchers')
             ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
             ->where('vouchers.from_account_id', $employee->account_id)
             ->where('vouchers.voucher_type', 'Receipt')
-            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->whereIn('payment_sub_types.code', ['1002', '1003', '1008']) // Salary Advance, Personal Loan, Advance Return
             ->count();
             
         $netAdvanced = $totalAdvanced - $totalAdvancedReturns;
