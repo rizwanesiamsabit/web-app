@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Filter, X } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { FileText, Filter, X } from 'lucide-react';
+import { useState } from 'react';
 
 interface Account {
     id: number;
@@ -51,14 +51,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function BankBookLedger({ ledgers, filters }: Props) {
-    const [startDate, setStartDate] = useState(filters?.start_date || new Date().toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(filters?.end_date || new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(
+        filters?.start_date || new Date().toISOString().split('T')[0],
+    );
+    const [endDate, setEndDate] = useState(
+        filters?.end_date || new Date().toISOString().split('T')[0],
+    );
 
     const applyFilters = () => {
         const params = new URLSearchParams();
         if (startDate) params.append('start_date', startDate);
         if (endDate) params.append('end_date', endDate);
-        
+
         router.get(`/bank-book-ledger?${params.toString()}`);
     };
 
@@ -80,7 +84,8 @@ export default function BankBookLedger({ ledgers, filters }: Props) {
                             Bank Book Ledger
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400">
-                            View bank and mobile bank account transactions and balances
+                            View bank and mobile bank account transactions and
+                            balances
                         </p>
                     </div>
                     {ledgers.length > 0 && (
@@ -88,7 +93,8 @@ export default function BankBookLedger({ ledgers, filters }: Props) {
                             variant="success"
                             onClick={() => {
                                 const params = new URLSearchParams();
-                                if (startDate) params.append('start_date', startDate);
+                                if (startDate)
+                                    params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
                                 window.location.href = `/bank-book-ledger/download-pdf?${params.toString()}`;
                             }}
@@ -110,16 +116,22 @@ export default function BankBookLedger({ ledgers, filters }: Props) {
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
+                                <Label className="dark:text-gray-200">
+                                    Start Date
+                                </Label>
                                 <Input
                                     type="date"
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
+                                    onChange={(e) =>
+                                        setStartDate(e.target.value)
+                                    }
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
                             <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
+                                <Label className="dark:text-gray-200">
+                                    End Date
+                                </Label>
                                 <Input
                                     type="date"
                                     value={endDate}
@@ -147,17 +159,50 @@ export default function BankBookLedger({ ledgers, filters }: Props) {
                 {ledgers.length > 0 ? (
                     <div className="space-y-6">
                         {ledgers.map((ledger, index) => (
-                            <Card key={index} className="dark:border-gray-700 dark:bg-gray-800">
+                            <Card
+                                key={index}
+                                className="dark:border-gray-700 dark:bg-gray-800"
+                            >
                                 <CardHeader>
-                                    <CardTitle className="text-[16px] font-bold dark:text-white mb-2">Account Information</CardTitle>
+                                    <CardTitle className="mb-2 text-[16px] font-bold dark:text-white">
+                                        Account Information
+                                    </CardTitle>
                                     <div className="space-y-1 text-[13px]">
-                                        <div><span className="font-semibold dark:text-gray-300">Account Name:</span> <span className="dark:text-white">{ledger.account.name}</span></div>
-                                        <div><span className="font-semibold dark:text-gray-300">Account Number:</span> <span className="dark:text-white">{ledger.account.ac_number}</span></div>
-                                        <div><span className="font-semibold dark:text-gray-300">Group:</span> <span className="dark:text-white">{ledger.account.group?.name || 'N/A'}</span></div>
                                         <div>
-                                            <span className="font-semibold dark:text-gray-300">Closing Balance:</span> 
-                                            <span className={`font-bold ${ledger.closing_balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                {Math.abs(ledger.closing_balance).toLocaleString()} {ledger.closing_balance >= 0 ? 'Cr' : 'Dr'}
+                                            <span className="font-semibold dark:text-gray-300">
+                                                Account Name:
+                                            </span>{' '}
+                                            <span className="dark:text-white">
+                                                {ledger.account.name}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="font-semibold dark:text-gray-300">
+                                                Account Number:
+                                            </span>{' '}
+                                            <span className="dark:text-white">
+                                                {ledger.account.ac_number}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="font-semibold dark:text-gray-300">
+                                                Group:
+                                            </span>{' '}
+                                            <span className="dark:text-white">
+                                                {ledger.account.group?.name ||
+                                                    'N/A'}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="font-semibold dark:text-gray-300">
+                                                Closing Balance:
+                                            </span>
+                                            <span
+                                                className={`font-bold ${ledger.closing_balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                                            >
+                                                {Math.abs(
+                                                    ledger.closing_balance,
+                                                ).toLocaleString()}
                                             </span>
                                         </div>
                                     </div>
@@ -167,38 +212,98 @@ export default function BankBookLedger({ ledgers, filters }: Props) {
                                         <table className="w-full">
                                             <thead>
                                                 <tr className="border-b dark:border-gray-700">
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Date</th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Transaction ID</th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Description</th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Debit</th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Credit</th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Balance</th>
+                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
+                                                        Date
+                                                    </th>
+                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
+                                                        Transaction ID
+                                                    </th>
+                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
+                                                        Description
+                                                    </th>
+                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
+                                                        Payment Type
+                                                    </th>
+                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
+                                                        Debit
+                                                    </th>
+                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
+                                                        Credit
+                                                    </th>
+                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
+                                                        Balance
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {ledger.transactions.map((transaction) => (
-                                                    <tr key={transaction.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-                                                        <td className="p-2 text-[13px] dark:text-white">{transaction.transaction_date}</td>
-                                                        <td className="p-2 text-[13px] dark:text-gray-300">{transaction.transaction_id}</td>
-                                                        <td className="p-2 text-[13px] dark:text-gray-300">{transaction.description}</td>
-                                                        <td className="p-2 text-[13px] dark:text-gray-300 capitalize">{transaction.payment_type}</td>
-                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">
-                                                            {transaction.transaction_type === 'Dr' ? transaction.amount.toLocaleString() : '-'}
-                                                        </td>
-                                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">
-                                                            {transaction.transaction_type === 'Cr' ? transaction.amount.toLocaleString() : '-'}
-                                                        </td>
-                                                        <td className={`p-2 text-right text-[13px] font-medium ${transaction.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            {Math.abs(transaction.balance).toLocaleString()} {transaction.balance >= 0 ? 'Cr' : 'Dr'}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                <tr className="border-b font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-700">
-                                                    <td colSpan={4} className="p-2 text-[13px] dark:text-white">Total:</td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">{ledger.total_debit.toFixed(2)}</td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">{ledger.total_credit.toFixed(2)}</td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">-</td>
+                                                {ledger.transactions.map(
+                                                    (transaction) => (
+                                                        <tr
+                                                            key={transaction.id}
+                                                            className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                                                        >
+                                                            <td className="p-2 text-[13px] dark:text-white">
+                                                                {
+                                                                    transaction.transaction_date
+                                                                }
+                                                            </td>
+                                                            <td className="p-2 text-[13px] dark:text-gray-300">
+                                                                {
+                                                                    transaction.transaction_id
+                                                                }
+                                                            </td>
+                                                            <td className="p-2 text-[13px] dark:text-gray-300">
+                                                                {
+                                                                    transaction.description
+                                                                }
+                                                            </td>
+                                                            <td className="p-2 text-[13px] capitalize dark:text-gray-300">
+                                                                {
+                                                                    transaction.payment_type
+                                                                }
+                                                            </td>
+                                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">
+                                                                {transaction.transaction_type ===
+                                                                'Dr'
+                                                                    ? transaction.amount.toLocaleString()
+                                                                    : '-'}
+                                                            </td>
+                                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">
+                                                                {transaction.transaction_type ===
+                                                                'Cr'
+                                                                    ? transaction.amount.toLocaleString()
+                                                                    : '-'}
+                                                            </td>
+                                                            <td
+                                                                className={`p-2 text-right text-[13px] font-medium ${transaction.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                                                            >
+                                                                {Math.abs(
+                                                                    transaction.balance,
+                                                                ).toLocaleString()}
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
+                                                <tr className="border-b bg-gray-50 font-bold dark:border-gray-700 dark:bg-gray-700">
+                                                    <td
+                                                        colSpan={4}
+                                                        className="p-2 text-[13px] dark:text-white"
+                                                    >
+                                                        Total:
+                                                    </td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">
+                                                        {ledger.total_debit.toFixed(
+                                                            2,
+                                                        )}
+                                                    </td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">
+                                                        {ledger.total_credit.toFixed(
+                                                            2,
+                                                        )}
+                                                    </td>
+                                                    <td className="p-2 text-right text-[13px] dark:text-white">
+                                                        -
+                                                    </td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -211,7 +316,8 @@ export default function BankBookLedger({ ledgers, filters }: Props) {
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardContent>
                             <p className="p-4 text-center text-[13px] text-gray-500 dark:text-gray-400">
-                                No bank or mobile bank transactions found for the selected period
+                                No bank or mobile bank transactions found for
+                                the selected period
                             </p>
                         </CardContent>
                     </Card>
