@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('daily_readings', function (Blueprint $table) {
@@ -18,6 +15,9 @@ return new class extends Migration
             $table->decimal('credit_sales', 18, 2)->default(0);
             $table->decimal('bank_sales', 18, 2)->default(0);
             $table->decimal('cash_sales', 18, 2)->default(0);
+            $table->decimal('credit_sales_other', 18, 2)->default(0);
+            $table->decimal('bank_sales_other', 18, 2)->default(0);
+            $table->decimal('cash_sales_other', 18, 2)->default(0);
             $table->decimal('cash_receive', 18, 2)->default(0);
             $table->decimal('bank_receive', 18, 2)->default(0);
             $table->decimal('total_cash', 18, 2)->default(0);
@@ -29,9 +29,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('daily_readings');

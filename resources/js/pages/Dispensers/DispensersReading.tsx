@@ -687,7 +687,23 @@ export default function DispenserReading({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (window.confirm('Are you sure you want to close this shift?')) {
-            router.post('/product/dispensers-reading', data, {
+            // Prepare other product sales data for backend
+            const otherProductSalesData = otherProductsSales
+                .filter(sale => sale.sell_quantity > 0)
+                .map(sale => ({
+                    product_id: sale.product_id,
+                    quantity: sale.sell_quantity,
+                    unit_price: otherProducts.find(p => p.id === sale.product_id)?.sales_price || 0,
+                    employee_id: sale.sell_by,
+                    remarks: null
+                }));
+
+            const submitData = {
+                ...data,
+                other_product_sales: otherProductSalesData
+            };
+
+            router.post('/product/dispensers-reading', submitData, {
                 onSuccess: () => {
                     alert('Shift closed successfully.');
                     window.location.reload();
@@ -725,7 +741,24 @@ export default function DispenserReading({
         const creditSalesOther = parseFloat(data.credit_sales_other) || 0;
         const bankSalesOther = parseFloat(data.bank_sales_other) || 0;
         const cashSalesOther = totalOtherProductsSales - creditSalesOther - bankSalesOther;
-        setData('cash_sales_other', cashSalesOther.toFixed(2));
+        
+        // Update cash_sales_other and recalculate totals in one go
+        const creditSales = parseFloat(data.credit_sales) || 0;
+        const bankSales = parseFloat(data.bank_sales) || 0;
+        const totalSales = data.dispenser_readings.reduce((sum, reading) => sum + (reading.total_sale || 0), 0);
+        const cashSales = totalSales - creditSales - bankSales;
+        const cashReceive = parseFloat(data.cash_receive) || 0;
+        const totalCash = cashSales + cashSalesOther + cashReceive;
+        const cashPayment = parseFloat(data.cash_payment) || 0;
+        const officePayment = parseFloat(data.office_payment) || 0;
+        const finalDueAmount = totalCash - cashPayment - officePayment;
+        
+        setData(prev => ({
+            ...prev,
+            cash_sales_other: cashSalesOther.toFixed(2),
+            total_cash: totalCash.toFixed(2),
+            final_due_amount: finalDueAmount.toFixed(2),
+        }));
     };
     
     useEffect(() => {
@@ -3065,7 +3098,11 @@ export default function DispenserReading({
                     onSubmit={(e) => {
                         e.preventDefault();
                         setCashPaymentProcessing(true);
-                        router.post('/vouchers/payment', cashPaymentData, {
+                        const submitData = {
+                            ...cashPaymentData,
+                            payment_method: cashPaymentData.payment_type
+                        };
+                        router.post('/vouchers/payment', submitData, {
                             onSuccess: () => {
                                 setIsCashPaymentOpen(false);
                                 setCashPaymentData({

@@ -25,7 +25,7 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Sale::with(['product', 'shift'])
+        $query = Sale::with(['product', 'shift', 'transaction'])
             ->leftJoin('sale_batches', 'sales.id', '=', 'sale_batches.sale_id')
             ->select('sales.*', 'sale_batches.batch_code');
 

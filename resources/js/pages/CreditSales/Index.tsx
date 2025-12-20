@@ -683,6 +683,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Customer</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Product</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Vehicle</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Quantity</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Total Amount</th>
@@ -707,6 +708,9 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.shift.name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.invoice_no}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.customer.name}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {products.find(p => p.id === sale.product_id)?.product_name || 'N/A'}
+                                                </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.vehicle.vehicle_number}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.quantity}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
@@ -746,7 +750,7 @@ export default function CreditSales({ creditSales, accounts = [], groupedAccount
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={11} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={12} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No sales found
                                             </td>

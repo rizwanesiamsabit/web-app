@@ -45,6 +45,9 @@ interface Sale {
     remarks: string;
     created_at: string;
     batch_code?: string;
+    transaction?: {
+        payment_type: string;
+    };
 }
 
 interface Account {
@@ -801,11 +804,12 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Customer</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Product</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Vehicle</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Quantity</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Paid Amount</th>
-
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
                                     </tr>
@@ -826,11 +830,29 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.shift.name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.invoice_no}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.customer}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {products.find(p => p.id === sale.product_id)?.product_name || 'N/A'}
+                                                </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.vehicle_no}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.quantity}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.paid_amount.toLocaleString()}</td>
-
+                                                <td className="p-4">
+                                                    <span className={`rounded px-2 py-1 text-xs font-medium ${
+                                                        (sale.transaction?.payment_type || 'cash') === 'cash' 
+                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                            : (sale.transaction?.payment_type || 'cash') === 'bank'
+                                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                                            : (sale.transaction?.payment_type || 'cash') === 'mobile bank'
+                                                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                                                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                    }`}>
+                                                        {(sale.transaction?.payment_type || 'cash') === 'cash' ? 'Cash' 
+                                                            : (sale.transaction?.payment_type || 'cash') === 'bank' ? 'Bank'
+                                                            : (sale.transaction?.payment_type || 'cash') === 'mobile bank' ? 'Mobile Bank'
+                                                            : 'Cash'}
+                                                    </span>
+                                                </td>
                                                 <td className="p-4">
                                                     <span className={`rounded px-2 py-1 text-xs ${
                                                         parseFloat(sale.due_amount.toString()) === 0 
@@ -878,7 +900,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={11} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={13} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No sales found
                                             </td>

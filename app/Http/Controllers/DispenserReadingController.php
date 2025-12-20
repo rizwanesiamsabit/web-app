@@ -11,6 +11,8 @@ use App\Models\Vehicle;
 use App\Models\Customer;
 use App\Models\IsShiftClose;
 use App\Models\DailyReading;
+use App\Models\OtherProductSale;
+use App\Models\Stock;
 use App\Models\VoucherCategory;
 use App\Models\PaymentSubType;
 use Illuminate\Http\Request;
@@ -29,8 +31,15 @@ class DispenserReadingController extends Controller
             ->groupBy('dispenser_id')
             ->map(function ($items) {
                 $latest = $items->first();
-                $latest->start_reading = $latest->end_reading;
-                $latest->end_reading = $latest->end_reading;
+                // যদি end_reading 0 হয় (first time), তাহলে original start_reading রাখি
+                // অন্যথায় next shift এর জন্য start_reading = current end_reading
+                if ($latest->end_reading == 0) {
+                    // First time reading - original start_reading রাখি
+                    $latest->start_reading = $latest->start_reading;
+                } else {
+                    // Next shift - previous end_reading কে start_reading করি
+                    $latest->start_reading = $latest->end_reading;
+                }
                 $latest->meter_test = 0;
                 $latest->product_id = $latest->product_id ?? ($latest->dispenser->product_id ?? null);
                 if ($latest->product) {
@@ -200,7 +209,6 @@ class DispenserReadingController extends Controller
                 'getCreditSalesDetailsReport' => $creditSalesDetails
             ]);
         } catch (\Exception $e) {
-            \Log::error('Shift closing data error: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -211,6 +219,22 @@ class DispenserReadingController extends Controller
             'transaction_date' => 'required|date',
             'shift_id' => 'required|exists:shifts,id',
             'dispenser_readings' => 'required|array',
+            'other_product_sales' => 'nullable|array',
+            'other_product_sales.*.product_id' => 'required|exists:products,id',
+            'other_product_sales.*.quantity' => 'required|numeric|min:0',
+            'other_product_sales.*.unit_price' => 'required|numeric|min:0',
+            'other_product_sales.*.employee_id' => 'required|exists:employees,id',
+            'credit_sales' => 'nullable|numeric|min:0',
+            'bank_sales' => 'nullable|numeric|min:0',
+            'cash_sales' => 'nullable|numeric|min:0',
+            'credit_sales_other' => 'nullable|numeric|min:0',
+            'bank_sales_other' => 'nullable|numeric|min:0',
+            'cash_sales_other' => 'nullable|numeric|min:0',
+            'cash_receive' => 'nullable|numeric|min:0',
+            'total_cash' => 'nullable|numeric|min:0',
+            'cash_payment' => 'nullable|numeric|min:0',
+            'office_payment' => 'nullable|numeric|min:0',
+            'final_due_amount' => 'nullable|numeric',
         ]);
 
         DB::beginTransaction();
@@ -231,12 +255,40 @@ class DispenserReadingController extends Controller
                 ]);
             }
 
+            // Store other product sales
+            if ($request->has('other_product_sales') && is_array($request->other_product_sales)) {
+                foreach ($request->other_product_sales as $sale) {
+                    if (isset($sale['quantity']) && $sale['quantity'] > 0) {
+                        OtherProductSale::create([
+                            'sale_date' => $request->transaction_date,
+                            'shift_id' => $request->shift_id,
+                            'employee_id' => $sale['employee_id'],
+                            'product_id' => $sale['product_id'],
+                            'quantity' => $sale['quantity'],
+                            'unit_price' => $sale['unit_price'],
+                            'total_amount' => $sale['quantity'] * $sale['unit_price'],
+                            'remarks' => $sale['remarks'] ?? null,
+                        ]);
+
+                        // Update stock
+                        $stock = Stock::where('product_id', $sale['product_id'])->first();
+                        if ($stock) {
+                            $stock->decrement('current_stock', $sale['quantity']);
+                            $stock->decrement('available_stock', $sale['quantity']);
+                        }
+                    }
+                }
+            }
+
             DailyReading::create([
                 'shift_id' => $request->shift_id,
                 'employee_id' => Auth::id(),
                 'credit_sales' => $request->credit_sales ?? 0,
                 'bank_sales' => $request->bank_sales ?? 0,
                 'cash_sales' => $request->cash_sales ?? 0,
+                'credit_sales_other' => $request->credit_sales_other ?? 0,
+                'bank_sales_other' => $request->bank_sales_other ?? 0,
+                'cash_sales_other' => $request->cash_sales_other ?? 0,
                 'cash_receive' => $request->cash_receive ?? 0,
                 'bank_receive' => 0,
                 'total_cash' => $request->total_cash ?? 0,
