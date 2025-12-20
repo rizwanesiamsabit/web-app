@@ -229,6 +229,8 @@ export default function DispenserReading({
     const [cashPaymentData, setCashPaymentData] = useState({
         date: '',
         shift_id: '',
+        voucher_category_id: '',
+        payment_sub_type_id: '',
         from_account_id: '',
         to_account_id: '',
         amount: '',
@@ -241,6 +243,7 @@ export default function DispenserReading({
         branch_name: '',
         mobile_bank: '',
         mobile_number: '',
+        description: '',
         remarks: '',
     });
     const [cashPaymentProcessing, setCashPaymentProcessing] = useState(false);
@@ -3039,6 +3042,8 @@ export default function DispenserReading({
                         setCashPaymentData({
                             date: '',
                             shift_id: '',
+                            voucher_category_id: '',
+                            payment_sub_type_id: '',
                             from_account_id: '',
                             to_account_id: '',
                             amount: '',
@@ -3051,6 +3056,7 @@ export default function DispenserReading({
                             branch_name: '',
                             mobile_bank: '',
                             mobile_number: '',
+                            description: '',
                             remarks: '',
                         });
                     }}
@@ -3064,6 +3070,8 @@ export default function DispenserReading({
                                 setCashPaymentData({
                                     date: '',
                                     shift_id: '',
+                                    voucher_category_id: '',
+                                    payment_sub_type_id: '',
                                     from_account_id: '',
                                     to_account_id: '',
                                     amount: '',
@@ -3076,6 +3084,7 @@ export default function DispenserReading({
                                     branch_name: '',
                                     mobile_bank: '',
                                     mobile_number: '',
+                                    description: '',
                                     remarks: '',
                                 });
                                 setCashPaymentProcessing(false);
@@ -3091,7 +3100,7 @@ export default function DispenserReading({
                     }}
                     processing={cashPaymentProcessing}
                     submitText="Create"
-                    className="max-w-lg"
+                    className="max-w-2xl"
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -3145,6 +3154,51 @@ export default function DispenserReading({
                                 </SelectContent>
                             </Select>
                         </div>
+                    </div>
+                    <div>
+                        <Label className="dark:text-gray-200">Category</Label>
+                        <div className="mt-2 flex flex-wrap gap-4">
+                            {voucherCategories.map((category) => (
+                                <label key={category.id} className="flex items-center space-x-2">
+                                    <input
+                                        type="radio"
+                                        name="voucher_category_id_payment"
+                                        value={category.id.toString()}
+                                        checked={cashPaymentData.voucher_category_id === category.id.toString()}
+                                        onChange={(e) => {
+                                            setCashPaymentData((prev) => ({
+                                                ...prev,
+                                                voucher_category_id: e.target.value,
+                                                payment_sub_type_id: '',
+                                            }));
+                                        }}
+                                        className="rounded border-gray-300 dark:border-gray-600"
+                                    />
+                                    <span className="text-sm dark:text-gray-300">{category.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="payment_sub_type_id" className="dark:text-gray-200">Payment Sub Type</Label>
+                        <Select 
+                            value={cashPaymentData.payment_sub_type_id} 
+                            onValueChange={(value) => setCashPaymentData((prev) => ({ ...prev, payment_sub_type_id: value }))}
+                            disabled={!cashPaymentData.voucher_category_id}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Choose sub type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {paymentSubTypes.filter(subType => 
+                                    subType.voucher_category_id.toString() === cashPaymentData.voucher_category_id
+                                ).map((subType) => (
+                                    <SelectItem key={subType.id} value={subType.id.toString()}>
+                                        {subType.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div>
                         <Label
@@ -3466,6 +3520,21 @@ export default function DispenserReading({
                                 </SelectContent>
                             </Select>
                         </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="description" className="dark:text-gray-200">Description</Label>
+                        <Input
+                            id="description"
+                            placeholder="Enter description (optional)"
+                            value={cashPaymentData.description}
+                            onChange={(e) =>
+                                setCashPaymentData((prev) => ({
+                                    ...prev,
+                                    description: e.target.value,
+                                }))
+                            }
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
                     </div>
                     <div>
                         <Label htmlFor="amount" className="dark:text-gray-200">
