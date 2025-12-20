@@ -48,7 +48,6 @@ const mainNavItems = [
                 icon: Building,
             },
             { title: 'Shift', href: '/shifts', icon: Clock },
-            { title: 'Payment Sub Types', href: '/payment-sub-types', icon: CreditCard },
         ],
     },
     {
@@ -70,9 +69,21 @@ const mainNavItems = [
         children: [
             { title: 'Customers', href: '/customers', icon: Users },
             { title: 'Vehicles', href: '/vehicles', icon: Car },
-            { title: 'Customer Details Bill', href: '/customer-details-bill', icon: FileText },
-            { title: 'Customer Summary Bill', href: '/customer-summary-bill', icon: FileText },
-            { title: 'Customer Ledger Summary', href: '/customer-ledger-summary', icon: BarChart3 },
+            {
+                title: 'Customer Details Bill',
+                href: '/customer-details-bill',
+                icon: FileText,
+            },
+            {
+                title: 'Customer Summary Bill',
+                href: '/customer-summary-bill',
+                icon: FileText,
+            },
+            {
+                title: 'Customer Ledger Summary',
+                href: '/customer-ledger-summary',
+                icon: BarChart3,
+            },
             {
                 title: 'Daily Statement Report',
                 href: '/daily-statement',
@@ -83,16 +94,18 @@ const mainNavItems = [
     {
         title: 'Supplier',
         icon: Truck,
-        children: [
-            { title: 'Suppliers', href: '/suppliers', icon: Truck },
-        ],
+        children: [{ title: 'Suppliers', href: '/suppliers', icon: Truck }],
     },
     {
         title: 'Products',
         icon: Package,
         children: [
             { title: 'Products', href: '/products', icon: Package },
-            { title: 'Product Rates', href: '/product-rates', icon: DollarSign },
+            {
+                title: 'Product Rates',
+                href: '/product-rates',
+                icon: DollarSign,
+            },
             { title: 'Categories', href: '/categories', icon: Package },
             { title: 'Units', href: '/units', icon: Package },
         ],
@@ -102,7 +115,11 @@ const mainNavItems = [
         icon: Warehouse,
         children: [
             { title: 'Stocks', href: '/stocks', icon: Package },
-            { title: 'Today Stock Report', href: '/stock-report', icon: BarChart3 },
+            {
+                title: 'Today Stock Report',
+                href: '/stock-report',
+                icon: BarChart3,
+            },
         ],
     },
     {
