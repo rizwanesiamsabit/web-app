@@ -47,6 +47,7 @@ interface Employee {
     present_address: string;
     permanent_address: string;
     job_status: string;
+    salary: number;
     joining_date: string;
     status: boolean;
     status_date: string;
@@ -152,14 +153,13 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Employee Code</p>
-                                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{employee.employee_code}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{employee.designation?.name || 'Not Assigned'}</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Salary</p>
+                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{employee.salary?.toLocaleString() || '0'}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -169,9 +169,9 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Department</p>
-                                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{employee.department?.name || 'Not Assigned'}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{employee.emp_type?.name || 'Not Assigned'}</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Paid Salary</p>
+                                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">0</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">0 payments</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -181,15 +181,21 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
-                                    <p className={`text-2xl font-bold ${
-                                        employee.status 
-                                            ? 'text-green-600 dark:text-green-400' 
-                                            : 'text-red-600 dark:text-red-400'
-                                    }`}>
-                                        {employee.status ? 'Active' : 'Inactive'}
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{employee.job_status}</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Return Advanced</p>
+                                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">0 returns</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Due/Advanced</p>
+                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Balanced</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -338,6 +344,14 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Salary
+                                    </label>
+                                    <p className="font-semibold dark:text-white">
+                                        {employee.salary?.toLocaleString() || 'Not Set'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                                         Department
                                     </label>
                                     <p className="font-semibold dark:text-white">
@@ -375,29 +389,59 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
 
                 {/* Action Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="dark:border-gray-700 dark:bg-gray-800 cursor-pointer" onClick={() => router.get('/employees/create')}>
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                                    <UserPlus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Employee</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Create employee record</p>
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="dark:text-white">Recent Salary Summary</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Date</th>
+                                                <th className="text-right py-2 text-gray-600 dark:text-gray-400">Amount</th>
+                                                <th className="text-center py-2 text-gray-600 dark:text-gray-400">Type</th>
+                                                <th className="text-center py-2 text-gray-600 dark:text-gray-400">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                                    No salary records found
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     
-                    <Card className="dark:border-gray-700 dark:bg-gray-800 cursor-pointer" onClick={() => router.get('/attendance')}>
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                                    <Briefcase className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Manage Attendance</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Track employee attendance</p>
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="dark:text-white">Recent Advanced Summary</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Date</th>
+                                                <th className="text-right py-2 text-gray-600 dark:text-gray-400">Amount</th>
+                                                <th className="text-center py-2 text-gray-600 dark:text-gray-400">Type</th>
+                                                <th className="text-center py-2 text-gray-600 dark:text-gray-400">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                                    No advanced records found
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </CardContent>

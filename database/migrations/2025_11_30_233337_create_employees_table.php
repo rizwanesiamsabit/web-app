@@ -33,6 +33,7 @@ return new class extends Migration
             $table->string('present_address', 250)->nullable();
             $table->string('permanent_address', 350)->nullable();
             $table->string('job_status', 50)->nullable();
+            $table->decimal('salary', 10, 2)->nullable();
             $table->date('joining_date')->nullable();
             $table->boolean('status')->default(true);
             $table->date('status_date')->nullable();

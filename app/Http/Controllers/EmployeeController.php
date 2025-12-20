@@ -122,6 +122,7 @@ class EmployeeController extends Controller
             'present_address' => 'nullable|string|max:250',
             'permanent_address' => 'nullable|string|max:350',
             'job_status' => 'nullable|string|max:50',
+            'salary' => 'nullable|numeric|min:0',
             'joining_date' => 'nullable|date',
             'order' => 'nullable|integer',
             'status' => 'boolean'
@@ -160,6 +161,7 @@ class EmployeeController extends Controller
             'present_address' => $request->present_address,
             'permanent_address' => $request->permanent_address,
             'job_status' => $request->job_status,
+            'salary' => $request->salary,
             'joining_date' => $request->joining_date,
             'status' => $request->status ?? true,
         ]);
@@ -219,6 +221,7 @@ class EmployeeController extends Controller
             'present_address' => 'nullable|string|max:250',
             'permanent_address' => 'nullable|string|max:350',
             'job_status' => 'nullable|string|max:50',
+            'salary' => 'nullable|numeric|min:0',
             'joining_date' => 'nullable|date',
             'order' => 'nullable|integer',
             'status' => 'boolean'
@@ -255,6 +258,7 @@ class EmployeeController extends Controller
             'present_address' => $request->present_address,
             'permanent_address' => $request->permanent_address,
             'job_status' => $request->job_status,
+            'salary' => $request->salary,
             'joining_date' => $request->joining_date,
             'status' => $request->status ?? true,
         ];

@@ -40,6 +40,7 @@ interface Employee {
     present_address: string;
     permanent_address: string;
     job_status: string;
+    salary: number;
     joining_date: string;
     highest_education: string;
     status: boolean;
@@ -119,6 +120,7 @@ export default function UpdateEmployee({
         present_address: employee.present_address || '',
         permanent_address: employee.permanent_address || '',
         job_status: employee.job_status || '',
+        salary: employee.salary?.toString() || '',
         joining_date: employee.joining_date || '',
         highest_education: employee.highest_education || '',
         status: employee.status || false,
@@ -329,6 +331,24 @@ export default function UpdateEmployee({
                                     />
                                     {errors.job_status && (
                                         <span className="text-sm text-red-500">{errors.job_status}</span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="salary" className="dark:text-gray-200">
+                                        Salary
+                                    </Label>
+                                    <Input
+                                        id="salary"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.salary}
+                                        onChange={(e) => setData('salary', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        placeholder="Enter salary"
+                                    />
+                                    {errors.salary && (
+                                        <span className="text-sm text-red-500">{errors.salary}</span>
                                     )}
                                 </div>
 

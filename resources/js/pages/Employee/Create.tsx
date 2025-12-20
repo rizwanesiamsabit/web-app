@@ -92,6 +92,7 @@ export default function CreateEmployee({
         present_address: '',
         permanent_address: '',
         job_status: '',
+        salary: '',
         joining_date: '',
         highest_education: '',
         status: true,
@@ -304,6 +305,24 @@ export default function CreateEmployee({
                                     />
                                     {errors.job_status && (
                                         <span className="text-sm text-red-500">{errors.job_status}</span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="salary" className="dark:text-gray-200">
+                                        Salary
+                                    </Label>
+                                    <Input
+                                        id="salary"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.salary}
+                                        onChange={(e) => setData('salary', e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        placeholder="Enter salary"
+                                    />
+                                    {errors.salary && (
+                                        <span className="text-sm text-red-500">{errors.salary}</span>
                                     )}
                                 </div>
 
