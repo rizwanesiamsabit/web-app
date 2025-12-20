@@ -11,6 +11,7 @@ use App\Models\EmpDesignation;
 use App\Models\CompanySetting;
 use App\Helpers\AccountHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -173,8 +174,124 @@ class EmployeeController extends Controller
     {
         $employee->load('account', 'empType', 'department', 'designation');
 
+        // Get recent salary payments from vouchers using payment_sub_type_id codes
+        $recentSalaryPayments = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014']) // Monthly Salary, Bonus, Overtime, Medical, Travel, Salary & Allowances
+            ->select(
+                'vouchers.id',
+                'vouchers.voucher_no',
+                'vouchers.date',
+                'transactions.amount',
+                'transactions.payment_type as type',
+                'payment_sub_types.name as sub_type',
+                'vouchers.description',
+                DB::raw("'Paid' as status")
+            )
+            ->orderBy('vouchers.date', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Get recent advanced payments from vouchers using payment_sub_type_id codes
+        $recentAdvancedPayments = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1002', '1003']) // Salary Advance, Personal Loan
+            ->select(
+                'vouchers.id',
+                'vouchers.voucher_no',
+                'vouchers.date',
+                'transactions.amount',
+                'transactions.payment_type as type',
+                'payment_sub_types.name as sub_type',
+                'vouchers.description',
+                DB::raw("'Given' as status")
+            )
+            ->orderBy('vouchers.date', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Calculate totals using payment_sub_type_id codes
+        $totalPaidSalary = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014'])
+            ->sum('transactions.amount');
+            
+        $salaryPaymentCount = DB::table('vouchers')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1001', '1004', '1005', '1006', '1007', '1014'])
+            ->count();
+            
+        $totalAdvanced = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->sum('transactions.amount');
+            
+        $advancedCount = DB::table('vouchers')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.to_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->count();
+            
+        // Calculate advanced returns (receipts from employee)
+        $totalAdvancedReturns = DB::table('vouchers')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.from_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Receipt')
+            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->sum('transactions.amount');
+            
+        $advancedReturnCount = DB::table('vouchers')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->where('vouchers.from_account_id', $employee->account_id)
+            ->where('vouchers.voucher_type', 'Receipt')
+            ->whereIn('payment_sub_types.code', ['1002', '1003'])
+            ->count();
+            
+        $netAdvanced = $totalAdvanced - $totalAdvancedReturns;
+        
+        // Calculate months since joining
+        $monthsWorked = 0;
+        if ($employee->created_at) {
+            $createdDate = new \DateTime($employee->created_at);
+            $currentDate = new \DateTime();
+            $interval = $createdDate->diff($currentDate);
+            $monthsWorked = ($interval->y * 12) + $interval->m;
+        }
+        
+        $expectedSalary = ($employee->salary ?? 0) * $monthsWorked;
+        $salaryDue = $expectedSalary - $totalPaidSalary;
+        $netBalance = $salaryDue - $netAdvanced;
+
         return Inertia::render('Employee/Show', [
-            'employee' => $employee
+            'employee' => $employee,
+            'recentSalaryPayments' => $recentSalaryPayments,
+            'recentAdvancedPayments' => $recentAdvancedPayments,
+            'totalPaidSalary' => $totalPaidSalary,
+            'salaryPaymentCount' => $salaryPaymentCount,
+            'totalAdvanced' => $totalAdvanced,
+            'advancedCount' => $advancedCount,
+            'totalAdvancedReturns' => $totalAdvancedReturns,
+            'advancedReturnCount' => $advancedReturnCount,
+            'netAdvanced' => $netAdvanced,
+            'salaryDue' => $salaryDue,
+            'netBalance' => $netBalance,
+            'monthsWorked' => $monthsWorked
         ]);
     }
 

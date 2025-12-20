@@ -13,7 +13,7 @@ class PaymentSubTypeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PaymentSubType::select('id', 'name', 'voucher_category_id', 'type', 'status', 'created_at')
+        $query = PaymentSubType::select('id', 'code', 'name', 'voucher_category_id', 'type', 'status', 'created_at')
             ->with('voucherCategory:id,name');
 
         if ($request->search) {
@@ -40,6 +40,7 @@ class PaymentSubTypeController extends Controller
         $paymentSubTypes = $query->paginate($perPage)->withQueryString()->through(function ($paymentSubType) {
             return [
                 'id' => $paymentSubType->id,
+                'code' => $paymentSubType->code,
                 'name' => $paymentSubType->name,
                 'voucher_category' => $paymentSubType->voucherCategory->name ?? 'N/A',
                 'voucher_category_id' => $paymentSubType->voucher_category_id,
@@ -61,6 +62,7 @@ class PaymentSubTypeController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'code' => 'required|string|max:10|unique:payment_sub_types,code',
             'name' => 'required|string|max:255',
             'voucher_category_id' => 'required|exists:voucher_categories,id',
             'type' => 'required|in:payment,receipt,both',
@@ -68,6 +70,7 @@ class PaymentSubTypeController extends Controller
         ]);
 
         PaymentSubType::create([
+            'code' => $request->code,
             'name' => $request->name,
             'voucher_category_id' => $request->voucher_category_id,
             'type' => $request->type,
@@ -87,6 +90,7 @@ class PaymentSubTypeController extends Controller
     public function update(Request $request, PaymentSubType $paymentSubType)
     {
         $request->validate([
+            'code' => 'required|string|max:10|unique:payment_sub_types,code,' . $paymentSubType->id,
             'name' => 'required|string|max:255',
             'voucher_category_id' => 'required|exists:voucher_categories,id',
             'type' => 'required|in:payment,receipt,both',
@@ -94,6 +98,7 @@ class PaymentSubTypeController extends Controller
         ]);
 
         $paymentSubType->update([
+            'code' => $request->code,
             'name' => $request->name,
             'voucher_category_id' => $request->voucher_category_id,
             'type' => $request->type,
@@ -123,7 +128,7 @@ class PaymentSubTypeController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        $query = PaymentSubType::select('id', 'name', 'voucher_category_id', 'type', 'status', 'created_at')
+        $query = PaymentSubType::select('id', 'code', 'name', 'voucher_category_id', 'type', 'status', 'created_at')
             ->with('voucherCategory:id,name');
 
         if ($request->search) {

@@ -32,6 +32,7 @@ import { useEffect, useState } from 'react';
 
 interface PaymentSubType {
     id: number;
+    code: string;
     name: string;
     voucher_category: string;
     voucher_category_id: number;
@@ -93,6 +94,7 @@ export default function PaymentSubType({ paymentSubTypes, voucherCategories = []
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
+        code: '',
         name: '',
         voucher_category_id: '',
         type: 'payment',
@@ -121,6 +123,7 @@ export default function PaymentSubType({ paymentSubTypes, voucherCategories = []
     const handleEdit = async (paymentSubType: PaymentSubType) => {
         setEditingPaymentSubType(paymentSubType);
         setData({
+            code: paymentSubType.code,
             name: paymentSubType.name,
             voucher_category_id: paymentSubType.voucher_category_id.toString(),
             type: paymentSubType.type,
@@ -464,6 +467,20 @@ export default function PaymentSubType({ paymentSubTypes, voucherCategories = []
                                         </th>
                                         <th
                                             className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
+                                            onClick={() => handleSort('code')}
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Code
+                                                {sortBy === 'code' &&
+                                                    (sortOrder === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    ))}
+                                            </div>
+                                        </th>
+                                        <th
+                                            className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300"
                                             onClick={() => handleSort('name')}
                                         >
                                             <div className="flex items-center gap-1">
@@ -510,6 +527,9 @@ export default function PaymentSubType({ paymentSubTypes, voucherCategories = []
                                                         }
                                                         className="rounded border-gray-300 dark:border-gray-600"
                                                     />
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-white">
+                                                    {item.code}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">
                                                     {item.name}
@@ -566,7 +586,7 @@ export default function PaymentSubType({ paymentSubTypes, voucherCategories = []
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={6}
+                                                colSpan={7}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Settings className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -614,6 +634,22 @@ export default function PaymentSubType({ paymentSubTypes, voucherCategories = []
                     processing={processing}
                     submitText="Create"
                 >
+                    <div>
+                        <Label htmlFor="code" className="dark:text-gray-200">
+                            Code
+                        </Label>
+                        <Input
+                            id="code"
+                            value={data.code}
+                            onChange={(e) => setData('code', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.code && (
+                            <span className="text-sm text-red-500">
+                                {errors.code}
+                            </span>
+                        )}
+                    </div>
                     <div>
                         <Label htmlFor="name" className="dark:text-gray-200">
                             Name
@@ -699,6 +735,22 @@ export default function PaymentSubType({ paymentSubTypes, voucherCategories = []
                     processing={processing}
                     submitText="Update"
                 >
+                    <div>
+                        <Label htmlFor="edit-code" className="dark:text-gray-200">
+                            Code
+                        </Label>
+                        <Input
+                            id="edit-code"
+                            value={data.code}
+                            onChange={(e) => setData('code', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        {errors.code && (
+                            <span className="text-sm text-red-500">
+                                {errors.code}
+                            </span>
+                        )}
+                    </div>
                     <div>
                         <Label htmlFor="edit-name" className="dark:text-gray-200">
                             Name

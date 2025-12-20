@@ -30,6 +30,7 @@ class Employee extends Model
         'present_address',
         'permanent_address',
         'job_status',
+        'salary',
         'joining_date',
         'status',
         'status_date',

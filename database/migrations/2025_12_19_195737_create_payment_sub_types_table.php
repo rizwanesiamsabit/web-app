@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('payment_sub_types', function (Blueprint $table) {
             $table->id();
+            $table->string('code')->unique();
             $table->string('name');
             $table->foreignId('voucher_category_id')->constrained('voucher_categories');
             $table->enum('type', ['payment', 'receipt', 'both']);

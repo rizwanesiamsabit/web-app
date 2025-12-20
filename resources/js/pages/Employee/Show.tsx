@@ -91,11 +91,53 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-interface ShowEmployeeProps {
-    employee: Employee;
+interface RecentSalaryPayment {
+    id: number;
+    date: string;
+    amount: number;
+    type: string;
+    status: string;
 }
 
-export default function ShowEmployee({ employee }: ShowEmployeeProps) {
+interface RecentAdvancedPayment {
+    id: number;
+    date: string;
+    amount: number;
+    type: string;
+    status: string;
+}
+
+interface ShowEmployeeProps {
+    employee: Employee;
+    recentSalaryPayments: RecentSalaryPayment[];
+    recentAdvancedPayments: RecentAdvancedPayment[];
+    totalPaidSalary: number;
+    salaryPaymentCount: number;
+    totalAdvanced: number;
+    advancedCount: number;
+    totalAdvancedReturns: number;
+    advancedReturnCount: number;
+    netAdvanced: number;
+    salaryDue: number;
+    netBalance: number;
+    monthsWorked: number;
+}
+
+export default function ShowEmployee({ 
+    employee, 
+    recentSalaryPayments, 
+    recentAdvancedPayments, 
+    totalPaidSalary, 
+    salaryPaymentCount, 
+    totalAdvanced, 
+    advancedCount, 
+    totalAdvancedReturns,
+    advancedReturnCount,
+    netAdvanced,
+    salaryDue,
+    netBalance,
+    monthsWorked
+}: ShowEmployeeProps) {
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -153,13 +195,14 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Salary</p>
-                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{employee.salary?.toLocaleString() || '0'}</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Monthly Salary</p>
+                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{(employee.salary || 0).toLocaleString()}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{monthsWorked} months worked</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -170,8 +213,8 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Paid Salary</p>
-                                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">0</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">0 payments</p>
+                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{totalPaidSalary.toLocaleString()}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{salaryPaymentCount} payments</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -181,9 +224,9 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Return Advanced</p>
-                                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">0 returns</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Net Advanced</p>
+                                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{netAdvanced.toLocaleString()}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Given: {totalAdvanced.toLocaleString()}, Returned: {totalAdvancedReturns.toLocaleString()}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -193,9 +236,37 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Due/Advanced</p>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Balanced</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Salary Due</p>
+                                    <p className={`text-2xl font-bold ${
+                                        salaryDue > 0 
+                                            ? 'text-red-600 dark:text-red-400' 
+                                            : salaryDue < 0 
+                                                ? 'text-green-600 dark:text-green-400' 
+                                                : 'text-gray-900 dark:text-white'
+                                    }`}>
+                                        {salaryDue.toLocaleString()}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        {netBalance > 0 ? 'Employee Will Get' : netBalance < 0 ? 'Employee Owes' : 'Balanced'}
+                                    </p>
+                                    <p className={`text-2xl font-bold ${
+                                        netBalance > 0 
+                                            ? 'text-blue-600 dark:text-blue-400' 
+                                            : netBalance < 0 
+                                                ? 'text-red-600 dark:text-red-400' 
+                                                : 'text-gray-900 dark:text-white'
+                                    }`}>
+                                        {Math.abs(netBalance).toLocaleString()}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -399,18 +470,43 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b border-gray-200 dark:border-gray-700">
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">SL</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Voucher No</th>
                                                 <th className="text-left py-2 text-gray-600 dark:text-gray-400">Date</th>
-                                                <th className="text-right py-2 text-gray-600 dark:text-gray-400">Amount</th>
-                                                <th className="text-center py-2 text-gray-600 dark:text-gray-400">Type</th>
-                                                <th className="text-center py-2 text-gray-600 dark:text-gray-400">Status</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Amount</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Type</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Payment Type</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                                    No salary records found
-                                                </td>
-                                            </tr>
+                                            {recentSalaryPayments.length > 0 ? (
+                                                recentSalaryPayments.map((payment, index) => (
+                                                    <tr key={payment.id} className="border-b border-gray-100 dark:border-gray-700">
+                                                        <td className="py-2 text-gray-900 dark:text-white">{index + 1}</td>
+                                                        <td className="py-2 text-gray-900 dark:text-white">{payment.voucher_no}</td>
+                                                        <td className="py-2 text-gray-900 dark:text-white">{payment.date}</td>
+                                                        <td className="py-2 text-gray-900 dark:text-white">{payment.amount.toLocaleString()}</td>
+                                                        <td className="py-2 text-gray-600 dark:text-gray-400">{payment.sub_type}</td>
+                                                        <td className="py-2 text-gray-600 dark:text-gray-400">{payment.type}</td>
+                                                        <td className="py-2">
+                                                            <span className={`px-2 py-1 rounded-full text-xs ${
+                                                                payment.status === 'Paid' 
+                                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                                            }`}>
+                                                                {payment.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={7} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                                        No salary records found
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -428,18 +524,43 @@ export default function ShowEmployee({ employee }: ShowEmployeeProps) {
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b border-gray-200 dark:border-gray-700">
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">SL</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Voucher No</th>
                                                 <th className="text-left py-2 text-gray-600 dark:text-gray-400">Date</th>
-                                                <th className="text-right py-2 text-gray-600 dark:text-gray-400">Amount</th>
-                                                <th className="text-center py-2 text-gray-600 dark:text-gray-400">Type</th>
-                                                <th className="text-center py-2 text-gray-600 dark:text-gray-400">Status</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Amount</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Type</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Payment Type</th>
+                                                <th className="text-left py-2 text-gray-600 dark:text-gray-400">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                                    No advanced records found
-                                                </td>
-                                            </tr>
+                                            {recentAdvancedPayments.length > 0 ? (
+                                                recentAdvancedPayments.map((payment, index) => (
+                                                    <tr key={payment.id} className="border-b border-gray-100 dark:border-gray-700">
+                                                        <td className="py-2 text-gray-900 dark:text-white">{index + 1}</td>
+                                                        <td className="py-2 text-gray-900 dark:text-white">{payment.voucher_no}</td>
+                                                        <td className="py-2 text-gray-900 dark:text-white">{payment.date}</td>
+                                                        <td className="py-2 text-gray-900 dark:text-white">{payment.amount.toLocaleString()}</td>
+                                                        <td className="py-2 text-gray-600 dark:text-gray-400">{payment.sub_type}</td>
+                                                        <td className="py-2 text-gray-600 dark:text-gray-400">{payment.type}</td>
+                                                        <td className="py-2">
+                                                            <span className={`px-2 py-1 rounded-full text-xs ${
+                                                                payment.status === 'Given' 
+                                                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                                            }`}>
+                                                                {payment.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={7} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                                        No advanced records found
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
