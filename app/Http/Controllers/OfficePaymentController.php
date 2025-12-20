@@ -79,7 +79,12 @@ class OfficePaymentController extends Controller
             ['value' => 'bank', 'label' => 'Bank']
         ];
 
-        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
+        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get()->map(function($item) {
+            return [
+                'close_date' => $item->close_date->format('Y-m-d'),
+                'shift_id' => $item->shift_id
+            ];
+        });
 
         return Inertia::render('OfficePayments/Index', [
             'officePayments' => $officePayments,

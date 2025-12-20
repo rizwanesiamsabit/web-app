@@ -102,7 +102,12 @@ class DispenserReadingController extends Controller
             ->unique()
             ->values();
 
-        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get();
+        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get()->map(function($item) {
+            return [
+                'close_date' => $item->close_date->format('Y-m-d'),
+                'shift_id' => $item->shift_id
+            ];
+        });
         $employees = Employee::select('id', 'employee_name')->get();
         $voucherCategories = VoucherCategory::where('status', true)->get();
         $paymentSubTypes = PaymentSubType::with('voucherCategory')->where('status', true)->get();
